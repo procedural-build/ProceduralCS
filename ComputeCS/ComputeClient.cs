@@ -9,39 +9,34 @@ namespace ComputeCS
 {
     public class ComputeClient
     {
-        public string url = null;
-        public AuthTokens Tokens = null;
+        public RESTClient http = null;
+        public AuthTokens Tokens = new AuthTokens();
 
-        public ComputeClient(string host = null) {
-            url = host;
+        public ComputeClient(string _host = null) {
+            http = new RESTClient
+            {
+                host = _host,
+                endPoint = "/auth-jwt/verify/",
+                httpMethod = httpVerb.GET
+            };
         }
 
         public AuthTokens Auth(string username, string password)
         {
-            var client = new RESTClient
-            {
-                endPoint = url + "/auth-jwt/get/",
-                httpMethod = httpVerb.POST,
-                payload = new Dictionary<string, object>()
+            Tokens = http.Request<AuthTokens>(
+                "/auth-jwt/get/", null,
+                httpVerb.POST,
+                new Dictionary<string, object>()
                 {
                     {"username", username},
                     {"password", password}
                 }
-            };
-            var response = client.makeRequest();
-            Tokens = JsonConvert.DeserializeObject<AuthTokens>(response);
-
+            );
+            http.token = Tokens.Access;
             return Tokens;
         }
 
-        private bool IsTokenExpired()
-        {
-            if (Tokens.Access == string.Empty)
-            {
-                throw new MissingFieldException("No access token was found. Please login!");
-            }
-
-            var token = Tokens.Access;
+        public static Dictionary<string, string> DecodeToken(string token) {
             token = token.Split(".")[1];
             var missingPadding = token.Length % 4;
             if (missingPadding > 0)
@@ -51,11 +46,20 @@ namespace ComputeCS
 
             token = token.Replace("-", "+");
             token = token.Replace("_", "/");
-            var decodedToken = JsonConvert.DeserializeObject<Dictionary<string, string>>(
-                Base64Decode(token));
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(Base64Decode(token));
+        }
+
+        private bool IsTokenExpired()
+        {
+            if (Tokens.Access == string.Empty)
+            {
+                throw new MissingFieldException("No access token was found. Please login!");
+            }
+            var decodedToken = DecodeToken(Tokens.Access);
+            // Get the expiry time
             var tokenExpireTime = Convert.ToInt64(decodedToken["exp"]);
             var now = DateTimeOffset.UtcNow;
-
+            // True if now is later than exiry time
             return now.ToUnixTimeSeconds() > tokenExpireTime;
         }
 
@@ -65,24 +69,22 @@ namespace ComputeCS
             {
                 Tokens.Access = RefreshAccessToken();
             }
-
+            // Set the token of the underlying RESTClient (http client)
+            http.token = Tokens.Access;
+            // Return the access token
             return Tokens.Access;
         }
 
         private string RefreshAccessToken()
         {
-            var client = new RESTClient
-            {
-                endPoint = url + "/auth-jwt/refresh/",
-                httpMethod = httpVerb.POST,
-                payload = new Dictionary<string, object>()
+            Tokens = http.Request<AuthTokens>(
+                "/auth-jwt/refresh/", null,
+                httpVerb.POST,
+                new Dictionary<string, object>()
                 {
                     {"refresh", Tokens.Refresh}
                 }
-            };
-            var response = client.makeRequest();
-            Tokens = JsonConvert.DeserializeObject<AuthTokens>(response);
-
+            );
             return Tokens.Access;
         }
 
@@ -90,6 +92,27 @@ namespace ComputeCS
         {
             var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        /* 
+        Wrappers around the RESTClient.Request methods that checks the token and refreshes
+        as required before a call
+        */
+        public T Request<T>(
+            string url, 
+            Dictionary<string, object> _query_params = null,
+            httpVerb _method = httpVerb.GET, 
+            Dictionary<string, object> _payload = null
+        ) {
+            GetAccessToken();
+            return http.Request<T>(url, _query_params, _method, _payload);
+        }
+
+        public T Request<T>(Dictionary<string, object> _payload = null) {
+            /* Generic request that casts the response to a type provided
+            */
+            GetAccessToken();
+            return http.Request<T>(_payload);
         }
     }
 }

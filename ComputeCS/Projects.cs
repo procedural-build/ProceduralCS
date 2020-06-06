@@ -8,72 +8,83 @@ namespace ComputeCS
 {
     public class Projects
     {
-        public ComputeClient Client = null;
+        public ComputeClient client = null;
         
-        public Project GetOrCreate(string projectName, int? projectNumber, bool create = false)
+        public Projects(ComputeClient _client) {
+            client = _client;
+            client.http.endPoint = "/api/project/";
+            client.http.httpMethod = httpVerb.GET;
+        }
+
+        public Project GetOrCreate(string name, int? number, bool create = false)
         {
-            // Check to see if tokens is still valid. If not get new access token
-            var token = this.Client.GetAccessToken();
-            var httpClient = new RESTClient
+            /* Try to get a project from its Name/Number. If it does not exist then 
+            (optionally) create it.
+            */
+
+            // Check that at least a name or number is provided
+            if (name == null && number == null)
             {
-                endPoint = this.Client.url + "/api/project/" + QueryParams(projectName, projectNumber),
-                httpMethod = httpVerb.GET,
-                token = token
-            };
-            var response = httpClient.makeRequest();
-            var projects = JsonConvert.DeserializeObject<List<Project>>(response);
+                throw new ArgumentException("Please provide a project name or number at minimum");
+            }
+
+            // Do the Get or Create
+            try {
+                return GetByNameNumber(name, number);
+            } catch (ArgumentNullException) {
+                if (create) {
+                    return Create(name, number);
+                }
+            }
+
+            // Return null possible if no Project found and not created.
+            return null;
+        }
+
+        public Project GetByNameNumber(string name = null, int? number = null) 
+        {
+            var projects = List(name, number);
             if (projects.Count > 1)
             {
                 throw new ArgumentException(
-                    "Found more than one project. Please provide both a project number and a name to identify an unique project");
+                    @"Found more than one project. Please provide both a project 
+                    number and a name to identify an unique project"
+                );
+            } else if (projects.Count == 0) {
+                throw new ArgumentNullException(
+                    "No project found."
+                );
             }
-
-            if (projects.Count == 0)
-            {
-                if (!create)
-                {
-                    throw new ArgumentException(
-                        "Did not find any project with the provided name and/or number. If you want to create a project project set create to true");
-                }
-                else
-                {
-                    httpClient.endPoint = this.Client.url + "/api/project/";
-                    httpClient.httpMethod = httpVerb.POST;
-                    httpClient.payload = new Dictionary<string, object>()
-                    {
-                        {"name", projectName},
-                        {"number", Convert.ToString(projectNumber)}
-                    };
-                    var createResponse = httpClient.makeRequest();
-                    return JsonConvert.DeserializeObject<Project>(response);
-                }
-            }
-            else
-            {
-                return projects.First();
-            }
+            return projects.First();
         }
 
-        private string QueryParams(string name, int? number)
+        public List<Project> List(string name = null, int? number = null) 
         {
-            if (name == null && number == null)
-            {
-                throw new ArgumentException("Please provide a project name or number");
-            }
+            /* Get a list of all Projects that this user can access 
+            Optional query parameters may be provided to filter against name or number
+            */
+            return client.Request<List<Project>>(
+                "/api/project/",
+                new Dictionary<string, object>() 
+                {
+                    {"name", name},
+                    {"number", number}
+                }
+            );
+        }
 
-            if (name != null && number != null)
-            {
-                return $"?name={name}&number={Convert.ToString(number)}";
-            }
-
-            if (number != null)
-            {
-                return $"?number={Convert.ToString(number)}";
-            }
-            else
-            {
-                return $"?name={name}";
-            }
+        public Project Create(string name = null, int? number = null) {
+            /* Create a new project with provided name and number 
+            */
+            return client.Request<Project>(
+                "/api/project/", null,
+                httpVerb.POST,
+                new Dictionary<string, object>()
+                {
+                    {"name", name},
+                    {"number", number}
+                }
+            );
         }
     }
 }
