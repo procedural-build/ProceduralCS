@@ -12,6 +12,10 @@ namespace ComputeCS
         public string url = null;
         public AuthTokens Tokens = null;
 
+        public ComputeClient(string host = null) {
+            url = host;
+        }
+
         public AuthTokens Auth(string username, string password)
         {
             var client = new RESTClient

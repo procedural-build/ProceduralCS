@@ -1,28 +1,30 @@
 using NUnit.Framework;
-using ComputeCS;
 using System;
-
 
 namespace ComputeCS.UnitTests.Login
 {
-
     [TestFixture]
     public class ComputeClient_computeClient
     {
-        private ComputeClient _client;
+        private UserSettings user = new UserSettings();
+
+        private ComputeClient client;
+        
         
         [SetUp]
         public void SetUp()
         {
-            _client = new ComputeClient();
+            client = new ComputeClient(user.host);
         }
 
         [Test]
         public void ComputeClient_GetToken()
         {
-            var result = _client.GetAccessToken();
+            var tokens = client.Auth(user.username, user.password);
 
-            Assert.IsNotNull(_client.GetAccessToken(), "Access token does not exist");
+            Console.WriteLine($"Got access token: {tokens.Access}");
+
+            Assert.IsNotNull(tokens.Access, "_value should be true");
         }
     }
 }
