@@ -2,10 +2,10 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using computeCS.types;
+using ComputeCS.types;
 using Newtonsoft.Json;
 
-namespace computeCS
+namespace ComputeCS
 {
     public class ComputeClient
     {

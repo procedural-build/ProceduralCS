@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using computeCS.types;
+using ComputeCS.types;
 using Newtonsoft.Json;
 
-namespace computeCS
+namespace ComputeCS
 {
     public class SerializeOutput
     {

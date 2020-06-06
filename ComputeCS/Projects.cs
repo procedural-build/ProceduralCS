@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using computeCS.types;
+using ComputeCS.types;
 using Newtonsoft.Json;
 
-namespace computeCS
+namespace ComputeCS
 {
     public class Projects
     {

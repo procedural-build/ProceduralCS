@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using computeCS;
-using computeCS.types;
+using ComputeCS;
+using ComputeCS.types;
 using Newtonsoft.Json;
 
 

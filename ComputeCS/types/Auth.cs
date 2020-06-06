@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace computeCS.types
+namespace ComputeCS.types
 {
     public class AuthTokens
     {
