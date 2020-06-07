@@ -11,6 +11,8 @@ namespace ComputeCS
     {
         public RESTClient http = null;
         public AuthTokens Tokens = new AuthTokens();
+        public string auth_host = "";
+        public string request_host = "";
 
         public ComputeClient(string _host = null) {
             http = new RESTClient
@@ -21,10 +23,54 @@ namespace ComputeCS
             };
         }
 
+        public ComputeClient (string access_token, string refresh_token) {
+            /* Generate a new ComputeClient instance from the tokens.
+
+            NOTE: This allows the JWT tokens to be provided down a pipeline (such as a Grasshopper
+            or Dynamo pipeline) in plain-text such as a JSON dictionary.  Then each component may
+            access the API in a stateless way.
+            */
+            Tokens = new AuthTokens() {
+                Access = access_token,
+                Refresh = refresh_token
+            };
+            GetHostsFromTokens();
+        }
+
+        public ComputeClient (AuthTokens tokens) {
+            /* As above - but tokens provided in a nice data structure
+            */
+            Tokens = tokens;
+            GetHostsFromTokens();
+         }
+
+        private void GetHostsFromTokens() {
+            /* Checks to see if hosts are included in the tokens so we know which domain
+            to hit for general requests (request_host ie. https://compute.procedural.build) 
+            or authorization (auth_host ie https://login.procedural.build)
+
+            Note that for a valid client to be generated from only the tokens then the
+            tokens need to contain the host in their payload.  
+            
+            It makes sense that the access_token contains the request_host (for hitting APIs and standard
+            operations) while the refresh_token contains the auth_host (for authentication and refresh).
+
+            Note that obivously the auth_host may be different from the request_host.  For example: the 
+            auth_host might be https://login.procedural.build and the request_host might be
+            https://compute.procedural.build
+            */
+            request_host = DecodeToken(Tokens.Access).GetValueOrDefault("host", "");
+            auth_host = DecodeToken(Tokens.Refresh).GetValueOrDefault("host", "");
+            // Set the request host in the http handler (if provided)
+            if (request_host != "") {
+                http.host = request_host;
+            }
+        }
+
         public AuthTokens Auth(string username, string password)
         {
             Tokens = http.Request<AuthTokens>(
-                "/auth-jwt/get/", null,
+                $"{auth_host}/auth-jwt/get/", null,
                 httpVerb.POST,
                 new Dictionary<string, object>()
                 {
@@ -36,7 +82,7 @@ namespace ComputeCS
             return Tokens;
         }
 
-        public static Dictionary<string, string> DecodeToken(string token) {
+        public static string DecodeTokenToJson(string token) {
             token = token.Split(".")[1];
             var missingPadding = token.Length % 4;
             if (missingPadding > 0)
@@ -46,7 +92,11 @@ namespace ComputeCS
 
             token = token.Replace("-", "+");
             token = token.Replace("_", "/");
-            return JsonConvert.DeserializeObject<Dictionary<string, string>>(Base64Decode(token));
+            return Base64Decode(token);
+        }
+
+        public static Dictionary<string, string> DecodeToken(string token) {
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(DecodeTokenToJson(token));
         }
 
         private bool IsTokenExpired()
@@ -78,11 +128,24 @@ namespace ComputeCS
         private string RefreshAccessToken()
         {
             Tokens = http.Request<AuthTokens>(
-                "/auth-jwt/refresh/", null,
+                $"{auth_host}/auth-jwt/refresh/", null,
                 httpVerb.POST,
                 new Dictionary<string, object>()
                 {
                     {"refresh", Tokens.Refresh}
+                }
+            );
+            return Tokens.Access;
+        }
+
+        private string VerifyAccessToken()
+        {
+            Tokens = http.Request<AuthTokens>(
+                $"{auth_host}/auth-jwt/verify/", null,
+                httpVerb.POST,
+                new Dictionary<string, object>()
+                {
+                    {"access", Tokens.Access}
                 }
             );
             return Tokens.Access;

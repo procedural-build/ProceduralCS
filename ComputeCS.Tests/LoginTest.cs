@@ -24,6 +24,8 @@ namespace ComputeCS.UnitTests.Login
 
             Console.WriteLine($"Got access token: {tokens.Access}");
 
+            Console.Write($"Decoded token: {ComputeClient.DecodeTokenToJson(tokens.Access)}");
+
             Assert.IsNotNull(tokens.Access, "_value should be true");
         }
     }

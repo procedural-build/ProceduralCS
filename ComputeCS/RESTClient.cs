@@ -12,6 +12,7 @@ namespace ComputeCS
         GET,
         POST,
         PUT,
+        PATCH,
         DELETE
     }
 
