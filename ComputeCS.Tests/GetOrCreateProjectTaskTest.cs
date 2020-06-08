@@ -19,7 +19,7 @@ namespace ComputeCS.UnitTests.GetOrCreateProjectTask
         Downstream components will get or default or error against these 
         parameters.
         */
-        private string input_json_string;
+        private string core_input;
 
         /* Component inputs*/
         private string project_name;
@@ -38,10 +38,11 @@ namespace ComputeCS.UnitTests.GetOrCreateProjectTask
             Console.WriteLine($"Got access token: {tokens.Access}");
 
             // Core input string (from previous/upstream component(s))
-            input_json_string = new SerializeOutput {
+            core_input = new SerializeOutput {
                 Auth = tokens,
                 Url = "https://compute.procedural.build"
             }.ToJson();
+            Dictionary<string, string> input_dict = ComputeCS.Utils.DeserializeJsonString(core_input);
 
             // Input parameters (these will be input into the component)
             project_name = "Test Project";
@@ -52,54 +53,21 @@ namespace ComputeCS.UnitTests.GetOrCreateProjectTask
         }
 
         [Test]
-        public void GetOrCreateProjectAndTask()
+        public void GetOrCreateProjectAndTask_Test()
         {
-            Dictionary<string, string> input_dict = ComputeCS.Utils.DeserializeJsonString(input_json_string);
-            // Unpack to an AuthToken instances
-            AuthTokens tokens = input_dict["auth"];
-
-            // Get a list of Projects for this user
-            var project = new GenericViewSet<Project>(
-                tokens, 
-                "/api/project/"
-            ).GetOrCreate(
-                new Dictionary<string, object> {
-                    {"name", project_name},
-                    {"number", project_number}
-                }, 
-                null,
+            // Here is the componet/function - this will be wrapped in Grasshopper/Dynamo boilerplate
+            Dictionary<string, object> outputs = ComputeCS.Components.GetOrCreateProjectTask(
+                core_input,
+                project_name,
+                project_number,
+                task_name,
                 create
             );
+            
+            // Components should always output json string "out" - this is the core dictoinary
+            Assert.IsTrue(outputs.ContainsKey("out"));
 
-            // We won't get here unless the last getting of Project succeeded
-            // Create the task if the Project succeded
-            var task = new GenericViewSet<Task>(
-                tokens, 
-                $"/api/project/{project.UID}/task/"
-            ).GetOrCreate(
-                new Dictionary<string, object> {
-                    {"name", task_name}
-                }, 
-                new Dictionary<string, object> {
-                    {"config", new Dictionary<string, string> {
-                        {"case_dir", "foam"},
-                        {"task_type", "parent"}         // This is optional - task types of "parent" will not execute jobs
-                    }}
-                }, 
-                create
-            );
-
-            // We could have a function here that makes life easier to
-            // merge the outputs with the provided inputs
-            var ouput_string = new SerializeOutput {
-                Auth = tokens,
-                Url = "https://compute.procedural.build",
-                Task = task,
-                Project = project,
-            };
-
-            Assert.IsNotNull(project, "Got null project");
-            Assert.IsNotNull(task, "Got null task");
+            // We can deserialise the output here and do more assertions
         }
     }
 }
