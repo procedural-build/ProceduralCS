@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Microsoft.Extensions.Configuration;
 
 
-namespace ComputeCS.UnitTests
+namespace ComputeCS.Tests
 {
 
     public class UserSettings 

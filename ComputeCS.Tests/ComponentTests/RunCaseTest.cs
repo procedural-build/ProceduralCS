@@ -3,12 +3,13 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using ComputeCS.types;
-using ComputeCS;
+using ComputeCS.Tests;
+using CFDSolution = ComputeCS.Components.CFDSolution;
 
-namespace ComputeCS.UnitTests.GetOrCreateProjectTask
+namespace ComputeCS.Tests.ComponentTests
 {
     [TestFixture]
-    public class ProjectTask_projectTask
+    public class TestComputeCase
     {
         private UserSettings user = new UserSettings();
         private ComputeClient client;
@@ -22,10 +23,11 @@ namespace ComputeCS.UnitTests.GetOrCreateProjectTask
         private string core_input;
 
         /* Component inputs*/
-        private string project_name;
-        private int project_number;
-        private string task_name;
-        private bool create;
+        private bool compute;
+        private Project project;
+        private Task task;
+        private Mesh mesh;
+        private types.CFDSolution solution;
         
         
         [SetUp]
@@ -38,32 +40,29 @@ namespace ComputeCS.UnitTests.GetOrCreateProjectTask
             Console.WriteLine($"Got access token: {tokens.Access}");
 
             // Core input string (from previous/upstream component(s))
-            core_input = new SerializeOutput {
+            core_input = SerializeIO.OutputToJson(new Inputs {
                 Auth = tokens,
-                Url = "https://compute.procedural.build"
-            }.ToJson();
-            Dictionary<string, string> input_dict = ComputeCS.Utils.DeserializeJsonString(core_input);
+                Url = user.host,
+                Project = project,
+                Task = task,
+                Mesh = mesh,
+                CFDSolution = solution
+            });
 
             // Input parameters (these will be input into the component)
-            project_name = "Test Project";
-            project_number = 1;
-            task_name = "Test Task";
-            create = false;
+            compute = false;
 
         }
 
         [Test]
-        public void GetOrCreateProjectAndTask_Test()
+        public void TestComputeRun()
         {
-            // Here is the componet/function - this will be wrapped in Grasshopper/Dynamo boilerplate
-            Dictionary<string, object> outputs = ComputeCS.Components.GetOrCreateProjectTask(
-                core_input,
-                project_name,
-                project_number,
-                task_name,
-                create
+            // Here is the component/function - this will be wrapped in Grasshopper/Dynamo boilerplate
+            Dictionary<string, object> outputs = ComputeCS.Components.Compute.Create(
+                core_input
             );
             
+            Console.WriteLine($"Got Output: {outputs["out"]}");
             // Components should always output json string "out" - this is the core dictoinary
             Assert.IsTrue(outputs.ContainsKey("out"));
 

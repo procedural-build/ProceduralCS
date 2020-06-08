@@ -9,7 +9,7 @@ namespace ComputeCS
 {
     public class ComputeClient
     {
-        public RESTClient http = null;
+        public RESTClient http = new RESTClient();
         public AuthTokens Tokens = new AuthTokens();
         public string auth_host = "";
         public string request_host = "";
@@ -34,14 +34,14 @@ namespace ComputeCS
                 Access = access_token,
                 Refresh = refresh_token
             };
-            GetHostsFromTokens();
+            //GetHostsFromTokens();
         }
 
         public ComputeClient (AuthTokens tokens) {
             /* As above - but tokens provided in a nice data structure
             */
             Tokens = tokens;
-            GetHostsFromTokens();
+            //GetHostsFromTokens();
          }
 
         private void GetHostsFromTokens() {

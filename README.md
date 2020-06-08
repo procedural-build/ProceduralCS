@@ -51,7 +51,7 @@ In summary do the following (on Linux):
 cd ComputeCS.Tests
 dotnet user-secrets set "ComputeAPIUser:Username" "<username>"
 dotnet user-secrets set "ComputeAPIUser:Password" "<password>"
-dotnet user-secrets set "ComputeAPIUser:Password" "<host>"
+dotnet user-secrets set "ComputeAPIUser:Host" "<host>"
 ```
 
 You can confirm that the secets have been created and saved to a local file path with the following:

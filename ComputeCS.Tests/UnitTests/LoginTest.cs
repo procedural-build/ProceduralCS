@@ -1,10 +1,10 @@
 using NUnit.Framework;
 using System;
 
-namespace ComputeCS.UnitTests.Login
+namespace ComputeCS.Tests.Login
 {
     [TestFixture]
-    public class ComputeClient_computeClient
+    public class TestComputeClient
     {
         private UserSettings user = new UserSettings();
 

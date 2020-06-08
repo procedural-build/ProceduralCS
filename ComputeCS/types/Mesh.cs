@@ -6,7 +6,24 @@ using System.Threading.Tasks;
 
 namespace ComputeCS.types
 {
-    class Mesh
+    public class Mesh
     {
+        public BaseMesh BaseMesh;
+        public SnappyHexMesh SnappyHexMesh;
+    }
+
+    public class BaseMesh
+    {
+        public string Type;
+        public double CellSize;
+        public List<List<int>> BoundingBox;
+        public Dictionary<string, string> Parameters;
+    }
+
+    public class SnappyHexMesh
+    {
+        public Dictionary<string, object> Overrides;
+        public Dictionary<string, object> DefaultSurface;
+        public List<Dictionary<string, object>> Surfaces;
     }
 }

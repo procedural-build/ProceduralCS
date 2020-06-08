@@ -2,13 +2,13 @@ using NUnit.Framework;
 using System;
 
 
-namespace ComputeCS.UnitTests.Secrets
+namespace ComputeCS.Tests
 {
     [TestFixture]
-    public class Secrets_secrets
+    public class TestSecrets
     {           
         [Test]
-        public void Secrets_GetSecrets()
+        public void TestGetSecrets()
         {
             // Load the user class (which loads the secrets on model instantiation)
             UserSettings user = new UserSettings();
