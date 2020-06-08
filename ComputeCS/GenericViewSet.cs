@@ -46,7 +46,11 @@ namespace ComputeCS
             return $"{basePath}{(basePath.EndsWith("/") ? "" : "/")}{objectId}/";
         }
 
-        public ObjectType GetOrCreate(Dictionary<string, object> query_params, bool create = false)
+        public ObjectType GetOrCreate(
+            Dictionary<string, object> query_params, 
+            Dictionary<string, object> create_params = null, 
+            bool create = false
+        )
         {
             /* Try to get an object by filtering using query parameters from a List request. 
             If a single filtered item does not exist then (optionally) create it.
@@ -64,7 +68,16 @@ namespace ComputeCS
                 return GetByQueryParams(query_params);
             } catch (ArgumentNullException) {
                 if (create) {
-                    return Create(query_params, query_params);
+                    // Merge the query_params with create_params
+                    if (create_params == null) {
+                        create_params = query_params;
+                    } else {
+                        create_params = query_params
+                            .Union(create_params)
+                            .ToDictionary(s => s.Key, s => s.Value);
+                    }
+                    // Create the object
+                    return Create(create_params, query_params);
                 }
             }
 

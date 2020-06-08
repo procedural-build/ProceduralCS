@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+
 
 namespace ComputeCS
 {
-    static class Utils {
+    public static class Utils {
 
         public static string DictToQueryString(Dictionary<string, object> dict)
         {
@@ -17,5 +19,10 @@ namespace ComputeCS
             query_string = (query_string != "") ? $"?{query_string.Substring(1)}" : "";
             return query_string;
         }
+
+        public static Dictionary<string, string> DeserializeJsonString(string json_string) {
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(json_string);
+        }
+
     }
 }
