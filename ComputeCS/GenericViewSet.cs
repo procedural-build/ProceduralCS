@@ -55,12 +55,13 @@ namespace ComputeCS
             // Check that at least a name or number is provided
             if (query_params.Keys.Count == 0)
             {
-                throw new ArgumentException("Please provide some query parameters for filtering the List request at a minimum");
+                throw new ArgumentException(@"Please provide some query parameters 
+                for filtering the List request at a minimum");
             }
 
             // Do the Get or Create
             try {
-                return GetByNameNumber(query_params);
+                return GetByQueryParams(query_params);
             } catch (ArgumentNullException) {
                 if (create) {
                     return Create(query_params, query_params);
@@ -71,7 +72,9 @@ namespace ComputeCS
             return default(ObjectType);
         }
 
-        public ObjectType GetByNameNumber(Dictionary<string, object> query_params) 
+        public ObjectType GetByQueryParams(
+            Dictionary<string, object> query_params
+        ) 
         {
             var items = List(query_params);
             if (items.Count > 1)
@@ -88,7 +91,9 @@ namespace ComputeCS
             return items.First();
         }
 
-        public List<ObjectType> List(Dictionary<string, object> query_params) 
+        public List<ObjectType> List(
+            Dictionary<string, object> query_params = null
+        ) 
         {
             /* Get a list of all Projects that this user can access 
             Optional query parameters may be provided to filter against name or number
@@ -102,7 +107,7 @@ namespace ComputeCS
 
         public ObjectType Retrieve(
             string objectId,
-            Dictionary<string, object> query_params
+            Dictionary<string, object> query_params = null
         ) {
             /* Create a new project with provided name and number 
             */
@@ -115,7 +120,7 @@ namespace ComputeCS
 
         public ObjectType Create(
             Dictionary<string, object> data,
-            Dictionary<string, object> query_params
+            Dictionary<string, object> query_params = null
         ) {
             /* Create a new project with provided name and number 
             */
@@ -129,8 +134,8 @@ namespace ComputeCS
 
         public ObjectType Update(
             string objectId,
-            Dictionary<string, object> query_params,
-            Dictionary<string, object> data
+            Dictionary<string, object> data,
+            Dictionary<string, object> query_params = null
         ) {
             /* Create a new project with provided name and number 
             */
@@ -144,8 +149,8 @@ namespace ComputeCS
 
         public ObjectType PartialUpdate(
             string objectId,
-            Dictionary<string, object> query_params,
-            Dictionary<string, object> data
+            Dictionary<string, object> data,
+            Dictionary<string, object> query_params = null
         ) {
             /* Create a new project with provided name and number 
             */

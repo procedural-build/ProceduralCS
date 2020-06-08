@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
+using ComputeCS.types;
 using ComputeCS;
 
 namespace ComputeCS.UnitTests.Projects
@@ -29,7 +30,7 @@ namespace ComputeCS.UnitTests.Projects
             var projects = new ComputeCS.Projects(client);
 
             // Get a list of Projects for this user
-            var project_list = projects.List();
+            var project_list = new GenericViewSet<Project>(tokens, "/api/project/").List();
 
             Console.Write($"Got projects: {JsonConvert.SerializeObject(project_list)}");
 
