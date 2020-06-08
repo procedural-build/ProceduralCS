@@ -16,6 +16,16 @@ namespace ComputeCS.Components
             var solution = inputData.CFDSolution;
             
             // Upload File to parent task
+            new GenericViewSet<string>(
+                tokens,
+                $"{inputData.Url}/api/task/{parentTask.UID}/file/constant/triSurface/cfdGeom.stl/"
+            ).Update(
+                null,
+                new Dictionary<string, object>
+                {
+                    {"data", "file"}
+                }
+            );
             
             // Tasks to Handle MagPy Celery Actions
             // First Action to create Mesh Files
