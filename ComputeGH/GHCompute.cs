@@ -1,13 +1,19 @@
-namespace DefaultNamespace
+﻿using System;
+using System.Collections.Generic;
+using Grasshopper.Kernel;
+using Rhino.Geometry;
+using Newtonsoft.Json;
+using ComputeCS.types;
+
+namespace ComputeCS.Grasshopper
 {
-    public class GHCompute : GH_ComponentC
+    public class ComputeCompute : GH_Component
     {
-    
         /// <summary>
-        /// Initializes a new instance of the computeLogin class.
+        /// Initializes a new instance of the ComputeCompute class.
         /// </summary>
-        public computeLogin()
-          : base("Compute Solution, "CFD Solution",
+        public ComputeCompute()
+          : base("Compute Solution", "CFD Solution",
               "Create the Solution Parameters for a CFD Case",
               "Compute", "CFD")
         {
@@ -19,10 +25,10 @@ namespace DefaultNamespace
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("Geometry", "Geometry", "Case Geometry", GH_ParamAccess.item);
+            pManager.AddTextParameter("Geometry", "Geometry", "Case Geometry", GH_ParamAccess.list);
             pManager.AddTextParameter("Local Path", "Path", "Local Path to write the geometry to. Default is %Temp%", GH_ParamAccess.item);
             pManager.AddTextParameter("Compute", "Compute", "Run the case on Procedural Compute", GH_ParamAccess.item);
-            
+
         }
 
         /// <summary>
@@ -40,28 +46,29 @@ namespace DefaultNamespace
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            List<Brep> geometry;
-            string path;
-            bool compute;
-            
-                
+            List<Brep> geometry = null;
+            string path = null;
+            bool compute = false;
+
+
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref geometry)) return;
             if (!DA.GetData(2, ref path)) return;
             if (!DA.GetData(3, ref compute)) return;
 
-            ExportSTL(geometry, path)
-                
+            ExportSTL(geometry, path);
+
+
             Dictionary<string, object> outputs = ComputeCS.Components.Compute.Create(
                 inputJson,
                 path
             );
 
             DA.SetData(0, inputJson);
-            
+
         }
-        
+
         protected void ExportSTL(List<Brep> breps, string path)
         {
             List<Guid> guidList = new List<Guid>();

@@ -1,20 +1,19 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using computeGH.core;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
-using computeGH.types;
+using ComputeCS.types;
 
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHProjectTask : GH_ComponentC
+    public class ComputeProjectTask : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
-        public computeLogin()
+        public ComputeProjectTask()
           : base("Get or Create Project and Task", "Project and Task",
               "Get or Create a project and/or a parent Task on Procedural Compute",
               "Compute", "Utils")
@@ -54,19 +53,19 @@ namespace ComputeCS.Grasshopper
             bool create = false;
 
             if (!DA.GetData(0, ref auth)) return;
-            if (!DA.GetData(1, ref projectName) || !DA.GetData(2, ref projectNumber) ) return;
+            if (!DA.GetData(1, ref projectName) || !DA.GetData(2, ref projectNumber)) return;
             if (!DA.GetData(3, ref taskName)) return;
 
             Dictionary<string, object> outputs = ComputeCS.Components.ProjectAndTask.GetOrCreate(
                 auth,
-                project_name,
-                project_number,
-                task_name,
+                projectName,
+                (int)projectNumber,
+                taskName,
                 create
             );
-            
+
             DA.SetData(0, outputs["out"]);
-            
+
         }
 
         /// <summary>

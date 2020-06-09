@@ -1,13 +1,20 @@
-namespace DefaultNamespace
+﻿using System;
+using System.Collections.Generic;
+using Grasshopper.Kernel;
+using Rhino.Geometry;
+using Newtonsoft.Json;
+using ComputeCS.types;
+
+namespace ComputeCS.Grasshopper
 {
-    public class GHSolution : GH_ComponentC
+    public class ComputeSolution : GH_Component
     {
-    
+
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
-        public computeLogin()
-          : base("Compute Solution, "CFD Solution",
+        public ComputeSolution()
+          : base("Compute Solution", "CFD Solution",
               "Create the Solution Parameters for a CFD Case",
               "Compute", "CFD")
         {
@@ -19,13 +26,13 @@ namespace DefaultNamespace
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("CPUs", "CPUs", "", GH_ParamAccess.List);
+            pManager.AddTextParameter("CPUs", "CPUs", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Solver", "Solver", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.List);
+            pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Iterations", "Iterations", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Number of Angles", "Number of Angles", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.List);
-            
+            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+
         }
 
         /// <summary>
@@ -43,17 +50,17 @@ namespace DefaultNamespace
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            List<int> cpus;
+            List<int> cpus = null;
 
-            string solver;
+            string solver = null;
 
-            List<Dictionary<string, object>> boundaryConditions;
+            List<Dictionary<string, object>> boundaryConditions = null;
 
-            Dictionary<string, int> iterations
+            Dictionary<string, int> iterations = null;
 
-            int numberOfAngles;
-            Dictionary<string, object> overrides;
-                
+            int numberOfAngles = 1;
+            Dictionary<string, object> overrides = new Dictionary<string, object>();
+
 
             if (!DA.GetData(1, ref cpus)) return;
             if (!DA.GetData(2, ref solver)) return;
@@ -72,7 +79,7 @@ namespace DefaultNamespace
 
 
             DA.SetData(0, outputs["out"]);
-            
+
         }
 
         /// <summary>

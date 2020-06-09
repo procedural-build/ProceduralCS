@@ -1,19 +1,19 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using computeGH.core;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
-using computeGH.types;
+using ComputeCS.types;
+
 
 namespace ComputeCS.Grasshopper
 {
-    public class computeLogin : GH_ComponentC
+    public class ComputeLogin : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
-        public computeLogin()
+        public ComputeLogin()
           : base("Compute Login", "Login",
               "Login to Procedural Compute",
               "Compute", "Utils")
@@ -52,15 +52,16 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(1, ref password)) return;
             if (!DA.GetData(2, ref url)) return;
 
-            client = new ComputeClient(url);
-            var tokens = client.Auth(user.username, user.password);
-            var output = SerializeIO.OutputToJson(new Inputs {
+            var client = new ComputeClient(url);
+            var tokens = client.Auth(username, password);
+            var output = SerializeIO.OutputToJson(new Inputs
+            {
                 Auth = tokens,
                 Url = url
             });
 
             DA.SetData(0, output);
-            
+
         }
 
         /// <summary>

@@ -6,7 +6,8 @@ namespace ComputeCS.Components
     public static class Compute
     {
         public static Dictionary<string, object> Create(
-            string inputJson
+            string inputJson,
+            string path
             )
         {
             var inputData = SerializeIO.InputsFromJson(inputJson);

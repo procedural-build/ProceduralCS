@@ -1,21 +1,20 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using computeGH.core;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
-using computeGH.types;
+using ComputeCS.types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHMesh : GH_ComponentC
+    public class ComputeMesh : GH_Component
     {
-    
+
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
-        public computeLogin()
-          : base("Compute Mesh, "Mesh",
+        public ComputeMesh()
+          : base("Compute Mesh", "Mesh",
               "Create the Mesh Parameters for a CFD Case",
               "Compute", "CFD")
         {
@@ -29,12 +28,12 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Type", "Type", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Cell Size", "Cell Size", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Bounding Box", "Bounding Box", "", GH_ParamAccess.List);
+            pManager.AddTextParameter("Bounding Box", "Bounding Box", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Parameters", "Parameters", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Surfaces", "Surfaces", "", GH_ParamAccess.List);
-            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.List);
-            
+            pManager.AddTextParameter("Surfaces", "Surfaces", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+
         }
 
         /// <summary>
@@ -52,19 +51,19 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            string type;
+            string type = null;
 
-            double cellSize;
+            double cellSize = 1.0;
 
-            List<List<int>> boundingBox;
+            List<List<int>> boundingBox = null;
 
-            Dictionary<string, string> params_;
+            Dictionary<string, string> params_ = null;
 
             // Inputs for SnappyHexMesh
-            Dictionary<string, object> defaultSurfaces;
-            List<Dictionary<string, object>> surfaces;
-            List<Dictionary<string, object>> overrides;
-                
+            Dictionary<string, object> defaultSurfaces = null;
+            List<Dictionary<string, object>> surfaces = null;
+            Dictionary<string, object> overrides = new Dictionary<string, object>();
+
 
             if (!DA.GetData(1, ref type)) return;
             if (!DA.GetData(2, ref cellSize)) return;
@@ -83,7 +82,7 @@ namespace ComputeCS.Grasshopper
             );
 
             DA.SetData(0, outputs["out"]);
-            
+
         }
 
         /// <summary>
