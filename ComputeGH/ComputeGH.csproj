@@ -62,12 +62,19 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CFD\GHBoundaryConditions.cs" />
+    <Compile Include="CFD\GHDomain.cs" />
+    <Compile Include="CFD\GHGetNames.cs" />
+    <Compile Include="CFD\GHMeshLevel.cs" />
+    <Compile Include="CFD\GHRefinementRegion.cs" />
+    <Compile Include="CFD\GHSetNames.cs" />
     <Compile Include="ComputeGHInfo.cs" />
-    <Compile Include="GHCompute.cs" />
-    <Compile Include="GHLogin.cs" />
-    <Compile Include="GHMesh.cs" />
-    <Compile Include="GHProjectTask.cs" />
-    <Compile Include="GHSolution.cs" />
+    <Compile Include="CFD\GHCompute.cs" />
+    <Compile Include="GrasshopperUtils\Geometry.cs" />
+    <Compile Include="Utils\GHLogin.cs" />
+    <Compile Include="CFD\GHMesh.cs" />
+    <Compile Include="Utils\GHProjectTask.cs" />
+    <Compile Include="CFD\GHSolution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +86,7 @@
       <Name>ComputeCS</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

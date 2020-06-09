@@ -7,15 +7,15 @@ using ComputeCS.types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeMesh : GH_Component
+    public class ComputeSolution : GH_Component
     {
 
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
-        public ComputeMesh()
-          : base("Compute Mesh", "Mesh",
-              "Create the Mesh Parameters for a CFD Case",
+        public ComputeSolution()
+          : base("Compute Solution", "CFD Solution",
+              "Create the Solution Parameters for a CFD Case",
               "Compute", "CFD")
         {
         }
@@ -26,12 +26,11 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("Type", "Type", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Cell Size", "Cell Size", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Bounding Box", "Bounding Box", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Parameters", "Parameters", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Surfaces", "Surfaces", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("CPUs", "CPUs", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Solver", "Solver", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iterations", "Iterations", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Number of Angles", "Number of Angles", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
 
         }
@@ -51,35 +50,33 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            string type = null;
+            List<int> cpus = null;
 
-            double cellSize = 1.0;
+            string solver = null;
 
-            List<List<int>> boundingBox = null;
+            List<Dictionary<string, object>> boundaryConditions = null;
 
-            Dictionary<string, string> params_ = null;
+            Dictionary<string, int> iterations = null;
 
-            // Inputs for SnappyHexMesh
-            Dictionary<string, object> defaultSurfaces = null;
-            List<Dictionary<string, object>> surfaces = null;
+            int numberOfAngles = 1;
             Dictionary<string, object> overrides = new Dictionary<string, object>();
 
 
-            if (!DA.GetData(1, ref type)) return;
-            if (!DA.GetData(2, ref cellSize)) return;
-            if (!DA.GetData(3, ref boundingBox)) return;
-            if (!DA.GetData(6, ref surfaces)) return;
+            if (!DA.GetData(1, ref cpus)) return;
+            if (!DA.GetData(2, ref solver)) return;
+            if (!DA.GetData(3, ref boundaryConditions)) return;
+            if (!DA.GetData(4, ref iterations)) return;
 
-            var outputs = ComputeCS.Components.Mesh.Setup(
+            var outputs = ComputeCS.Components.CFDSolution.Setup(
                 inputJson,
-                type,
-                cellSize,
-                boundingBox,
-                params_,
-                defaultSurfaces,
-                surfaces,
+                cpus,
+                solver,
+                boundaryConditions,
+                iterations,
+                numberOfAngles,
                 overrides
             );
+
 
             DA.SetData(0, outputs["out"]);
 
@@ -103,7 +100,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b"); }
+            get { return new Guid("31b37cda-f5cc-4ffe-86b2-00bd457e4311"); }
         }
     }
 }

@@ -8,14 +8,14 @@ using ComputeCS.types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeLogin : GH_Component
+    public class ComputeProjectTask : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
-        public ComputeLogin()
-          : base("Compute Login", "Login",
-              "Login to Procedural Compute",
+        public ComputeProjectTask()
+          : base("Get or Create Project and Task", "Project and Task",
+              "Get or Create a project and/or a parent Task on Procedural Compute",
               "Compute", "Utils")
         {
         }
@@ -25,9 +25,11 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("username", "username", "User Name", GH_ParamAccess.item);
-            pManager.AddTextParameter("password", "password", "Password", GH_ParamAccess.item);
-            pManager.AddTextParameter("computeURL", "url", "URL for Compute", GH_ParamAccess.item);
+            pManager.AddTextParameter("Auth", "Auth", "Authentication from the Compute Login component", GH_ParamAccess.item);
+            pManager.AddTextParameter("ProjectName", "ProjectName", "Project Name", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("ProjectNumber", "ProjectNumber", "Project  Number", GH_ParamAccess.item);
+            pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
         }
 
         /// <summary>
@@ -35,7 +37,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("auth", "auth", "auth", GH_ParamAccess.item);
+            pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -44,23 +46,25 @@ namespace ComputeCS.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string username = null;
-            string password = null;
-            string url = null;
+            string auth = null;
+            string projectName = null;
+            int? projectNumber = null;
+            string taskName = null;
+            bool create = false;
 
-            if (!DA.GetData(0, ref username)) return;
-            if (!DA.GetData(1, ref password)) return;
-            if (!DA.GetData(2, ref url)) return;
+            if (!DA.GetData(0, ref auth)) return;
+            if (!DA.GetData(1, ref projectName) || !DA.GetData(2, ref projectNumber)) return;
+            if (!DA.GetData(3, ref taskName)) return;
 
-            var client = new ComputeClient(url);
-            var tokens = client.Auth(username, password);
-            var output = SerializeIO.OutputToJson(new Inputs
-            {
-                Auth = tokens,
-                Url = url
-            });
+            Dictionary<string, object> outputs = ComputeCS.Components.ProjectAndTask.GetOrCreate(
+                auth,
+                projectName,
+                (int)projectNumber,
+                taskName,
+                create
+            );
 
-            DA.SetData(0, output);
+            DA.SetData(0, outputs["out"]);
 
         }
 
@@ -82,7 +86,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b"); }
+            get { return new Guid("74e6ee44-9879-4769-83bb-3f2cdeb8dd7a"); }
         }
     }
 }

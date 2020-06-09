@@ -26,7 +26,7 @@ namespace ComputeGH
             get
             {
                 //Return a short string describing the purpose of this GHA library.
-                return "";
+                return "Grasshopper Client for Procedural Compute";
             }
         }
         public override Guid Id
@@ -42,7 +42,7 @@ namespace ComputeGH
             get
             {
                 //Return a string identifying you or your company.
-                return "IXP Data";
+                return "Procedural Build";
             }
         }
         public override string AuthorContact
@@ -50,7 +50,7 @@ namespace ComputeGH
             get
             {
                 //Return a string representing your preferred contact details.
-                return "";
+                return "info@procedural.build";
             }
         }
     }
