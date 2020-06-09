@@ -44,29 +44,6 @@ namespace ComputeCS
             //GetHostsFromTokens();
          }
 
-        private void GetHostsFromTokens() {
-            /* Checks to see if hosts are included in the tokens so we know which domain
-            to hit for general requests (request_host ie. https://compute.procedural.build) 
-            or authorization (auth_host ie https://login.procedural.build)
-
-            Note that for a valid client to be generated from only the tokens then the
-            tokens need to contain the host in their payload.  
-            
-            It makes sense that the access_token contains the request_host (for hitting APIs and standard
-            operations) while the refresh_token contains the auth_host (for authentication and refresh).
-
-            Note that obivously the auth_host may be different from the request_host.  For example: the 
-            auth_host might be https://login.procedural.build and the request_host might be
-            https://compute.procedural.build
-            */
-            request_host = DecodeToken(Tokens.Access).GetValueOrDefault("host", "");
-            auth_host = DecodeToken(Tokens.Refresh).GetValueOrDefault("host", "");
-            // Set the request host in the http handler (if provided)
-            if (request_host != "") {
-                http.host = request_host;
-            }
-        }
-
         public AuthTokens Auth(string username, string password)
         {
             Tokens = http.Request<AuthTokens>(
@@ -82,8 +59,9 @@ namespace ComputeCS
             return Tokens;
         }
 
-        public static string DecodeTokenToJson(string token) {
-            token = token.Split(".")[1];
+        public static string DecodeTokenToJson(string token)
+        {
+            token = token.Split(Convert.ToChar("."))[1];
             var missingPadding = token.Length % 4;
             if (missingPadding > 0)
             {
