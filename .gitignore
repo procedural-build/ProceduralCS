@@ -4,4 +4,9 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .idea
+<<<<<<< HEAD
 ComputeCS.sln.DotSettings.user
+=======
+ComputeCS.sln.DotSettings.user
+.vs
+>>>>>>> master

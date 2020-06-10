@@ -36,9 +36,10 @@ namespace ComputeCS
             client.http.httpMethod = httpVerb.GET;
         }
 
-        public GenericViewSet(AuthTokens tokens, string basePath) {
+        public GenericViewSet(AuthTokens tokens, string _basePath) {
             client = new ComputeClient(tokens);
-            client.http.endPoint = basePath;
+            basePath = _basePath;
+            client.http.endPoint = _basePath;
             client.http.httpMethod = httpVerb.GET;
         }
 
