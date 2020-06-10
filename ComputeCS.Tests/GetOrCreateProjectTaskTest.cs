@@ -56,7 +56,7 @@ namespace ComputeCS.UnitTests.GetOrCreateProjectTask
         public void GetOrCreateProjectAndTask_Test()
         {
             // Here is the componet/function - this will be wrapped in Grasshopper/Dynamo boilerplate
-            Dictionary<string, object> outputs = ComputeCS.Components.GetOrCreateProjectTask(
+            Dictionary<string, object> outputs = new ComputeCS.Components.GetOrCreateProjectTask().run(
                 core_input,
                 project_name,
                 project_number,

@@ -8,7 +8,7 @@ namespace ComputeCS.Components
         public static Dictionary<string, object> Create(
             string inputJson,
             string path
-            )
+        )
         {
             var inputData = SerializeIO.InputsFromJson(inputJson);
             var tokens = inputData.Auth;

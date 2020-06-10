@@ -59,7 +59,8 @@ namespace ComputeCS.Tests.ComponentTests
         {
             // Here is the component/function - this will be wrapped in Grasshopper/Dynamo boilerplate
             Dictionary<string, object> outputs = ComputeCS.Components.Compute.Create(
-                core_input
+                core_input,
+                ""              // Do we need to provide a path here?
             );
             
             Console.WriteLine($"Got Output: {outputs["out"]}");
