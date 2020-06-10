@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ComputeCS.types
 {
-    public class Mesh
+    public class CFDMesh
     {
         public BaseMesh BaseMesh;
         public SnappyHexMesh SnappyHexMesh;
@@ -16,7 +16,7 @@ namespace ComputeCS.types
     {
         public string Type;
         public double CellSize;
-        public List<List<int>> BoundingBox;
+        public Dictionary<string, object> BoundingBox;
         public Dictionary<string, string> Parameters;
     }
 

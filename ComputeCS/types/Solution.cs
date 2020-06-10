@@ -10,7 +10,8 @@ namespace ComputeCS.types
     {
         public List<int> CPUs;
         public string Solver;
-        public List<Dictionary<string, object>> BoundaryConditions;
+        public string CaseType;
+        public Dictionary<string, object> BoundaryConditions;
         public Dictionary<string, int> Iterations;
         public List<double> Angles;
         public Dictionary<string, object> Overrides;

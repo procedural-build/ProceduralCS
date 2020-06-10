@@ -16,7 +16,7 @@ namespace ComputeCS.Grasshopper
         public ComputeMesh()
           : base("Compute Mesh", "Mesh",
               "Create the Mesh Parameters for a CFD Case",
-              "Compute", "CFD")
+              "Compute", "Mesh")
         {
         }
 
@@ -26,6 +26,10 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
+            pManager.AddTextParameter("Domain", "Domain", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+            /*
             pManager.AddTextParameter("Type", "Type", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Cell Size", "Cell Size", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Bounding Box", "Bounding Box", "", GH_ParamAccess.list);
@@ -33,7 +37,10 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Surfaces", "Surfaces", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+            */
 
+            pManager[2].Optional = true;
+            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -51,6 +58,30 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
+            string domain = null;
+            Dictionary<string, object> defaultSurfaces = new Dictionary<string, object> {
+                { "Plane", new Dictionary<string, object>{
+                        { "level", new Dictionary<string, string>{
+                                { "min", "3"},
+                                { "max", "3"},
+                        }
+                        }
+                }
+                }
+            };
+            Dictionary<string, object> overrides = new Dictionary<string, object>();
+
+            if (!DA.GetData(0, ref inputJson)) return;
+            if (!DA.GetData(1, ref domain)) return;
+
+            
+            var outputs = Components.Mesh.Setup(
+                inputJson,
+                domain,
+                defaultSurfaces,
+                overrides
+            );
+            /*
             string type = null;
 
             double cellSize = 1.0;
@@ -80,6 +111,7 @@ namespace ComputeCS.Grasshopper
                 surfaces,
                 overrides
             );
+            */
 
             DA.SetData(0, outputs["out"]);
 

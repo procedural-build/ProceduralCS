@@ -30,6 +30,9 @@ namespace ComputeCS.Grasshopper
             pManager.AddIntegerParameter("ProjectNumber", "ProjectNumber", "Project  Number", GH_ParamAccess.item);
             pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create", "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
+
+            pManager[2].Optional = true;
+            pManager[4].Optional = true;
         }
 
         /// <summary>
@@ -56,7 +59,7 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(1, ref projectName) || !DA.GetData(2, ref projectNumber)) return;
             if (!DA.GetData(3, ref taskName)) return;
 
-            Dictionary<string, object> outputs = ComputeCS.Components.ProjectAndTask.GetOrCreate(
+            Dictionary<string, object> outputs = Components.ProjectAndTask.GetOrCreate(
                 auth,
                 projectName,
                 (int)projectNumber,

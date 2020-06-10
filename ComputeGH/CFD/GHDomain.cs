@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using ComputeCS.Grasshopper.Utils;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using ComputeCS.types;
 
 
 namespace ComputeCS.Grasshopper
@@ -35,8 +36,8 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("out", "out", "out", GH_ParamAccess.item);
-            pManager.AddBoxParameter("bb", "bb", "BoundingBox", GH_ParamAccess.item);
+            pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
+            pManager.AddBoxParameter("Bounding Box", "Bounding Box", "BoundingBox", GH_ParamAccess.item);
             pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
         }
 
@@ -74,6 +75,82 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(6, ref xyOffset)) { return; }
             if (!DA.GetData(7, ref zScale)) { return; }
 
+            // Create Bounding Box
+            List<BoundingBox> bbs = new List<BoundingBox>();
+            foreach (IGH_GeometricGoo o in geometry) { bbs.Add(o.Boundingbox); }
+            BoundingBox bb = Domain.getMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
+
+            // Construct Surface Dict
+            
+            List<Dictionary<string, object>> surfaces = new List<Dictionary<string, object>>();
+            foreach (IGH_GeometricGoo mesh in geometry) {
+                surfaces.Add(new Dictionary<string, object>
+            {
+                {Geometry.getUserString(mesh, "ComputeName"), new Dictionary<string, object>
+                    {
+                        { "level", new Dictionary<string, string>{
+                                { "min", Geometry.getUserString(mesh, "ComputeMeshMinLevel")},
+                                { "max", Geometry.getUserString(mesh, "ComputeMeshMaxLevel")},
+                        }
+                        }
+                    }
+                }
+            });
+            }
+
+            var outputs = new Inputs {
+                Mesh = new CFDMesh {
+                    BaseMesh = new BaseMesh
+                    {
+                        Type = "simpleBox",
+                        CellSize = cellSize,
+                        BoundingBox = new Dictionary<string, object> {
+                        {"min", new List<double>{
+                            bb.Min.X, bb.Min.Y, bb.Min.Z
+                        } },
+                        {"max", new List<double>{
+                            bb.Max.X, bb.Max.Y, bb.Max.Z
+                        } }
+                        },
+                        Parameters = new Dictionary<string, string>
+                        {
+                            {"square", Convert.ToString(square) },
+                            {"z0", Convert.ToString(z0) }
+                        }
+                    },
+                    SnappyHexMesh = new SnappyHexMesh
+                    {
+                        Surfaces = surfaces
+                    }
+                }
+            };
+            /*
+            var outputs = new CFDMesh().ToJson(new Dictionary<string, object> {
+                {"bounding_box", new Dictionary<string, object> {
+                    {"min", new List<double>{
+                        bb.Min.X, bb.Min.Y, bb.Min.Z
+                    } },
+                    {"max", new List<double>{
+                        bb.Max.X, bb.Max.Y, bb.Max.Z
+                    } }
+                }
+                },
+                {"cell_size", cellSize },
+                {"surfaces", surfaces }
+            });
+            /*
+            { 
+            bbox: {
+                min: x,y,z
+                max: x,y,z
+            },
+            cellSize: 2
+            surfaces: [
+                {names, level}
+            ]
+            }
+            */
+
             // Get the required info from the coreDict
             /*foamDictionary coreDict = new foamDictionary(inText);
             string caseDir = coreDict.GetPath("system.caseDir");
@@ -103,8 +180,8 @@ namespace ComputeCS.Grasshopper
             domainDict["vwtDims"] = new foamDictionary($"length {Math.Abs(bb.Max.X - bb.Min.X)}; height {Math.Abs(bb.Max.Z - bb.Min.Z)}; divsXY {divs[0]}; divsZ {divs[2]}; isCircular false; radiusFactor 1.5; widthFactor 1.7; radialDivision 10;");
             coreDict.AddOrUpdate("domain", domainDict);*/
 
-            //DA.SetData(0, coreDict.ToString());
-            //DA.SetData(1, bb);
+            DA.SetData(0, outputs.ToJson());
+            DA.SetData(1, bb);
             DA.SetDataList(2, geometry);
         }
     }

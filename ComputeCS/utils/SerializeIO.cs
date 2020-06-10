@@ -14,7 +14,11 @@ namespace ComputeCS
             */
             foreach (KeyValuePair<string, object> item in overrides) {
                 PropertyInfo propertyInfo = this.GetType().GetProperty(item.Key);
-                propertyInfo.SetValue(this, item.Value);
+                if (item.Value != null)
+                {
+                    propertyInfo.SetValue(this, item.Value);
+                }
+                
             }
         }
 

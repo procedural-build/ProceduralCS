@@ -56,10 +56,9 @@ namespace ComputeCS.Components
 
             // We could have a function here that makes life easier to
             // merge the outputs with the provided inputs
-            var output = inputData.ToJson(new Dictionary<string, object> {
-                {"Task", task},
-                {"Project", project}
-            });
+            inputData.Task = task;
+            inputData.Project = project;
+            var output = inputData.ToJson();
 
             return new Dictionary<string, object>
             {

@@ -8,7 +8,7 @@ namespace ComputeCS.types
         public Project Project;
         public AuthTokens Auth;
         public string Url;
-        public Mesh Mesh;
+        public CFDMesh Mesh;
         public CFDSolution CFDSolution;
     }
 }

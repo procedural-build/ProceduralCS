@@ -26,12 +26,18 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("CPUs", "CPUs", "", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CPUs", "CPUs", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Solver", "Solver", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Case Type", "Case Type", "Avaible Options: SimpleCase, VirtualWindTunnel", GH_ParamAccess.item, "SimpleCase");
             pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Iterations", "Iterations", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Number of Angles", "Number of Angles", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Number of Angles", "Number of Angles", "Number of Angles. Default is 16", GH_ParamAccess.item, 16);
+            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.item);
+
+            pManager[2].Optional = true;
+            pManager[3].Optional = true;
+            pManager[6].Optional = true;
+            pManager[7].Optional = true;
 
         }
 
@@ -50,27 +56,32 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            List<int> cpus = null;
+            List<int> cpus = new List<int>();
 
-            string solver = null;
+            string solver = "simpleFoam";
+            string caseType = "simpleCase";
+            List<string> boundaryConditions = new List<string>();
 
-            List<Dictionary<string, object>> boundaryConditions = null;
+            string iterations = null;
 
-            Dictionary<string, int> iterations = null;
-
-            int numberOfAngles = 1;
-            Dictionary<string, object> overrides = new Dictionary<string, object>();
+            int numberOfAngles = 16;
+            string overrides = null;
 
 
-            if (!DA.GetData(1, ref cpus)) return;
-            if (!DA.GetData(2, ref solver)) return;
-            if (!DA.GetData(3, ref boundaryConditions)) return;
-            if (!DA.GetData(4, ref iterations)) return;
+            if (!DA.GetData(0, ref inputJson)) return;
+            if (!DA.GetDataList(1, cpus)) return;
+            DA.GetData(2, ref solver);
+            DA.GetData(3, ref caseType);
+            if (!DA.GetDataList(4, boundaryConditions)) return;
+            if (!DA.GetData(5, ref iterations)) return;
+            DA.GetData(6, ref numberOfAngles);
+            DA.GetData(7, ref overrides);
 
-            var outputs = ComputeCS.Components.CFDSolution.Setup(
+            var outputs = Components.CFDSolution.Setup(
                 inputJson,
                 cpus,
                 solver,
+                caseType,
                 boundaryConditions,
                 iterations,
                 numberOfAngles,

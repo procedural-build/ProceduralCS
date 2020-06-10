@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ComputeCS.types;
+using System.IO;
 
 namespace ComputeCS.Components
 {
@@ -7,7 +8,7 @@ namespace ComputeCS.Components
     {
         public static Dictionary<string, object> Create(
             string inputJson,
-            string path
+            MemoryStream geometryFile
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
@@ -16,6 +17,16 @@ namespace ComputeCS.Components
             var project = inputData.Project;
             var solution = inputData.CFDSolution;
             
+            if (parentTask == null)
+            {
+                throw new System.Exception("Cannot upload a case without a parent task.");
+            }
+
+            if (project == null)
+            {
+                throw new System.Exception("Cannot upload a case without a project.");
+            }
+
             // Upload File to parent task
             new GenericViewSet<string>(
                 tokens,
@@ -24,7 +35,7 @@ namespace ComputeCS.Components
                 null,
                 new Dictionary<string, object>
                 {
-                    {"data", "file"}
+                    {"file", geometryFile}
                 }
             );
             

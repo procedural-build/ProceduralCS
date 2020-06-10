@@ -26,6 +26,7 @@ namespace ComputeCS
         public Dictionary<string, object> query_params { get; set; }
         public httpVerb httpMethod { get; set; }
         public Dictionary<string, object> payload { get; set; }
+        public string contentType = "json";
         public string token = null;
         
 
@@ -80,13 +81,26 @@ namespace ComputeCS
         }
 
         private void SetPayload() {
-            request.ContentType = "application/json";
-            using (StreamWriter swJSONPayload = new StreamWriter(request.GetRequestStream()))
+            if (contentType == "file")
             {
-                string json = JsonConvert.SerializeObject(payload);
-                swJSONPayload.Write(json);
-                swJSONPayload.Close();
+                request.ContentType = "application/octet-stream";
+                using (var filePayload = request.GetRequestStream())
+                {
+                    var memStream = (MemoryStream)payload["file"];
+                    memStream.CopyTo(filePayload);
+                }
             }
+            else
+            {
+                request.ContentType = "application/json";
+                using (var swJSONPayload = new StreamWriter(request.GetRequestStream()))
+                {
+                    string json = JsonConvert.SerializeObject(payload);
+                    swJSONPayload.Write(json);
+                    swJSONPayload.Close();
+                }
+            }
+
         }
 
         private string GetResponseString() {

@@ -16,7 +16,7 @@ namespace ComputeCS.Grasshopper.Utils
 
             for (int i = 0; i < objList.Count; i++)
             {
-                objName = objList[i].Object().Attributes.GetUserString("ghODSName");
+                objName = objList[i].Object().Attributes.GetUserString("ComputeName");
 
                 // First define a new name (if it doesnt already exist)
                 if (objName == "")
@@ -25,15 +25,15 @@ namespace ComputeCS.Grasshopper.Utils
                 }
 
                 // Now check for uniqueness
-                if (names.Contains(objList[i].Object().Attributes.GetUserString("ghODSName")))
+                if (names.Contains(objList[i].Object().Attributes.GetUserString("ComputeName")))
                 {
                     int counter = 1;
-                    while (names.Contains(objList[i].Object().Attributes.GetUserString("ghODSName"))) { counter++; };
+                    while (names.Contains(objList[i].Object().Attributes.GetUserString("ComputeName"))) { counter++; };
                     objName = objName + "." + counter.ToString("D3");
                 }
 
                 // Set the name of the object
-                objList[i].Object().Attributes.SetUserString("ghODSName", objName);
+                objList[i].Object().Attributes.SetUserString("ComputeName", objName);
             }
         }
 

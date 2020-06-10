@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using Newtonsoft.Json;
 using ComputeCS.types;
+using ComputeCS.Grasshopper.Utils;
 
 namespace ComputeCS.Grasshopper
 {
@@ -25,9 +27,11 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddBrepParameter("Geometry", "Geometry", "Case Geometry", GH_ParamAccess.list);
-            pManager.AddTextParameter("Local Path", "Path", "Local Path to write the geometry to. Default is %Temp%", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Case Geometry as a list of meshes", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Compute", "Compute", "Run the case on Procedural Compute", GH_ParamAccess.item, false);
+
+            pManager[2].Optional = true;
+
 
         }
 
@@ -46,21 +50,29 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            List<Brep> geometry = new List<Brep>();
-            string path = null;
+            List<GH_Mesh> geometry = new List<GH_Mesh>();
             bool compute = false;
 
 
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetDataList(1, geometry)) return;
-            if (!DA.GetData(2, ref path)) return;
-            if (!DA.GetData(3, ref compute)) return;
-  
-            /*Dictionary<string, object> outputs = ComputeCS.Components.Compute.Create(
-                inputJson,
-                path
-            );*/
+            DA.GetData(2, ref compute);
+
+            var geometryFile = Export.STLObject(geometry);
+
+
+            if (compute == true)
+            {
+                Dictionary<string, object> outputs = Components.Compute.Create(
+                    inputJson,
+                    geometryFile
+                );
+            } else
+            {
+                inputJson = "Please set compute to true to run the case";
+            }
+
 
             DA.SetData(0, inputJson);
 

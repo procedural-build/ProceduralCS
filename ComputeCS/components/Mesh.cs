@@ -7,17 +7,27 @@ namespace ComputeCS.Components
     {
         public static Dictionary<string, object> Setup(
             string inputJson,
-            string type,
-            double cellSize,
-            List<List<int>> boundingBox,
-            Dictionary<string, string> parameters,
+            string domain,
             Dictionary<string, object> defaultSurface,
-            List<Dictionary<string, object>> surfaces,
             Dictionary<string, object> overrides = null
+        /*
+        string type,
+        double cellSize,
+        List<List<int>> boundingBox,
+        Dictionary<string, string> parameters,
+        Dictionary<string, object> defaultSurface,
+        List<Dictionary<string, object>> surfaces,
+        Dictionary<string, object> overrides = null
+        */
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
-            var mesh = new types.Mesh
+            var domainData = new Inputs().FromJson(domain);
+            inputData.Mesh = domainData.Mesh;
+            inputData.Mesh.SnappyHexMesh.DefaultSurface = defaultSurface;
+            inputData.Mesh.SnappyHexMesh.Overrides = overrides;
+
+            /*var mesh = new types.Mesh
             {
                 BaseMesh = new BaseMesh
                 {
@@ -33,11 +43,9 @@ namespace ComputeCS.Components
                     Surfaces = surfaces
                 }
             };
-
-            var output = inputData.ToJson(new Dictionary<string, object> {
-                {"Mesh", mesh}
-            });
-
+            */
+            var output = inputData.ToJson();
+            
             return new Dictionary<string, object>
             {
                 {"out", output}
