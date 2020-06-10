@@ -1,6 +1,8 @@
+using Newtonsoft.Json;
+
 namespace ComputeCS.types
 {
-    public class Inputs
+    public class Inputs : SerializeBase<Inputs>
     {
         public Task Task;
         public Project Project;

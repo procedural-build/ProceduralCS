@@ -13,7 +13,7 @@ namespace ComputeCS.Components
             bool create
         )
         {
-            var inputData = SerializeIO.InputsFromJson(inputJson);
+            var inputData = new Inputs().FromJson(inputJson);
             // Unpack to an AuthToken instances
             var tokens = inputData.Auth;
 
@@ -56,13 +56,10 @@ namespace ComputeCS.Components
 
             // We could have a function here that makes life easier to
             // merge the outputs with the provided inputs
-            var output = SerializeIO.OutputToJson(
-                inputData,
-                null,
-                null,
-                project,
-                task
-            );
+            var output = inputData.ToJson(new Dictionary<string, object> {
+                {"Task", task},
+                {"Project", project}
+            });
 
             return new Dictionary<string, object>
             {

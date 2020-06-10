@@ -56,7 +56,13 @@ namespace ComputeCS.Grasshopper
             // Get a list of object references in the Rhino model
             foreach (GH_Mesh mesh in meshes)
             {
-                Geometry.setUserString(mesh, "ComputeRefinementRegion", string.Format("mode {0}; levels {1};", location, refLevels));
+                Geometry.setUserString(
+                    mesh, 
+                    "ComputeRefinementRegion", 
+                    string.Format("mode {0}; levels {1};", 
+                    location, 
+                    refLevels
+                ));
             }
 
             DA.SetDataList(0, meshes);

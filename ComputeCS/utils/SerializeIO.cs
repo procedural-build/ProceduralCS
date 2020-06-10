@@ -2,60 +2,33 @@ using System;
 using System.Collections.Generic;
 using ComputeCS.types;
 using Newtonsoft.Json;
+using System.Reflection;
 
 namespace ComputeCS
 {
-    public static class SerializeIO
-    {
-        public static string OutputToJson(
-            Inputs inputs = null,
-            AuthTokens auth = null,
-            string url = null,
-            Project project = null,
-            Task task = null,
-            Mesh mesh = null,
-            CFDSolution solution = null
-            )
-        {
-            if (inputs == null)
-            {
-                inputs = new Inputs();
-            }
 
-            if (auth != null)
-            {
-                inputs.Auth = auth;
-            }
+    public class SerializeBase<T> {
 
-            if (url != null)
-            {
-                inputs.Url = url;
+        private void SetAttributes(Dictionary<string, object> overrides = null) {
+            /* Programmatically set class attributes from ket,value pairs (Pythonic)
+            */
+            foreach (KeyValuePair<string, object> item in overrides) {
+                PropertyInfo propertyInfo = this.GetType().GetProperty(item.Key);
+                propertyInfo.SetValue(this, item.Value);
             }
-
-            if (project != null)
-            {
-                inputs.Project = project;
-            }
-
-            if (task != null)
-            {
-                inputs.Task = task;
-            }
-            if (mesh != null)
-            {
-                inputs.Mesh = mesh;
-            }
-            if (solution != null)
-            {
-                inputs.CFDSolution = solution;
-            }
-
-            return JsonConvert.SerializeObject(inputs, Formatting.Indented);
         }
 
-        public static Inputs InputsFromJson(string inputData)
-        {
-            return JsonConvert.DeserializeObject<Inputs>(inputData);
+        public T FromJson(string inputData) {
+            return JsonConvert.DeserializeObject<T>(inputData);
+        }
+
+        public string ToJson(Dictionary<string, object> overrides = null) {
+
+            if (overrides != null) {
+                SetAttributes(overrides);
+            }
+
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
     }
 }

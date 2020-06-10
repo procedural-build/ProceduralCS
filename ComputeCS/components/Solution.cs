@@ -17,7 +17,8 @@ namespace ComputeCS.Components
             Dictionary<string, object> overrides = null
         )
         {
-            var inputData = SerializeIO.InputsFromJson(inputJson);
+            var inputData = new Inputs().FromJson(inputJson);
+
             var solution = new types.CFDSolution
             {
                 CPUs = cpus,
@@ -27,15 +28,10 @@ namespace ComputeCS.Components
                 Angles = GetAngleListFromNumber(numberOfAngles),
                 Overrides = overrides
             };
-            var output = SerializeIO.OutputToJson(
-                inputData,
-                null,
-                null,
-                null,
-                null,
-                null,
-                solution
-            );
+
+            var output = inputData.ToJson(new Dictionary<string, object> {
+                {"Solution", solution}
+            });
 
             return new Dictionary<string, object>
             {

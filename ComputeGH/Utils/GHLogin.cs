@@ -54,13 +54,13 @@ namespace ComputeCS.Grasshopper
 
             var client = new ComputeClient(url);
             var tokens = client.Auth(username, password);
-            var output = SerializeIO.OutputToJson(new Inputs
+            var output = new Inputs
             {
                 Auth = tokens,
                 Url = url
-            });
+            };
 
-            DA.SetData(0, output);
+            DA.SetData(0, output.ToJson());
 
         }
 

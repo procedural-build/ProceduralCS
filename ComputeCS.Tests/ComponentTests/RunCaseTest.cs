@@ -40,14 +40,14 @@ namespace ComputeCS.Tests.ComponentTests
             Console.WriteLine($"Got access token: {tokens.Access}");
 
             // Core input string (from previous/upstream component(s))
-            core_input = SerializeIO.OutputToJson(new Inputs {
+            core_input = new Inputs {
                 Auth = tokens,
                 Url = user.host,
                 Project = project,
                 Task = task,
                 Mesh = mesh,
                 CFDSolution = solution
-            });
+            }.ToJson();
 
             // Input parameters (these will be input into the component)
             compute = false;

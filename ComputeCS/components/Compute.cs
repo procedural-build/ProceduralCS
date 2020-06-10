@@ -10,7 +10,7 @@ namespace ComputeCS.Components
             string path
         )
         {
-            var inputData = SerializeIO.InputsFromJson(inputJson);
+            var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
             var project = inputData.Project;
@@ -148,13 +148,9 @@ namespace ComputeCS.Components
                 true
             );
             
-            var output = SerializeIO.OutputToJson(
-                inputData
-            );
-
             return new Dictionary<string, object>
             {
-                {"out", output}
+                {"out", inputData.ToJson()}
             };
         } 
     }

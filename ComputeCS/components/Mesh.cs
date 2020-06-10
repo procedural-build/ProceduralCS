@@ -16,7 +16,7 @@ namespace ComputeCS.Components
             Dictionary<string, object> overrides = null
         )
         {
-            var inputData = SerializeIO.InputsFromJson(inputJson);
+            var inputData = new Inputs().FromJson(inputJson);
             var mesh = new types.Mesh
             {
                 BaseMesh = new BaseMesh
@@ -33,14 +33,10 @@ namespace ComputeCS.Components
                     Surfaces = surfaces
                 }
             };
-            var output = SerializeIO.OutputToJson(
-                inputData,
-                null,
-                null,
-                null,
-                null,
-                mesh
-            );
+
+            var output = inputData.ToJson(new Dictionary<string, object> {
+                {"Mesh", mesh}
+            });
 
             return new Dictionary<string, object>
             {
