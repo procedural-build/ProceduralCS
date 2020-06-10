@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace ComputeCS.types
 {
-    public class AuthTokens
+    public class AuthTokens : SerializeBase<AuthTokens>
     {
         public string Access { get; set; }
 

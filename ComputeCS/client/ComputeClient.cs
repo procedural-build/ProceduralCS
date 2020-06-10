@@ -11,8 +11,6 @@ namespace ComputeCS
     {
         public RESTClient http = new RESTClient();
         public AuthTokens Tokens = new AuthTokens();
-        public string auth_host = "";
-        public string request_host = "";
 
         public ComputeClient(string _host = null) {
             http = new RESTClient
@@ -23,31 +21,38 @@ namespace ComputeCS
             };
         }
 
-        public ComputeClient (string access_token, string refresh_token) {
+        public ComputeClient (string access_token, string refresh_token, string _host) {
             /* Generate a new ComputeClient instance from the tokens.
 
             NOTE: This allows the JWT tokens to be provided down a pipeline (such as a Grasshopper
             or Dynamo pipeline) in plain-text such as a JSON dictionary.  Then each component may
             access the API in a stateless way.
             */
+            http.host = _host;
             Tokens = new AuthTokens() {
                 Access = access_token,
                 Refresh = refresh_token
             };
-            //GetHostsFromTokens();
         }
 
-        public ComputeClient (AuthTokens tokens) {
+        public ComputeClient (AuthTokens tokens, string _host) {
             /* As above - but tokens provided in a nice data structure
             */
+            http.host = _host;
             Tokens = tokens;
-            //GetHostsFromTokens();
-         }
+        }
+
+        public ComputeClient (string jsonString, string _host) {
+            /* As above - but both tokens are serialized in a JSON string with keys "access" and "refresh"
+            */
+            http.host = _host;
+            Tokens = new AuthTokens().FromJson(jsonString);
+        }
 
         public AuthTokens Auth(string username, string password)
         {
             Tokens = http.Request<AuthTokens>(
-                $"{auth_host}/auth-jwt/get/", null,
+                "/auth-jwt/get/", null,
                 httpVerb.POST,
                 new Dictionary<string, object>()
                 {
@@ -106,7 +111,7 @@ namespace ComputeCS
         private string RefreshAccessToken()
         {
             Tokens = http.Request<AuthTokens>(
-                $"{auth_host}/auth-jwt/refresh/", null,
+                "/auth-jwt/refresh/", null,
                 httpVerb.POST,
                 new Dictionary<string, object>()
                 {
@@ -119,7 +124,7 @@ namespace ComputeCS
         private string VerifyAccessToken()
         {
             Tokens = http.Request<AuthTokens>(
-                $"{auth_host}/auth-jwt/verify/", null,
+                "/auth-jwt/verify/", null,
                 httpVerb.POST,
                 new Dictionary<string, object>()
                 {

@@ -37,7 +37,7 @@ namespace ComputeCS
         }
 
         public GenericViewSet(AuthTokens tokens, string _basePath) {
-            client = new ComputeClient(tokens);
+            client = new ComputeClient(tokens, "");  // The empty string is the host - we need to get this
             basePath = _basePath;
             client.http.endPoint = _basePath;
             client.http.httpMethod = httpVerb.GET;
