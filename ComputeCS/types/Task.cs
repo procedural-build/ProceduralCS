@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ComputeCS.types
 {
-    public class Task
+    public class Task : SerializeBase<Task>
     {
         public string UID;
         public string Name;
@@ -14,11 +10,11 @@ namespace ComputeCS.types
         public string Started;
         public string Stopped;
         public string Created;
-        public Dictionary<string, string> Config;
+        public Dictionary<string, object> Config;
         public string ClusterBaseDir;
-        public string Parent;
+        public Task Parent;
         public string MetaJson;
         public string Project;
-        public string DependentOn;
+        public Task DependentOn;
     }
 }

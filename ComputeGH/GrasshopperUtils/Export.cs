@@ -11,11 +11,11 @@ namespace ComputeCS.Grasshopper.Utils
 {
     public static class Export
     {
-        public static MemoryStream STLObject(List<GH_Mesh> surfaceMeshes)
+        public static byte[] STLObject(List<GH_Mesh> surfaceMeshes)
         {
             UnicodeEncoding uniEncoding = new UnicodeEncoding();
             MemoryStream stream = new MemoryStream();
-            using (MemoryStream memStream = stream)
+            using (var memStream = new StreamWriter(stream))
             {
                 foreach (GH_Mesh ghMesh in surfaceMeshes)
                 {
@@ -28,8 +28,7 @@ namespace ComputeCS.Grasshopper.Utils
 
                     MeshFace face;
                     int[] verts = new int[3] { 0, 0, 0 };
-                    byte[] name_ = uniEncoding.GetBytes($"solid {name}\n");
-                    memStream.Write(name_, (int)memStream.Length, name_.Length);
+                    memStream.Write($"solid {name}\n");
 
                     for (int f = 0; f < mesh.Faces.Count; f++)
                     {
@@ -38,29 +37,23 @@ namespace ComputeCS.Grasshopper.Utils
                         verts[1] = face.B;
                         verts[2] = face.C;
 
-                        byte[] face_ = uniEncoding.GetBytes($"facet normal {mesh.FaceNormals[f].X} {mesh.FaceNormals[f].Y} {mesh.FaceNormals[f].Z}\n");
-                        memStream.Write(face_, (int)memStream.Length, face_.Length);
+                        memStream.Write($"facet normal {mesh.FaceNormals[f].X} {mesh.FaceNormals[f].Y} {mesh.FaceNormals[f].Z}\n");
 
-                        byte[] outLoop = uniEncoding.GetBytes(" outer loop\n");
-                        memStream.Write(outLoop, (int)memStream.Length, outLoop.Length);
+                        memStream.Write(" outer loop\n");
                         foreach (int v in verts)
                         {
-                            byte[] vertex_ = uniEncoding.GetBytes($"  vertex {mesh.Vertices[v].X} {mesh.Vertices[v].Y} {mesh.Vertices[v].Z}\n");
-                            memStream.Write(vertex_, (int)memStream.Length, vertex_.Length);
+                            memStream.Write($"  vertex {mesh.Vertices[v].X} {mesh.Vertices[v].Y} {mesh.Vertices[v].Z}\n");
                         }
-                        byte[] endLoop = uniEncoding.GetBytes(" endloop\n");
-                        memStream.Write(endLoop, (int)memStream.Length, endLoop.Length);
+                        memStream.Write(" endloop\n");
 
-                        byte[] endFace = uniEncoding.GetBytes("endfacet\n");
-                        memStream.Write(endFace, (int)memStream.Length, endFace.Length);
+                        memStream.Write("endfacet\n");
                     }
 
-                    byte[] endSolid = uniEncoding.GetBytes("endsolid\n");
-                    memStream.Write(endSolid, (int)memStream.Length, endSolid.Length);
+                    memStream.Write("endsolid\n");
                 }
             }
 
-            return stream;
+            return stream.ToArray();
         }
     }
 }

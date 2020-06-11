@@ -58,6 +58,7 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(0, ref auth)) return;
             if (!DA.GetData(1, ref projectName) || !DA.GetData(2, ref projectNumber)) return;
             if (!DA.GetData(3, ref taskName)) return;
+            DA.GetData(4, ref create);
 
             Dictionary<string, object> outputs = Components.ProjectAndTask.GetOrCreate(
                 auth,

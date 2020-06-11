@@ -8,7 +8,7 @@ namespace ComputeCS.Components
     {
         public static Dictionary<string, object> Create(
             string inputJson,
-            MemoryStream geometryFile
+            byte[] geometryFile
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
@@ -28,9 +28,9 @@ namespace ComputeCS.Components
             }
 
             // Upload File to parent task
-            new GenericViewSet<string>(
+            new GenericViewSet<Dictionary<string, object>>(
                 tokens,
-                $"{inputData.Url}/api/task/{parentTask.UID}/file/constant/triSurface/cfdGeom.stl/"
+                $"{inputData.Url}/api/task/{parentTask.UID}/file/foam/constant/triSurface/cfdGeom.stl"
             ).Update(
                 null,
                 new Dictionary<string, object>
@@ -63,19 +63,18 @@ namespace ComputeCS.Components
             new GenericViewSet<Task>(
                 tokens, 
                 $"{inputData.Url}/api/project/{project.UID}/task/"
-            ).GetOrCreate(
+            ).Update(
+                actionTask.UID,
                 new Dictionary<string, object> {
                     {"name", "Actions"},
-                    {"parent", parentTask.UID}
-                }, 
-                new Dictionary<string, object> {
+                    {"parent", parentTask.UID},
+                    {"status", "pending" },
                     {"config", new Dictionary<string, object> {
                         {"task_type", "magpy"},
                         {"cmd", "cfd.io.tasks.write_solution"},
                         {"solution", inputData.CFDSolution}
                     }}
-                }, 
-                true
+                }
             );
             
             // Task to Handle Meshing
@@ -108,7 +107,7 @@ namespace ComputeCS.Components
             // Task to Handle CFD
             Dictionary<string, object> createParams;
 
-            if (solution.Solver.ToLower() == "windtunnel")
+            if (solution.CaseType.ToLower() == "virtualwindtunnel")
             {
                 createParams = new Dictionary<string, object>
                 {
@@ -146,22 +145,28 @@ namespace ComputeCS.Components
                     }
                 };
             }
-            new GenericViewSet<Task>(
+            var cfdTask = new GenericViewSet<Task>(
                 tokens, 
                 $"{inputData.Url}/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
-                    {"name", solution.Solver},
+                    {"name", solution.CaseType},
                     {"parent", parentTask.UID},
                     {"dependent_on", meshTask.UID}
                 }, 
                 createParams, 
                 true
             );
+
+            List<string> tasks = new List<string> {
+                actionTask.ToJson(),
+                meshTask.ToJson(),
+                cfdTask.ToJson()
+            };
             
             return new Dictionary<string, object>
             {
-                {"out", inputData.ToJson()}
+                {"out", tasks}
             };
         } 
     }

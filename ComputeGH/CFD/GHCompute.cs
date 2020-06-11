@@ -40,7 +40,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
+            pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -59,22 +59,27 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetDataList(1, geometry)) return;
             DA.GetData(2, ref compute);
 
-            var geometryFile = Export.STLObject(geometry);
 
 
+            Dictionary<string, object> outputs = null;
             if (compute == true)
             {
-                Dictionary<string, object> outputs = Components.Compute.Create(
+                var geometryFile = Export.STLObject(geometry);
+                outputs = Components.Compute.Create(
                     inputJson,
                     geometryFile
                 );
             } else
             {
-                inputJson = "Please set compute to true to run the case";
+                outputs = new Dictionary<string, object> {
+                    {"out", new List<string>{
+                        "Please set compute to true to run the case"
+                    } }
+                };
             }
 
 
-            DA.SetData(0, inputJson);
+            DA.SetDataList(0, (List<string>)outputs["out"]);
 
         }
 

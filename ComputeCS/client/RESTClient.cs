@@ -26,7 +26,6 @@ namespace ComputeCS
         public Dictionary<string, object> query_params { get; set; }
         public httpVerb httpMethod { get; set; }
         public Dictionary<string, object> payload { get; set; }
-        public string contentType = "json";
         public string token = null;
         
 
@@ -81,13 +80,16 @@ namespace ComputeCS
         }
 
         private void SetPayload() {
-            if (contentType == "file")
+            
+            if (payload.ContainsKey("file"))
             {
                 request.ContentType = "application/octet-stream";
-                using (var filePayload = request.GetRequestStream())
+                using (var filePayload = new StreamWriter(request.GetRequestStream()))
                 {
-                    var memStream = (MemoryStream)payload["file"];
-                    memStream.CopyTo(filePayload);
+                    //var data = (byte[])payload["file"];
+                    string data = JsonConvert.SerializeObject(payload);
+                    filePayload.Write(data);
+                    filePayload.Close();
                 }
             }
             else
@@ -100,6 +102,17 @@ namespace ComputeCS
                     swJSONPayload.Close();
                 }
             }
+            
+
+            /*
+            request.ContentType = "application/json";
+            using (var swJSONPayload = new StreamWriter(request.GetRequestStream()))
+            {
+                string json = JsonConvert.SerializeObject(payload);
+                swJSONPayload.Write(json);
+                swJSONPayload.Close();
+            }
+            */
 
         }
 
@@ -134,7 +147,7 @@ namespace ComputeCS
                 request.Headers.Add("Authorization", $"JWT {token}");
             }
 
-            if (request.Method == "POST" && payload != null)
+            if ((request.Method == "POST" || request.Method == "PUT") && payload != null)
             {
                 this.SetPayload();
             }

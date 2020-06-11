@@ -44,7 +44,7 @@ namespace ComputeCS
         }
 
         public string ObjectPath(string objectId) {
-            return $"{basePath}{(basePath.EndsWith("/") ? "" : "/")}{objectId}/";
+            return $"{basePath}{(basePath.EndsWith("/") ? "" : "/")}{(objectId != null? $"{objectId}/" : "")}";
         }
 
         public ObjectType GetOrCreate(
@@ -78,7 +78,7 @@ namespace ComputeCS
                             .ToDictionary(s => s.Key, s => s.Value);
                     }
                     // Create the object
-                    return Create(create_params, query_params);
+                    return Create(create_params);
                 }
             }
 
@@ -133,14 +133,13 @@ namespace ComputeCS
         }
 
         public ObjectType Create(
-            Dictionary<string, object> data,
-            Dictionary<string, object> query_params = null
+            Dictionary<string, object> data
         ) {
             /* Create a new project with provided name and number 
             */
             return client.Request<ObjectType>(
                 basePath,  
-                query_params,
+                null,
                 httpVerb.POST,
                 data
             );
