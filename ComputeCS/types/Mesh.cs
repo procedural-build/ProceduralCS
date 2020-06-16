@@ -24,6 +24,6 @@ namespace ComputeCS.types
     {
         public Dictionary<string, object> Overrides;
         public Dictionary<string, object> DefaultSurface;
-        public List<Dictionary<string, object>> Surfaces;
+        public Dictionary<string, object> Surfaces;
     }
 }

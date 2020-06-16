@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ComputeCS.types;
 using Newtonsoft.Json;
 using System.Reflection;
+using Newtonsoft.Json.Serialization;
 
 namespace ComputeCS
 {
@@ -18,13 +19,22 @@ namespace ComputeCS
                 {
                     propertyInfo.SetValue(this, item.Value);
                 }
-                
+
             }
         }
 
         public T FromJson(string inputData) {
-            return JsonConvert.DeserializeObject<T>(inputData);
+            return JsonConvert.DeserializeObject<T>(inputData, JsonSettings);
         }
+
+        private JsonSerializerSettings JsonSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            },
+            Formatting = Formatting.Indented
+        };
 
         public string ToJson(Dictionary<string, object> overrides = null) {
 
@@ -32,7 +42,7 @@ namespace ComputeCS
                 SetAttributes(overrides);
             }
 
-            return JsonConvert.SerializeObject(this, Formatting.Indented);
+            return JsonConvert.SerializeObject(this, JsonSettings);
         }
     }
 }

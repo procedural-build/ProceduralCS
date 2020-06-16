@@ -81,37 +81,6 @@ namespace ComputeCS.Grasshopper
                 defaultSurfaces,
                 overrides
             );
-            /*
-            string type = null;
-
-            double cellSize = 1.0;
-
-            List<List<int>> boundingBox = null;
-
-            Dictionary<string, string> params_ = null;
-
-            // Inputs for SnappyHexMesh
-            Dictionary<string, object> defaultSurfaces = null;
-            List<Dictionary<string, object>> surfaces = null;
-            Dictionary<string, object> overrides = new Dictionary<string, object>();
-
-
-            if (!DA.GetData(1, ref type)) return;
-            if (!DA.GetData(2, ref cellSize)) return;
-            if (!DA.GetData(3, ref boundingBox)) return;
-            if (!DA.GetData(6, ref surfaces)) return;
-
-            var outputs = ComputeCS.Components.Mesh.Setup(
-                inputJson,
-                type,
-                cellSize,
-                boundingBox,
-                params_,
-                defaultSurfaces,
-                surfaces,
-                overrides
-            );
-            */
 
             DA.SetData(0, outputs["out"]);
 

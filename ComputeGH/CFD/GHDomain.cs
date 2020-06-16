@@ -82,20 +82,18 @@ namespace ComputeCS.Grasshopper
 
             // Construct Surface Dict
             
-            List<Dictionary<string, object>> surfaces = new List<Dictionary<string, object>>();
+            Dictionary<string, object> surfaces = new Dictionary<string, object>();
             foreach (IGH_GeometricGoo mesh in geometry) {
-                surfaces.Add(new Dictionary<string, object>
-            {
-                {Geometry.getUserString(mesh, "ComputeName"), new Dictionary<string, object>
+                surfaces.Add(
+                Geometry.getUserString(mesh, "ComputeName"), new Dictionary<string, object>
                     {
                         { "level", new Dictionary<string, string>{
                                 { "min", Geometry.getUserString(mesh, "ComputeMeshMinLevel")},
                                 { "max", Geometry.getUserString(mesh, "ComputeMeshMaxLevel")},
                         }
                         }
-                    }
-                }
-            });
+                    }                
+                );
             }
 
             var outputs = new Inputs {
@@ -124,61 +122,6 @@ namespace ComputeCS.Grasshopper
                     }
                 }
             };
-            /*
-            var outputs = new CFDMesh().ToJson(new Dictionary<string, object> {
-                {"bounding_box", new Dictionary<string, object> {
-                    {"min", new List<double>{
-                        bb.Min.X, bb.Min.Y, bb.Min.Z
-                    } },
-                    {"max", new List<double>{
-                        bb.Max.X, bb.Max.Y, bb.Max.Z
-                    } }
-                }
-                },
-                {"cell_size", cellSize },
-                {"surfaces", surfaces }
-            });
-            /*
-            { 
-            bbox: {
-                min: x,y,z
-                max: x,y,z
-            },
-            cellSize: 2
-            surfaces: [
-                {names, level}
-            ]
-            }
-            */
-
-            // Get the required info from the coreDict
-            /*foamDictionary coreDict = new foamDictionary(inText);
-            string caseDir = coreDict.GetPath("system.caseDir");
-
-            List<BoundingBox> bbs = new List<BoundingBox>();
-            foreach (IGH_GeometricGoo o in _geo) { bbs.Add(o.Boundingbox); }
-            BoundingBox bb = domainCalcs.getMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
-
-            int[] divs = new int[3];
-            divs[0] = (int)(Math.Abs(bb.Max.X - bb.Min.X) / cellSize);
-            divs[1] = (int)(Math.Abs(bb.Max.Y - bb.Min.Y) / cellSize);
-            divs[2] = (int)(Math.Abs(bb.Max.Z - bb.Min.Z) / cellSize);
-            blockMesh blockMeshDict = new blockMesh(caseDir, bb, divs);
-
-            double r = (4 + (new Random().NextDouble() - 1)) / 16.0;
-            string keepPointOverride = string.Format(
-                "castellatedMeshControls {{ locationInMesh ({0} {1} {2}); }}",
-                (bb.Center.X + Math.Abs(bb.Max.X - bb.Min.X) * r).ToString(),
-                (bb.Center.Y + Math.Abs(bb.Max.Y - bb.Min.Y) * r).ToString(),
-                (bb.Center.Z + Math.Abs(bb.Max.Z - bb.Min.Z) * r).ToString()
-                );
-
-            // Add the output to the coreDict
-            foamDictionary domainDict = new foamDictionary();
-            domainDict["blockMeshDict"] = blockMeshDict.fields;
-            domainDict["keepPointOverride"] = new foamDictionary(keepPointOverride);
-            domainDict["vwtDims"] = new foamDictionary($"length {Math.Abs(bb.Max.X - bb.Min.X)}; height {Math.Abs(bb.Max.Z - bb.Min.Z)}; divsXY {divs[0]}; divsZ {divs[2]}; isCircular false; radiusFactor 1.5; widthFactor 1.7; radialDivision 10;");
-            coreDict.AddOrUpdate("domain", domainDict);*/
 
             DA.SetData(0, outputs.ToJson());
             DA.SetData(1, bb);
