@@ -96,6 +96,8 @@ namespace ComputeCS.Grasshopper
                 );
             }
 
+            var locationInMesh = Domain.getLocationInMesh(new Box(bb));
+
             var outputs = new Inputs {
                 Mesh = new CFDMesh {
                     BaseMesh = new BaseMesh
@@ -118,7 +120,19 @@ namespace ComputeCS.Grasshopper
                     },
                     SnappyHexMesh = new SnappyHexMesh
                     {
-                        Surfaces = surfaces
+                        Surfaces = surfaces,
+                        Overrides = new Dictionary<string, object>
+                        {
+                            { "castellatedMeshControls", new Dictionary<string, object>
+                            {
+                                { "locationInMesh", new List<double>
+                                {
+                                    locationInMesh.X, locationInMesh.Y, locationInMesh.Z
+                                }
+                                }
+                            }
+                            }
+                        }
                     }
                 }
             };

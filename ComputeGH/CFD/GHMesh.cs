@@ -29,15 +29,6 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Domain", "Domain", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
-            /*
-            pManager.AddTextParameter("Type", "Type", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Cell Size", "Cell Size", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Bounding Box", "Bounding Box", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Parameters", "Parameters", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Surfaces", "Surfaces", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
-            */
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
@@ -73,8 +64,9 @@ namespace ComputeCS.Grasshopper
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref domain)) return;
-
             
+
+
             var outputs = Components.Mesh.Setup(
                 inputJson,
                 domain,

@@ -14,9 +14,10 @@ namespace ComputeCS.Components
         {
             var inputData = new Inputs().FromJson(inputJson);
             var domainData = new Inputs().FromJson(domain);
+           
+                
             inputData.Mesh = domainData.Mesh;
             inputData.Mesh.SnappyHexMesh.DefaultSurface = defaultSurface;
-            inputData.Mesh.SnappyHexMesh.Overrides = overrides;
 
             var output = inputData.ToJson();
             

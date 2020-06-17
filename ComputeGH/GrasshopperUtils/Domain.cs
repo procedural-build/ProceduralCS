@@ -128,5 +128,18 @@ namespace ComputeCS.Grasshopper.Utils
 
             return A;
         }
+
+        public static Point3d getLocationInMesh(Box boundingBox)
+        {
+            double r = (4 + (new Random().NextDouble() - 1)) / 16.0;
+            Point3d kPoint = boundingBox.Center;
+            Vector3d kPointVect = (new Vector3d(boundingBox.X.Length, boundingBox.Y.Length, boundingBox.Z.Length)) * r;
+
+            Transform t = Transform.ChangeBasis(boundingBox.Plane, Plane.WorldXY);
+            kPointVect.Transform(t);
+            kPoint += kPointVect;
+
+            return kPoint;
+        }
     }
 }
