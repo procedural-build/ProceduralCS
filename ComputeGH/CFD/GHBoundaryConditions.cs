@@ -14,7 +14,7 @@ namespace ComputeCS.Grasshopper
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public cfdBoundaryCondition() : base("cfdBC", "cfdBC", "Defines a CFD Boundary Condition", "Compute", "CFD")
+        public cfdBoundaryCondition() : base("CFD Boundary Condition", "CFD Boundary Condition", "Defines a CFD Boundary Condition", "Compute", "CFD")
         {
         }
 

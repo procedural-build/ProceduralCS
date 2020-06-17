@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -48,11 +49,20 @@ namespace ComputeCS
             get { return $"{host}{endPoint}{QueryString}"; }
         }
 
+        private JsonSerializerSettings JsonSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            },
+            Formatting = Formatting.Indented
+        };
+
         public T Request<T>() {
             /* Generic request that casts the response to a type provided
             */
             string response = requestToString();
-            return JsonConvert.DeserializeObject<T>(response);
+            return JsonConvert.DeserializeObject<T>(response, JsonSettings);
         }
 
         public T Request<T>(
@@ -68,7 +78,7 @@ namespace ComputeCS
             httpMethod = _method;
             payload = _payload != null ? _payload : payload;
             string response = requestToString();
-            return JsonConvert.DeserializeObject<T>(response);
+            return JsonConvert.DeserializeObject<T>(response, JsonSettings);
         }
 
         public T Request<T>(Dictionary<string, object> _payload = null) {
@@ -76,7 +86,7 @@ namespace ComputeCS
             */
             payload = _payload;
             string response = requestToString();
-            return JsonConvert.DeserializeObject<T>(response);
+            return JsonConvert.DeserializeObject<T>(response, JsonSettings);
         }
 
         private void SetPayload() {
@@ -87,7 +97,7 @@ namespace ComputeCS
                 using (var filePayload = new StreamWriter(request.GetRequestStream()))
                 {
                     //var data = (byte[])payload["file"];
-                    string data = JsonConvert.SerializeObject(payload);
+                    string data = JsonConvert.SerializeObject(payload, JsonSettings);
                     filePayload.Write(data);
                     filePayload.Close();
                 }
@@ -97,22 +107,11 @@ namespace ComputeCS
                 request.ContentType = "application/json";
                 using (var swJSONPayload = new StreamWriter(request.GetRequestStream()))
                 {
-                    string json = JsonConvert.SerializeObject(payload);
+                    string json = JsonConvert.SerializeObject(payload, JsonSettings);
                     swJSONPayload.Write(json);
                     swJSONPayload.Close();
                 }
             }
-            
-
-            /*
-            request.ContentType = "application/json";
-            using (var swJSONPayload = new StreamWriter(request.GetRequestStream()))
-            {
-                string json = JsonConvert.SerializeObject(payload);
-                swJSONPayload.Write(json);
-                swJSONPayload.Close();
-            }
-            */
 
         }
 

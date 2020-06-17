@@ -13,7 +13,7 @@ namespace ComputeCS.types
         public Dictionary<string, object> Config;
         public string ClusterBaseDir;
         public Task Parent;
-        public string MetaJson;
+        public Dictionary<string, object> MetaJson;
         public string Project;
         public Task DependentOn;
     }

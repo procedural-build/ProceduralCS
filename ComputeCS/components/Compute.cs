@@ -30,7 +30,8 @@ namespace ComputeCS.Components
             // Upload File to parent task
             new GenericViewSet<Dictionary<string, object>>(
                 tokens,
-                $"{inputData.Url}/api/task/{parentTask.UID}/file/foam/constant/triSurface/cfdGeom.stl"
+                inputData.Url,
+                $"/api/task/{parentTask.UID}/file/foam/constant/triSurface/cfdGeom.stl"
             ).Update(
                 null,
                 new Dictionary<string, object>
@@ -42,8 +43,9 @@ namespace ComputeCS.Components
             // Tasks to Handle MagPy Celery Actions
             // First Action to create Mesh Files
             var actionTask = new GenericViewSet<Task>(
-                tokens, 
-                $"{inputData.Url}/api/project/{project.UID}/task/"
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
                     {"name", "Actions"},
@@ -61,8 +63,9 @@ namespace ComputeCS.Components
             );
             // Then Action Task to create CFD files
             new GenericViewSet<Task>(
-                tokens, 
-                $"{inputData.Url}/api/project/{project.UID}/task/"
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
             ).Update(
                 actionTask.UID,
                 new Dictionary<string, object> {
@@ -79,8 +82,9 @@ namespace ComputeCS.Components
             
             // Task to Handle Meshing
             var meshTask = new GenericViewSet<Task>(
-                tokens, 
-                $"{inputData.Url}/api/project/{project.UID}/task/"
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
                     {"name", "Mesh"},
@@ -146,8 +150,9 @@ namespace ComputeCS.Components
                 };
             }
             var cfdTask = new GenericViewSet<Task>(
-                tokens, 
-                $"{inputData.Url}/api/project/{project.UID}/task/"
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
                     {"name", solution.CaseType},

@@ -28,16 +28,18 @@ namespace ComputeCS
     {
         public ComputeClient client = null;
         private string basePath = "";
+        private string host = "";
         
-        public GenericViewSet(ComputeClient _client, string _basePath) {
+        public GenericViewSet(ComputeClient _client, string _host, string _basePath) {
             basePath = _basePath;
+            host = _host;
             client = _client;
             client.http.endPoint = _basePath;
             client.http.httpMethod = httpVerb.GET;
         }
 
-        public GenericViewSet(AuthTokens tokens, string _basePath) {
-            client = new ComputeClient(tokens, "");  // The empty string is the host - we need to get this
+        public GenericViewSet(AuthTokens tokens, string _host, string _basePath) {
+            client = new ComputeClient(tokens, _host);  // The empty string is the host - we need to get this
             basePath = _basePath;
             client.http.endPoint = _basePath;
             client.http.httpMethod = httpVerb.GET;

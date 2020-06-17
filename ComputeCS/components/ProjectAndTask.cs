@@ -20,7 +20,8 @@ namespace ComputeCS.Components
             // Get a list of Projects for this user
             var project = new GenericViewSet<Project>(
                 tokens,
-                $"{inputData.Url}/api/project/"
+                inputData.Url,
+                "/api/project/"
             ).GetOrCreate(
                 new Dictionary<string, object>
                 {
@@ -35,7 +36,8 @@ namespace ComputeCS.Components
             // Create the task if the Project succeeded
             var task = new GenericViewSet<Task>(
                 tokens,
-                $"{inputData.Url}/api/project/{project.UID}/task/"
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object>
                 {

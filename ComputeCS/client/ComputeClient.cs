@@ -111,7 +111,8 @@ namespace ComputeCS
         private string RefreshAccessToken()
         {
             Tokens = http.Request<AuthTokens>(
-                "/auth-jwt/refresh/", null,
+                "/auth-jwt/refresh/", 
+                null,
                 httpVerb.POST,
                 new Dictionary<string, object>()
                 {
