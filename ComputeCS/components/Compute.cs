@@ -70,8 +70,7 @@ namespace ComputeCS.Components
                 actionTask.UID,
                 new Dictionary<string, object> {
                     {"name", "Actions"},
-                    {"parent", parentTask.UID},
-                    {"status", "pending" },
+                    {"status", "pending"},
                     {"config", new Dictionary<string, object> {
                         {"task_type", "magpy"},
                         {"cmd", "cfd.io.tasks.write_solution"},
@@ -98,7 +97,7 @@ namespace ComputeCS.Components
                         {"commands", new List<string>
                         {
                             "blockMesh",
-                            "snappyHesMesh -overwrite",
+                            "snappyHexMesh -overwrite",
                             "reconstructParMesh -constant -mergeTol 1e-6",
                             "!checkMesh -writeSets vtk"
                         }},

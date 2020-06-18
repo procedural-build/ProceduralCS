@@ -80,15 +80,27 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(2, ref overrides)) { return; }
 
             Dictionary<string, object> boundaryConditions = new Dictionary<string, object>();
+            Dictionary<string, string> overrides_ = null;
+            try
+            {
+                overrides_ = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
+            }
+            catch (JsonReaderException e){}
+            
             foreach (string name in names)
             {
-                Dictionary<string, string> thisBC = new Dictionary<string, string>();
+                Dictionary<string, object> thisBC = new Dictionary<string, object>();
 
                 if (preset.Length > 0)
                 {
                     thisBC.Add("preset", preset);
                 }
-                if (overrides.Length > 0)
+
+                if (overrides_ != null)
+                {
+                    thisBC.Add("overrides", overrides_);
+                }
+                else if (overrides.Length > 0)
                 {
                     thisBC.Add("overrides", overrides);
                 }
