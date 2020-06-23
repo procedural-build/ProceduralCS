@@ -30,7 +30,7 @@ namespace ComputeCS.Tests
             //var projects = new ComputeCS.Projects(client);
 
             // Get a list of Projects for this user
-            var projects = new GenericViewSet<Project>(tokens, $"{user.host}/api/project/").List();
+            var projects = new GenericViewSet<Project>(tokens, user.host, "/api/project/").List();
 
             Console.Write($"Got projects: {JsonConvert.SerializeObject(projects)}");
 

@@ -25,13 +25,9 @@ namespace ComputeCS.Tests.ComponentTests
 
         private double cellSize;
 
-        private List<List<int>> boundingBox;
-
-        private Dictionary<string, string> params_;
-
+        private string domain;
         // Inputs for SnappyHexMesh
         private Dictionary<string, object> defaultSurfaces;
-        private List<Dictionary<string, object>> surfaces;
 
 
         [SetUp]
@@ -41,33 +37,78 @@ namespace ComputeCS.Tests.ComponentTests
             // Input parameters (these will be input into the component)
             type = "simpleBox";
             cellSize = 0.25;
-            boundingBox = new List<List<int>>
-            {
-                new List<int>{-1, -1, 0}, new List<int>{1, 1, 2}   
-            };
-            params_ = new Dictionary<string, string>
-            {
-                {"square", "true"},
-                {"z0", "true"}
-            };
+
+            domain = @"{
+            'mesh': {
+                'base_mesh': {
+                    'type': 'simpleBox',
+                    'cell_size': 2.0,
+                    'bounding_box': {
+                        'min': [
+                        -35.0,
+                        -35.0,
+                        0.0
+                            ],
+                        'max': [
+                        35.0,
+                        35.0,
+                        24.0
+                            ]
+                    },
+                    'parameters': {
+                        'square': 'True',
+                        'z0': 'True'
+                    }
+                },
+                'snappy_hex_mesh': {
+                    'overrides': {
+                        'castellatedMeshControls': {
+                            'locationInMesh': [
+                            14.959544095599346,
+                            14.959544095599346,
+                            17.128986547062631
+                                ]
+                        }
+                    },
+                    'default_surface': null,
+                    'surfaces': {
+                        '_48ec977c-a254-4265-b1f6-887f22a5789a': {
+                            'level': {
+                                'min': '2',
+                                'max': '2'
+                            }
+                        },
+                        'ef915c80-37ff-444d-b8c1-6da92bbb3c42': {
+                            'level': {
+                                'min': '2',
+                                'max': '2'
+                            }
+                        },
+                        'ae36b695-6e4f-4731-b291-169babab88e7': {
+                            'level': {
+                                'min': '2',
+                                'max': '2'
+                            }
+                        },
+                        '_5c9f4ce8-d706-4f3d-9c08-4fd9e3f10fc1': {
+                            'level': {
+                                'min': '2',
+                                'max': '2'
+                            }
+                        },
+                        'e7cb3704-5c14-43f3-85f1-6fe455e183d9': {
+                            'level': {
+                                'min': '2',
+                                'max': '2'
+                            }
+                        }
+                    }
+                }
+            }";
             defaultSurfaces = new Dictionary<string, object>
             {
                 {"name", "Plane"},
                 {"level", new List<int>{3, 3}}
-            };
-            surfaces = new List<Dictionary<string, object>>
-            {
-                new Dictionary<string, object>
-                {
-                    {"name", "Plane"},
-                    {"level", new List<int>{3, 3}},
-                },
-                new Dictionary<string, object>
-                {
-                    {"name", "Cube.005"},
-                    {"level", new List<int>{4, 4}},
-                    {"layers", 3}
-                },
             };
         }
 
@@ -76,12 +117,8 @@ namespace ComputeCS.Tests.ComponentTests
         {
             var outputs = ComputeCS.Components.Mesh.Setup(
                 "",
-                type,
-                cellSize,
-                boundingBox,
-                params_,
+                domain,
                 defaultSurfaces,
-                surfaces,
                 null
             );
             

@@ -22,14 +22,14 @@ namespace ComputeCS.Tests.ComponentTests
 
         private string solver;
         
-        private List<Dictionary<string, object>> boundaryConditions;
+        private List<string> boundaryConditions;
 
-        private Dictionary<string, int> iterations;
+        private string iterations;
 
         private int numberOfAngles;
         
-        private Dictionary<string, object> overrides;
-
+        private string overrides;
+        private string caseType = "virtualwindtunnel";
 
         [SetUp]
         public void SetUp()
@@ -39,34 +39,24 @@ namespace ComputeCS.Tests.ComponentTests
             // Input parameters (these will be input into the component)
             cpus = new List<int>{2, 2, 1};
             solver = "simpleFoam";
-            boundaryConditions = new List<Dictionary<string, object>>
-            {
-                new Dictionary<string, object>
-                {
-                    {"names", new List<string>{"Cube"}},
-                    {"preset", "fixedVelocity"},
-                    {"overrides", new Dictionary<string, object>
-                    {
-                        {"U", new Dictionary<string, string>
-                        {
-                            {"value", "uniform (0 0 5)"}
-                        }}
-                    }}
-                }
+            boundaryConditions = new List<string>{@"{
+                    'names': ['Cube'],
+                    'preset': 'fixedVelocity',
+                    'overrides': {
+                        'U': {
+                            'value': 'uniform (0 0 5)'
+                            }
+                    }
+                }"
             };
-            iterations = new Dictionary<string, int>
-            {
-                {"init", 1000},
-                {"run", 800}
-            };
-            numberOfAngles = 16;
-            overrides = new Dictionary<string, object>
-                {
-                    {"presets", null},
-                    {"fields", null},
-                    {"caseFiles", null}
-                };
             
+            iterations = "{{\"init\", 1000},{\"run\", 800}}";
+            numberOfAngles = 16;
+            overrides = @"{
+                    'presets': null,
+                    'fields':, null,
+                    'caseFiles': null
+                }";
         }
 
         [Test]
@@ -76,6 +66,7 @@ namespace ComputeCS.Tests.ComponentTests
                 "",
                 cpus,
                 solver,
+                caseType,
                 boundaryConditions,
                 iterations,
                 numberOfAngles,

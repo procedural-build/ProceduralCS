@@ -1,10 +1,9 @@
-using Newtonsoft.Json;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using ComputeCS.Components;
 using ComputeCS.types;
-using ComputeCS.Tests;
-using CFDSolution = ComputeCS.Components.CFDSolution;
+using NUnit.Framework;
+using CFDSolution = ComputeCS.types.CFDSolution;
 
 namespace ComputeCS.Tests.ComponentTests
 {
@@ -26,8 +25,9 @@ namespace ComputeCS.Tests.ComponentTests
         private bool compute;
         private Project project;
         private Task task;
-        private Mesh mesh;
-        private types.CFDSolution solution;
+        private CFDMesh mesh;
+        private CFDSolution solution;
+        private byte[] geometryFile;
         
         
         [SetUp]
@@ -51,6 +51,7 @@ namespace ComputeCS.Tests.ComponentTests
 
             // Input parameters (these will be input into the component)
             compute = false;
+            
 
         }
 
@@ -58,9 +59,9 @@ namespace ComputeCS.Tests.ComponentTests
         public void TestComputeRun()
         {
             // Here is the component/function - this will be wrapped in Grasshopper/Dynamo boilerplate
-            Dictionary<string, object> outputs = ComputeCS.Components.Compute.Create(
+            Dictionary<string, object> outputs = Compute.Create(
                 core_input,
-                ""              // Do we need to provide a path here?
+                geometryFile              // Do we need to provide a path here?
             );
             
             Console.WriteLine($"Got Output: {outputs["out"]}");
