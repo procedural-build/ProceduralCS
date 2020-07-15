@@ -96,7 +96,23 @@
   <ItemGroup>
     <PackageReference Include="ILMerge" Version="3.0.29" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Resources\IconBoundaryCondition.png" />
+    <Content Include="Resources\IconBoundaryLayerMesh.png" />
+    <Content Include="Resources\IconCircDomain.png" />
+    <Content Include="Resources\IconCircDomain1.png" />
+    <Content Include="Resources\IconFolder.png" />
+    <Content Include="Resources\IconGetName.png" />
+    <Content Include="Resources\IconGetName1.png" />
+    <Content Include="Resources\IconLicense.png" />
+    <Content Include="Resources\IconMesh.png" />
+    <Content Include="Resources\IconMeshLevel.png" />
+    <Content Include="Resources\IconRectDomain.png" />
+    <Content Include="Resources\IconRefinementRegion.png" />
+    <Content Include="Resources\IconRun.png" />
+    <Content Include="Resources\IconSetName.png" />
+    <Content Include="Resources\IconSolver.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
