@@ -4,7 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ComputeCS
 {
@@ -37,6 +38,12 @@ namespace ComputeCS
             query_params = new Dictionary<string, object>();
             httpMethod = httpVerb.GET;
             payload = null;
+        }
+
+        private static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors policyErrors)
+        {
+            bool result = cert.Subject.Contains("admin@procedural.build");
+            return result;
         }
 
         public string QueryString {
@@ -77,8 +84,25 @@ namespace ComputeCS
             query_params = _query_params != null ? _query_params : new Dictionary<string, object>();
             httpMethod = _method;
             payload = _payload != null ? _payload : payload;
-            string response = requestToString();
+            var response = requestToString();
             return JsonConvert.DeserializeObject<T>(response, JsonSettings);
+        }
+
+        public string Request(
+            string url,
+            string path,
+            Dictionary<string, object> _query_params = null,
+            httpVerb _method = httpVerb.GET
+        )
+        {
+            /* Generic request that casts the response to a type provided
+            */
+            endPoint = url;
+            query_params = _query_params != null ? _query_params : new Dictionary<string, object>();
+            httpMethod = _method;
+            var response = RequestToFile(path);
+
+            return response;
         }
 
         public T Request<T>(Dictionary<string, object> _payload = null) {
@@ -117,6 +141,8 @@ namespace ComputeCS
 
         private string GetResponseString() {
             string responseString = string.Empty;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback
+                = ((sender, cert, chain, errors) => ValidateRemoteCertificate(sender, cert, chain, errors));
 
             response = (HttpWebResponse)request.GetResponse();
 
@@ -130,6 +156,62 @@ namespace ComputeCS
                     }
                  }
             }
+            return responseString;
+        }
+
+        private string WriteResponseToFile(string path) {
+
+            System.Net.ServicePointManager.ServerCertificateValidationCallback
+                = ((sender, cert, chain, errors) => ValidateRemoteCertificate(sender, cert, chain, errors));
+
+            response = (HttpWebResponse)request.GetResponse();
+            var contentDisposition = System.Net.Http.Headers.ContentDispositionHeaderValue.Parse(response.Headers["Content-Disposition"]);
+            var filename = contentDisposition.FileName;
+            path = Path.Combine(path, filename);
+
+            using (Stream responseStream = response.GetResponseStream())
+            {
+                if (responseStream != null)
+                {
+                    using (var writer = File.OpenWrite(path))
+                    {
+                        responseStream.CopyTo(writer);
+                    }
+                }
+            }
+
+            return path;
+        }
+
+        public string RequestToFile(string path) {
+            string responseString = string.Empty;
+
+            // Generate the request object
+            request = (HttpWebRequest)WebRequest.Create(FullUrl);
+            request.Method = httpMethod.ToString();
+
+            if (token != null)
+            {
+                request.Headers.Add("Authorization", $"JWT {token}");
+            }
+
+            // Get the response object of fallback to error message - then release resources from the request.
+            try
+            {
+                responseString = WriteResponseToFile(path);
+            }
+            catch (Exception ex)
+            {
+                responseString = ex.Message.ToString();
+            }
+            finally
+            {
+                if (response != null)
+                {
+                    ((IDisposable)response).Dispose();
+                }
+            }
+
             return responseString;
         }
 

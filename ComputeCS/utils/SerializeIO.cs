@@ -33,6 +33,7 @@ namespace ComputeCS
             {
                 NamingStrategy = new SnakeCaseNamingStrategy()
             },
+            NullValueHandling = NullValueHandling.Ignore,
             Formatting = Formatting.Indented
         };
 

@@ -134,6 +134,19 @@ namespace ComputeCS
             );
         }
 
+        public string Retrieve(
+            string objectId,
+            string path,
+            Dictionary<string, object> query_params = null
+        ) {
+            return client.Request(
+                ObjectPath(objectId),
+                path,
+                query_params,
+                httpVerb.GET
+            );
+        }
+
         public ObjectType Create(
             Dictionary<string, object> data
         ) {

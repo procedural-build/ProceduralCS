@@ -162,15 +162,16 @@ namespace ComputeCS.Components
                 true
             );
 
-            List<string> tasks = new List<string> {
-                actionTask.ToJson(),
-                meshTask.ToJson(),
-                cfdTask.ToJson()
+            var tasks = new List<Task> {
+                actionTask,
+                meshTask,
+                cfdTask
             };
+            inputData.SubTasks = tasks;
             
             return new Dictionary<string, object>
             {
-                {"out", tasks}
+                {"out", inputData.ToJson()}
             };
         } 
     }

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ComputeCS.types;
 using Newtonsoft.Json;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace ComputeCS
 {
@@ -160,6 +162,16 @@ namespace ComputeCS
             */
             GetAccessToken();
             return http.Request<T>(_payload);
+        }
+
+        public string Request(
+            string url,
+            string path,
+            Dictionary<string, object> _query_params = null,
+            httpVerb _method = httpVerb.GET
+        ) {
+            GetAccessToken();
+            return http.Request(url, path, _query_params, _method);
         }
     }
 }
