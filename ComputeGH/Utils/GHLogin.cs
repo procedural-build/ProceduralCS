@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using ComputeCS.types;
 using ComputeCS.utils.Queue;
 using ComputeCS.utils.Cache;
+using Grasshopper;
 
 namespace ComputeCS.Grasshopper
 {
@@ -61,7 +62,7 @@ namespace ComputeCS.Grasshopper
             //Async Execution
             var cacheKey = username + password + url;
             var cachedTokens = StringCache.getCache(cacheKey);
-
+            DA.DisableGapLogic();
             if (cachedTokens == null)
             {
                 QueueManager.addToQueue("login", () => {
@@ -69,29 +70,37 @@ namespace ComputeCS.Grasshopper
                         var results = client.Auth(username, password);
                         cachedTokens = results.ToJson();
                         StringCache.setCache(cacheKey, cachedTokens);
+                        
                     }
                     catch (Exception e)
                     {
                         StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
                     }
+                    
                 });
+                ExpireSolution(true);
             }
-
 
             // Read from Cache
             var tokens = new AuthTokens();
             if (cachedTokens != null)
             {
                 tokens = tokens.FromJson(cachedTokens);
+                var output = new Inputs
+                {
+                    Auth = tokens,
+                    Url = url
+                };
+
+                DA.SetData(0, output.ToJson());
+                
             }
 
-            var output = new Inputs
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
             {
-                Auth = tokens,
-                Url = url
-            };
-
-            DA.SetData(0, output.ToJson());
+                throw new Exception(errors);
+            }
 
         }
         

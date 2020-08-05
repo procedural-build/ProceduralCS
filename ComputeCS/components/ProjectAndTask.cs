@@ -5,7 +5,7 @@ namespace ComputeCS.Components
 {
     public static class ProjectAndTask
     {
-        public static Dictionary<string, object> GetOrCreate(
+        public static string GetOrCreate(
             string inputJson,
             string projectName,
             int projectNumber,
@@ -62,10 +62,7 @@ namespace ComputeCS.Components
             inputData.Project = project;
             var output = inputData.ToJson();
 
-            return new Dictionary<string, object>
-            {
-                {"out", output}
-            };
+            return output;
         }
     }
 }

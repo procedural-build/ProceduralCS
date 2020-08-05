@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Grasshopper.Kernel;
+using Grasshopper;
 using Rhino.Geometry;
 using Newtonsoft.Json;
 using ComputeCS.types;
-
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 
 namespace ComputeCS.Grasshopper
 {
@@ -60,15 +62,50 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(3, ref taskName)) return;
             DA.GetData(4, ref create);
 
-            Dictionary<string, object> outputs = Components.ProjectAndTask.GetOrCreate(
-                auth,
-                projectName,
-                (int)projectNumber,
-                taskName,
-                create
-            );
+            // Get Cache to see if we already did this
+            var cacheKey = projectName + taskName;
+            var cachedValues = StringCache.getCache(cacheKey);
+            DA.DisableGapLogic();
 
-            DA.SetData(0, outputs["out"]);
+            if (cachedValues == null)
+            {
+                QueueManager.addToQueue("ProjectAndTask", () => {
+                    try
+                    {
+                        var results = Components.ProjectAndTask.GetOrCreate(
+                            auth,
+                            projectName,
+                            (int)projectNumber,
+                            taskName,
+                            create
+                        );
+                        cachedValues = results;
+                        StringCache.setCache(cacheKey, cachedValues);
+
+                    }
+                    catch (Exception e)
+                    {
+                        StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                    }
+                    
+                });
+                ExpireSolution(true);
+            }
+
+            // Read from Cache
+            string outputs = null;
+            if (cachedValues != null)
+            {
+                outputs = cachedValues;
+                DA.SetData(0, outputs);
+            }
+
+            // Handle Errors
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                throw new Exception(errors);
+            }
 
         }
 
