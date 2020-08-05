@@ -59,20 +59,26 @@ namespace ComputeCS.Grasshopper
             //var tokens = client.Auth(username, password);
 
             //Async Execution
-            var cacheKey = "tokens";
-            QueueManager.addToQueue("login", () => {
-                try {
-                    var results = client.Auth(username, password);
-                    StringCache.setCache(cacheKey, results.ToJson());
-                }
-                catch (Exception e)
-                {
-                    StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
-                }
-            });
+            var cacheKey = username + password + url;
+            var cachedTokens = StringCache.getCache(cacheKey);
+
+            if (cachedTokens == null)
+            {
+                QueueManager.addToQueue("login", () => {
+                    try {
+                        var results = client.Auth(username, password);
+                        cachedTokens = results.ToJson();
+                        StringCache.setCache(cacheKey, cachedTokens);
+                    }
+                    catch (Exception e)
+                    {
+                        StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                    }
+                });
+            }
+
 
             // Read from Cache
-            var cachedTokens = StringCache.getCache(cacheKey);
             var tokens = new AuthTokens();
             if (cachedTokens != null)
             {
@@ -88,7 +94,7 @@ namespace ComputeCS.Grasshopper
             DA.SetData(0, output.ToJson());
 
         }
-
+        
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
