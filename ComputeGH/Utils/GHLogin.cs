@@ -4,7 +4,8 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
 using ComputeCS.types;
-
+using ComputeCS.utils.Queue;
+using ComputeCS.utils.Cache;
 
 namespace ComputeCS.Grasshopper
 {
@@ -53,7 +54,31 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(2, ref url)) return;
 
             var client = new ComputeClient(url);
-            var tokens = client.Auth(username, password);
+
+            // Sync Execution
+            //var tokens = client.Auth(username, password);
+
+            //Async Execution
+            var cacheKey = "tokens";
+            QueueManager.addToQueue("login", () => {
+                try {
+                    var results = client.Auth(username, password);
+                    StringCache.setCache(cacheKey, results.ToJson());
+                }
+                catch (Exception e)
+                {
+                    StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                }
+            });
+
+            // Read from Cache
+            var cachedTokens = StringCache.getCache(cacheKey);
+            var tokens = new AuthTokens();
+            if (cachedTokens != null)
+            {
+                tokens = tokens.FromJson(cachedTokens);
+            }
+
             var output = new Inputs
             {
                 Auth = tokens,

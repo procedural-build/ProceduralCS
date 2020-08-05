@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Grasshopper.Kernel;
 using ComputeCS;
+using Rhino.Geometry;
 
 namespace ComputeGH.CFD
 {
@@ -23,13 +24,15 @@ namespace ComputeGH.CFD
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("SampleSets", "SampleSets", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Fields", "Fields", "", GH_ParamAccess.item);
+            pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Fields", "Fields", "", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]", GH_ParamAccess.list);
             pManager.AddTextParameter("DependentOn", "DependentOn", "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist", GH_ParamAccess.item, false);
 
             pManager[3].Optional = true;
             pManager[4].Optional = true;
+            pManager[5].Optional = true;
         }
 
         /// <summary>
@@ -47,21 +50,30 @@ namespace ComputeGH.CFD
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            string sampleSets = null;
-            string fields = null;
+            var points = new List<Point3d>();
+            var fields = new List<string>();
+            var cpus = new List<int>();
             string dependentOn = null;
-            bool create = false;
+            var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
-            if (!DA.GetData(1, ref sampleSets)) return;
-            if (!DA.GetData(2, ref fields)) return;
-            DA.GetData(3, ref dependentOn);
-            DA.GetData(4, ref create);
+            if (!DA.GetDataList(1, points)) return;
+            if (!DA.GetDataList(2, fields)) return;
+            if (!DA.GetDataList(3, cpus)); cpus = new List<int> { 1, 1, 1 };
+            DA.GetData(4, ref dependentOn);
+            DA.GetData(5, ref create);
+
+            var convertedPoints = new List<List<double>>();
+
+            foreach (Point3d point in points) {
+                convertedPoints.Add(new List<double> { point.X, point.Y, point.Z });
+            };
 
             var outputs = ComputeCS.Components.Probe.ProbePoints(
                 inputJson,
-                sampleSets,
+                convertedPoints,
                 fields,
+                cpus,
                 dependentOn,
                 create
             );

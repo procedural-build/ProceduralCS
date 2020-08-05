@@ -9,8 +9,9 @@ namespace ComputeCS.Components
     {
         public static Dictionary<string, object> ProbePoints(
             string inputJson,
-            string sampleSets,
-            string fields,
+            List<List<double>> points,
+            List<string> fields,
+            List<int> cpus,
             string dependentOn = "",
             bool create = false
         )
@@ -23,6 +24,9 @@ namespace ComputeCS.Components
 
             if (parentTask == null) {return null;}
             if (simulationTask == null) {return null;}
+
+            var fieldsOpenFoamFormat = String.Join(" ", fields);
+            var sampleSets = GenerateSampleSet(points);
 
             var task = new GenericViewSet<Task>(
                 tokens,
@@ -37,8 +41,11 @@ namespace ComputeCS.Components
                 new Dictionary<string, object> {
                     {"config", new Dictionary<string, object> {
                         {"task_type", "cfd"},
-                        {"cmd", "probe"},
-                        {"sampleSets", sampleSets},
+                        {"cmd", "pipeline"},
+                        {"commands", new List<string>{ "write_sample_set", $"postProcess -fields '({fieldsOpenFoamFormat})' -func internalCloud"} },
+                        {"case_dir", "VWT/" },
+                        {"cpus", cpus },
+                        {"sampleSets", sampleSets },
                         {"fields", fields},
                     }}
                 },
@@ -75,6 +82,18 @@ namespace ComputeCS.Components
                 }
             }
             return null;
+        }
+
+        public static List<Dictionary<string, object>> GenerateSampleSet(
+            List<List<double>> points
+            )
+        {
+            var sampleSet = new Dictionary<string, object> {
+                { "name", "set1" },
+                { "points", points}
+            };
+
+            return new List<Dictionary<string, object>> { sampleSet };
         }
     }
 }
