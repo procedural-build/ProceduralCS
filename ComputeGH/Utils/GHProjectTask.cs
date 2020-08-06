@@ -67,29 +67,39 @@ namespace ComputeCS.Grasshopper
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null)
+            if (cachedValues == null || create == true)
             {
-                QueueManager.addToQueue("ProjectAndTask", () => {
-                    try
-                    {
-                        var results = Components.ProjectAndTask.GetOrCreate(
-                            auth,
-                            projectName,
-                            (int)projectNumber,
-                            taskName,
-                            create
-                        );
-                        cachedValues = results;
-                        StringCache.setCache(cacheKey, cachedValues);
+                var queueName = "ProjectAndTask";
 
-                    }
-                    catch (Exception e)
-                    {
-                        StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
-                    }
-                    
-                });
-                ExpireSolution(true);
+                // Get queue lock
+                var queueLock = StringCache.getCache(queueName);
+                if (queueLock != "true")
+                {
+                    StringCache.setCache(queueName, "true");
+                    StringCache.setCache(cacheKey, null);
+                    QueueManager.addToQueue(queueName, () => {
+                        try
+                        {
+                            var results = Components.ProjectAndTask.GetOrCreate(
+                                auth,
+                                projectName,
+                                (int)projectNumber,
+                                taskName,
+                                create
+                            );
+                            cachedValues = results;
+                            StringCache.setCache(cacheKey, cachedValues);
+
+                        }
+                        catch (Exception e)
+                        {
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                        }
+                        StringCache.setCache(queueName, "");
+                    });
+                    ExpireSolution(true);
+                }
+
             }
 
             // Read from Cache

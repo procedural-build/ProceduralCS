@@ -6,6 +6,8 @@ using Rhino.Geometry;
 using Newtonsoft.Json;
 using ComputeCS.types;
 using ComputeCS.Grasshopper.Utils;
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 
 namespace ComputeCS.Grasshopper
 {
@@ -59,28 +61,59 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetDataList(1, geometry)) return;
             DA.GetData(2, ref compute);
 
+            // Get Cache to see if we already did this
+            var cacheKey = inputJson;
+            var cachedValues = StringCache.getCache(cacheKey);
+            DA.DisableGapLogic();
 
+            if (cachedValues == null && compute)
+            {
+                var queueName = "compute";
 
-            Dictionary<string, object> outputs = null;
-            if (compute == true)
-            {
-                var geometryFile = Export.STLObject(geometry);
-                outputs = Components.Compute.Create(
-                    inputJson,
-                    geometryFile
-                );
-            } else
-            {
-                outputs = new Dictionary<string, object> {
-                    {"out", new List<string>{
-                        "Please set compute to true to run the case"
-                    } }
-                };
+                // Get queue lock
+                var queueLock = StringCache.getCache(queueName);
+                if (queueLock != "true")
+                {
+                    StringCache.setCache(queueName, "true");
+                    QueueManager.addToQueue(queueName, () => {
+                        try
+                        {
+                            var geometryFile = Export.STLObject(geometry);
+                            var results = Components.Compute.Create(
+                                inputJson,
+                                geometryFile,
+                                compute
+                            );
+                            cachedValues = results;
+                            StringCache.setCache(cacheKey, cachedValues);
+
+                        }
+                        catch (Exception e)
+                        {
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                        }
+                        StringCache.setCache(queueName, "");
+                    });
+                    ExpireSolution(true);
+                }
+
             }
 
 
-            DA.SetDataList(0, (List<string>)outputs["out"]);
+            // Read from Cache
+            string outputs = null;
+            if (cachedValues != null)
+            {
+                outputs = cachedValues;
+                DA.SetData(0, outputs);
+            }
 
+            // Handle Errors
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                throw new Exception(errors);
+            }
         }
 
         /// <summary>

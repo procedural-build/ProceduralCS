@@ -72,6 +72,7 @@
     <Compile Include="CFD\GHSetNames.cs" />
     <Compile Include="ComputeGHInfo.cs" />
     <Compile Include="CFD\GHCompute.cs" />
+    <Compile Include="GrasshopperUtils\Async.cs" />
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />

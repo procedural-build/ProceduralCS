@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using ComputeCS;
 using Rhino.Geometry;
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 
 namespace ComputeGH.CFD
 {
@@ -69,16 +71,60 @@ namespace ComputeGH.CFD
                 convertedPoints.Add(new List<double> { point.X, point.Y, point.Z });
             };
 
-            var outputs = ComputeCS.Components.Probe.ProbePoints(
-                inputJson,
-                convertedPoints,
-                fields,
-                cpus,
-                dependentOn,
-                create
-            );
+            // Get Cache to see if we already did this
+            var cacheKey = string.Join("", points) + string.Join("", fields);
+            var cachedValues = StringCache.getCache(cacheKey);
+            DA.DisableGapLogic();
 
-            DA.SetData(0, outputs["out"]);
+            if (cachedValues == null && create)
+            {
+                var queueName = "probe";
+
+                // Get queue lock
+                var queueLock = StringCache.getCache(queueName);
+                if (queueLock != "true")
+                {
+                    StringCache.setCache(queueName, "true");
+                    QueueManager.addToQueue(queueName, () => {
+                        try
+                        {
+                            var results = ComputeCS.Components.Probe.ProbePoints(
+                                inputJson,
+                                convertedPoints,
+                                fields,
+                                cpus,
+                                dependentOn,
+                                create
+                            );
+                            cachedValues = results;
+                            StringCache.setCache(cacheKey, cachedValues);
+
+                        }
+                        catch (Exception e)
+                        {
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                        }
+                        StringCache.setCache(queueName, "");
+                    });
+                    ExpireSolution(true);
+                }
+
+            }
+
+            // Read from Cache
+            string outputs = null;
+            if (cachedValues != null)
+            {
+                outputs = cachedValues;
+                DA.SetData(0, outputs);
+            }
+
+            // Handle Errors
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                throw new Exception(errors);
+            }
         }
 
         /// <summary>

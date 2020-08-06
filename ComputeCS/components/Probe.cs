@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using ComputeCS.types;
+using Newtonsoft.Json.Linq;
 
 namespace ComputeCS.Components
 {
     public static class Probe
     {
-        public static Dictionary<string, object> ProbePoints(
+        public static string ProbePoints(
             string inputJson,
             List<List<double>> points,
             List<string> fields,
@@ -21,6 +22,7 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
             var subTasks = inputData.SubTasks;
             var simulationTask = GetSimulationTask(subTasks, dependentOn);
+            var project = inputData.Project;
 
             if (parentTask == null) {return null;}
             if (simulationTask == null) {return null;}
@@ -31,7 +33,7 @@ namespace ComputeCS.Components
             var task = new GenericViewSet<Task>(
                 tokens,
                 inputData.Url,
-                "/api/task/"
+                $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
                     {"name", "PostProcess"},
@@ -45,7 +47,7 @@ namespace ComputeCS.Components
                         {"commands", new List<string>{ "write_sample_set", $"postProcess -fields '({fieldsOpenFoamFormat})' -func internalCloud"} },
                         {"case_dir", "VWT/" },
                         {"cpus", cpus },
-                        {"sampleSets", sampleSets },
+                        {"sets", sampleSets },
                         {"fields", fields},
                     }}
                 },
@@ -54,10 +56,7 @@ namespace ComputeCS.Components
 
             inputData.SubTasks.Add(task);
 
-            return new Dictionary<string, object>
-            {
-                {"out", inputData.ToJson()}
-            };
+            return inputData.ToJson();
         }
 
         private static Task GetSimulationTask(
@@ -76,10 +75,14 @@ namespace ComputeCS.Components
                 {
                     return subTask;
                 }
-                else if (((List<string>)subTask.Config["commands"])[0] == "simpleFoam")
+                else if (subTask.Config.ContainsKey("commands"))
                 {
-                    return subTask;
-                }
+                    // Have to do this conversion to be able to compare the strings
+                    if (((JArray)subTask.Config["commands"]).ToObject<List<string>>()[0] == "simpleFoam")
+                    {
+                        return subTask;
+                    }
+                } 
             }
             return null;
         }

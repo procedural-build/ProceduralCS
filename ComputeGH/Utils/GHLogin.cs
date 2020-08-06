@@ -65,20 +65,30 @@ namespace ComputeCS.Grasshopper
             DA.DisableGapLogic();
             if (cachedTokens == null)
             {
-                QueueManager.addToQueue("login", () => {
-                    try {
-                        var results = client.Auth(username, password);
-                        cachedTokens = results.ToJson();
-                        StringCache.setCache(cacheKey, cachedTokens);
-                        
-                    }
-                    catch (Exception e)
-                    {
-                        StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
-                    }
-                    
-                });
-                ExpireSolution(true);
+                var queueName = "login";
+                // Get queue lock
+                var queueLock = StringCache.getCache(queueName);
+                if (queueLock != "true")
+                {
+                    StringCache.setCache(queueName, "true");
+                    QueueManager.addToQueue(queueName, () => {
+                        try
+                        {
+                            var results = client.Auth(username, password);
+                            cachedTokens = results.ToJson();
+                            StringCache.setCache(cacheKey, cachedTokens);
+
+                        }
+                        catch (Exception e)
+                        {
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                        }
+                        StringCache.setCache(queueName, "");
+
+                    });
+                    ExpireSolution(true);
+                }
+
             }
 
             // Read from Cache

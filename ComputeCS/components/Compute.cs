@@ -6,9 +6,10 @@ namespace ComputeCS.Components
 {
     public static class Compute
     {
-        public static Dictionary<string, object> Create(
+        public static string Create(
             string inputJson,
-            byte[] geometryFile
+            byte[] geometryFile,
+            bool create
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
@@ -27,18 +28,22 @@ namespace ComputeCS.Components
                 throw new System.Exception("Cannot upload a case without a project.");
             }
 
-            // Upload File to parent task
-            new GenericViewSet<Dictionary<string, object>>(
-                tokens,
-                inputData.Url,
-                $"/api/task/{parentTask.UID}/file/foam/constant/triSurface/cfdGeom.stl"
-            ).Update(
-                null,
-                new Dictionary<string, object>
-                {
+            if (create)
+            {
+                // Upload File to parent task
+                new GenericViewSet<Dictionary<string, object>>(
+                    tokens,
+                    inputData.Url,
+                    $"/api/task/{parentTask.UID}/file/foam/constant/triSurface/cfdGeom.stl"
+                ).Update(
+                    null,
+                    new Dictionary<string, object>
+                    {
                     {"file", geometryFile}
-                }
-            );
+                    }
+                );
+            }
+
             
             // Tasks to Handle MagPy Celery Actions
             // First Action to create Mesh Files
@@ -61,23 +66,28 @@ namespace ComputeCS.Components
                 }, 
                 true
             );
+
             // Then Action Task to create CFD files
-            new GenericViewSet<Task>(
-                tokens,
-                inputData.Url,
-                $"/api/project/{project.UID}/task/"
-            ).Update(
-                actionTask.UID,
-                new Dictionary<string, object> {
-                    {"name", "Actions"},
-                    {"status", "pending"},
-                    {"config", new Dictionary<string, object> {
-                        {"task_type", "magpy"},
-                        {"cmd", "cfd.io.tasks.write_solution"},
-                        {"solution", inputData.CFDSolution}
-                    }}
-                }
-            );
+            if (create)
+            {
+                new GenericViewSet<Task>(
+                    tokens,
+                    inputData.Url,
+                    $"/api/project/{project.UID}/task/"
+                ).Update(
+                    actionTask.UID,
+                    new Dictionary<string, object> {
+                        {"name", "Actions"},
+                            {"status", "pending"},
+                            {"config", new Dictionary<string, object> {
+                                {"task_type", "magpy"},
+                                {"cmd", "cfd.io.tasks.write_solution"},
+                            {"solution", inputData.CFDSolution}
+                        }}
+                    }
+                );
+            }
+
             
             // Task to Handle Meshing
             var meshTask = new GenericViewSet<Task>(
@@ -169,10 +179,7 @@ namespace ComputeCS.Components
             };
             inputData.SubTasks = tasks;
             
-            return new Dictionary<string, object>
-            {
-                {"out", inputData.ToJson()}
-            };
+            return inputData.ToJson();
         } 
     }
 }
