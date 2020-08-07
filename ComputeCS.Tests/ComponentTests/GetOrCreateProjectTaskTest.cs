@@ -55,7 +55,7 @@ namespace ComputeCS.Tests.ComponentTests
         public void TestGetOrCreateProjectAndTask()
         {
             // Here is the component/function - this will be wrapped in Grasshopper/Dynamo boilerplate
-            Dictionary<string, object> outputs = ComputeCS.Components.ProjectAndTask.GetOrCreate(
+            var outputs = ComputeCS.Components.ProjectAndTask.GetOrCreate(
                 core_input,
                 project_name,
                 project_number,
@@ -65,7 +65,7 @@ namespace ComputeCS.Tests.ComponentTests
             
             Console.WriteLine($"Got Output: {outputs}");
             // Components should always output json string "out" - this is the core dictoinary
-            Assert.IsTrue(outputs.ContainsKey("out"));
+            Assert.IsTrue(outputs != null);
 
             // We can deserialise the output here and do more assertions
         }

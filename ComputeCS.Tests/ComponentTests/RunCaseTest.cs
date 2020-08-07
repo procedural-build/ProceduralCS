@@ -59,14 +59,15 @@ namespace ComputeCS.Tests.ComponentTests
         public void TestComputeRun()
         {
             // Here is the component/function - this will be wrapped in Grasshopper/Dynamo boilerplate
-            Dictionary<string, object> outputs = Compute.Create(
+            var outputs = Compute.Create(
                 core_input,
-                geometryFile              // Do we need to provide a path here?
+                geometryFile,              // Do we need to provide a path here?
+                true
             );
             
-            Console.WriteLine($"Got Output: {outputs["out"]}");
+            Console.WriteLine($"Got Output: {outputs}");
             // Components should always output json string "out" - this is the core dictoinary
-            Assert.IsTrue(outputs.ContainsKey("out"));
+            Assert.IsTrue(outputs != null);
 
             // We can deserialise the output here and do more assertions
         }
