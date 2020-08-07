@@ -79,6 +79,7 @@
     <Compile Include="Utils\GHDownload.cs" />
     <Compile Include="Utils\GHLogin.cs" />
     <Compile Include="CFD\GHMesh.cs" />
+    <Compile Include="Utils\GHProbeResults.cs" />
     <Compile Include="Utils\GHProjectTask.cs" />
     <Compile Include="CFD\GHSolution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

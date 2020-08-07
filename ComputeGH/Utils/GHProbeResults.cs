@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ComputeCS.Components;
+using Grasshopper;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper
@@ -31,8 +34,10 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("U", "U", "Velocity vectors", GH_ParamAccess.tree);
-            pManager.AddTextParameter("p", "p", "Pressure", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
+            pManager.AddPointParameter("U", "U", "Velocity vectors", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("p", "p", "Pressure", GH_ParamAccess.tree);
+
         }
 
         /// <summary>
@@ -46,11 +51,88 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(0, ref folder)) return;
 
             var results = ProbeResult.ReadProbeResults(folder);
-            var UVectors = ConvertToGHVectors(results["U"]);
-            var pValues = ConverToGHValues(results["p"]);
+            
 
-            DA.SetDataTree(0, UVectors);
-            DA.SetDataTree(1, pValues);
+            foreach (string key in results.Keys)
+            {
+                var data = ConvertToDataTree(results[key]);
+                int index = 0;
+                if (key == "U") { index = 1; }
+                else if (key == "p") { index = 2; }
+                DA.SetDataTree(index, data);
+                //AddToOutput(key, data);
+            }
+
+            var info = UpdateInfo(results);
+            DA.SetData(0, info);
+
+            // for key in results.keys()
+            //      var data = ConvertToDataTree(results[key])
+            //      AddToOutput(key, data)
+
+            //var UVectors = ConvertToGHVectors(results["U"]);
+            //var pValues = ConverToGHValues(results["p"]);
+
+            //DA.SetDataTree(0, UVectors);
+            //DA.SetDataTree(1, pValues);
+        }
+
+        private DataTree<object> ConvertToDataTree(Dictionary<string, object> data)
+        {
+            var counter = 0;
+            var output = new DataTree<object>();
+            foreach (var key in data.Keys)
+            {
+                var path = new GH_Path(counter);
+                var data_ = (List<object>)data[key];
+                var dataType = data_.First().GetType();
+                if (dataType == typeof(double))
+                {
+                    foreach (double element in data_)
+                    {
+                        output.Add(element, path);
+                    }
+                    
+                }
+                else if (dataType == typeof(List<double>))
+                {
+                    
+                    foreach (List<double> row in data_)
+                    {
+                        output.Add(new Point3d(row[0], row[1], row[2]), path);
+                    }
+                    
+                }
+
+                counter++;
+            }
+
+            return output;
+        }
+
+        private void AddToOutput(string name, DataTree<object> data)
+        {
+            
+            /*IGH_Param p = new Grasshopper.Kernel.Parameters.Param_GenericObject
+            {
+                Name = name,
+                NickName = name
+            };
+            this.Params.Output.Add(p);
+            */
+        }
+
+        private string UpdateInfo(Dictionary<string, Dictionary<string, object>> data)
+        {
+            var MasterKey = data.Keys.ToList().First();
+            var info = "";
+            var i = 0;
+            foreach (string key in data[MasterKey].Keys)
+            {
+                info += $"{i} is {key}\n";
+                i++;
+            }
+            return info;
         }
 
         /// <summary>

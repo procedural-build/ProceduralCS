@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using ComputeCS.types;
-
+using System.IO;
 
 namespace ComputeCS.Grasshopper
 {
@@ -60,7 +60,8 @@ namespace ComputeCS.Grasshopper
             var downloaded = Components.DownloadContent.Download(input, downloadPath, localPath, reload);
             if (downloaded == true)
             {
-                DA.SetData(0, localPath);
+                var newPath = Path.Combine(localPath, downloadPath.Split('/').Last());
+                DA.SetData(0, newPath);
             } else
             {
                 DA.SetData(0, null);

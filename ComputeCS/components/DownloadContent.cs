@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using ComputeCS.types;
+using System.Linq;
 
 namespace ComputeCS.Components
 {
@@ -25,7 +26,8 @@ namespace ComputeCS.Components
             }
 
             // If local path exists; return true
-            if (File.Exists(localPath) && !reload)
+            var extractedFolder = Path.Combine(localPath, downloadPath.Split('/').Last());
+            if (Directory.Exists(extractedFolder) && !reload)
             {
                 return true;
             }
@@ -42,6 +44,7 @@ namespace ComputeCS.Components
             {
                 if (downloadedFile.EndsWith(".zip"))
                 {
+                    if (reload) { Directory.Delete(extractedFolder); }
                     System.IO.Compression.ZipFile.ExtractToDirectory(downloadedFile, localPath);
                 }
                 return true;
