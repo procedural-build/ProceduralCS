@@ -51,6 +51,10 @@ namespace ComputeCS.Components
 
             foreach (string file in Directory.GetFiles(folder))
             {
+                if (!file.EndsWith(".xy"))
+                {
+                    continue;
+                }
                 var fieldName = FileNameToFieldName(file);
                 var values = ReadProbeData(file);
                 if (!data.ContainsKey(fieldName))

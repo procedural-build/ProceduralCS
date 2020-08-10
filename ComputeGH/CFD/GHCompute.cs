@@ -93,8 +93,9 @@ namespace ComputeCS.Grasshopper
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
                         }
                         StringCache.setCache(queueName, "");
+                        ExpireSolutionThreadSafe(true);
                     });
-                    ExpireSolution(true);
+                    
                 }
 
             }
@@ -114,6 +115,12 @@ namespace ComputeCS.Grasshopper
             {
                 throw new Exception(errors);
             }
+        }
+
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
+            var delegated = new ExpireSolutionDelegate(ExpireSolution);
+            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

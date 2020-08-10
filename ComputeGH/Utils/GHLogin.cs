@@ -10,6 +10,7 @@ using Grasshopper;
 
 namespace ComputeCS.Grasshopper
 {
+
     public class ComputeLogin : GH_Component
     {
         /// <summary>
@@ -84,12 +85,14 @@ namespace ComputeCS.Grasshopper
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
                         }
                         StringCache.setCache(queueName, "");
+                        ExpireSolutionThreadSafe(true);
 
                     });
-                    ExpireSolution(true);
+                    
                 }
 
             }
+
 
             // Read from Cache
             var tokens = new AuthTokens();
@@ -113,7 +116,13 @@ namespace ComputeCS.Grasshopper
             }
 
         }
-        
+
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
+            var delegated = new ExpireSolutionDelegate(ExpireSolution);
+            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+        }
+
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>

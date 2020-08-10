@@ -6,7 +6,7 @@ using Rhino.Geometry;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 
-namespace ComputeGH.CFD
+namespace ComputeCS.Grasshopper
 {
     public class GHProbe : GH_Component
     {
@@ -61,7 +61,7 @@ namespace ComputeGH.CFD
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetDataList(1, points)) return;
             if (!DA.GetDataList(2, fields)) return;
-            if (!DA.GetDataList(3, cpus)); cpus = new List<int> { 1, 1, 1 };
+            if (!DA.GetDataList(3, cpus)) { cpus = new List<int> { 1, 1, 1 }; }
             DA.GetData(4, ref dependentOn);
             DA.GetData(5, ref create);
 
@@ -85,6 +85,7 @@ namespace ComputeGH.CFD
                 if (queueLock != "true")
                 {
                     StringCache.setCache(queueName, "true");
+                    StringCache.setCache(cacheKey, null);
                     QueueManager.addToQueue(queueName, () => {
                         try
                         {
@@ -105,8 +106,9 @@ namespace ComputeGH.CFD
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
                         }
                         StringCache.setCache(queueName, "");
+                        ExpireSolutionThreadSafe(true);
                     });
-                    ExpireSolution(true);
+                  
                 }
 
             }
@@ -125,6 +127,12 @@ namespace ComputeGH.CFD
             {
                 throw new Exception(errors);
             }
+        }
+
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
+            var delegated = new ExpireSolutionDelegate(ExpireSolution);
+            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>
