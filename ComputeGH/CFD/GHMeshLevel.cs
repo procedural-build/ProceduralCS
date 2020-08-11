@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ComputeCS.Grasshopper.Utils;
+using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 
@@ -32,7 +33,7 @@ namespace ComputeCS.Grasshopper
         {
             get
             {
-                return null; //ghODSResources.IconMeshLevel;
+                return Resources.IconMeshLevel;
             }
         }
 

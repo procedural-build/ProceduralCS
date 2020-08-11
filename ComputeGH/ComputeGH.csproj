@@ -76,6 +76,12 @@
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Utils\GHAnalysisMesh.cs" />
     <Compile Include="Utils\GHDownload.cs" />
     <Compile Include="Utils\GHLogin.cs" />
     <Compile Include="CFD\GHMesh.cs" />
@@ -83,6 +89,7 @@
     <Compile Include="Utils\GHProjectTask.cs" />
     <Compile Include="CFD\GHSolution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\GHRecolorMesh.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
@@ -114,6 +121,12 @@
     <Content Include="Resources\IconRun.png" />
     <Content Include="Resources\IconSetName.png" />
     <Content Include="Resources\IconSolver.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

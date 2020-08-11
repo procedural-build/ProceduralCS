@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
 using ComputeCS.types;
+using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
@@ -87,7 +88,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return Resources.IconMesh;
             }
         }
 

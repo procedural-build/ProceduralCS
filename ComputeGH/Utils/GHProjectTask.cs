@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
@@ -96,6 +97,7 @@ namespace ComputeCS.Grasshopper
                         catch (Exception e)
                         {
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.setCache(cacheKey, "error");
                         }
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
@@ -137,7 +139,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return Resources.IconFolder;
             }
         }
 

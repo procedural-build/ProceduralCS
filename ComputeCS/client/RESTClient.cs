@@ -42,7 +42,7 @@ namespace ComputeCS
 
         private static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors policyErrors)
         {
-            bool result = cert.Subject.Contains("admin@procedural.build");
+            bool result = cert.Subject.Contains("procedural.build");
             return result;
         }
 

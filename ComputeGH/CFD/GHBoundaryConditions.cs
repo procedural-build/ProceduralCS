@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Grasshopper.Kernel;
+using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
@@ -50,7 +51,7 @@ namespace ComputeCS.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return null; //ghODSResources.IconBoundaryCondition;
+                return Resources.IconBoundaryCondition;
             }
         }
 

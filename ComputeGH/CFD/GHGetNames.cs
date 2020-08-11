@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ComputeCS.Grasshopper.Utils;
+using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 
@@ -24,7 +25,7 @@ namespace ComputeGH.Grasshopper
         {
             get
             {
-                return null;//ghODSResources.IconGetName;
+                return Resources.IconGetName;
             }
         }
 

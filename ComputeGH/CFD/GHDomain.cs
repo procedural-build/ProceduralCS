@@ -5,7 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using ComputeCS.types;
-
+using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
@@ -45,7 +45,7 @@ namespace ComputeCS.Grasshopper
         {
             get
             {
-                return null; //ghODSResources.IconRectDomain;
+                return Resources.IconRectDomain;
             }
         }
 

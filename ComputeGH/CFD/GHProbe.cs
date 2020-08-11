@@ -5,6 +5,7 @@ using ComputeCS;
 using Rhino.Geometry;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
@@ -76,7 +77,7 @@ namespace ComputeCS.Grasshopper
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null && create)
+            if (cachedValues == null || create)
             {
                 var queueName = "probe";
 
@@ -144,7 +145,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return Resources.IconMesh;
             }
         }
 

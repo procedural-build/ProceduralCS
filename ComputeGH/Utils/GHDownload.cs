@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using ComputeCS.types;
 using System.IO;
+using ComputeGH.Properties;
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 
 namespace ComputeCS.Grasshopper
 {
@@ -57,16 +60,81 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(2, ref localPath)) return;
             DA.GetData(3, ref reload);
 
-            var downloaded = Components.DownloadContent.Download(input, downloadPath, localPath, reload);
-            if (downloaded == true)
+            // Get Cache to see if we already did this
+            var cacheKey = input + downloadPath;
+            var cachedValues = StringCache.getCache(cacheKey);
+            DA.DisableGapLogic();
+
+            if (cachedValues == null || reload == true)
             {
-                var newPath = Path.Combine(localPath, downloadPath.Split('/').Last());
+                PollDownloadContent(input, downloadPath, localPath, reload, cacheKey);
+            }
+
+            var newPath = Path.Combine(localPath, downloadPath.Split('/').Last());
+            if (cachedValues == "True" || Directory.Exists(newPath))
+            {
                 DA.SetData(0, newPath);
-            } else
+            }
+            else
             {
                 DA.SetData(0, null);
-            }          
+            }
 
+            // Handle Errors
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                throw new Exception(errors);
+            }
+
+        }
+
+        private void PollDownloadContent(
+            string inputJson,
+            string downloadPath,
+            string localPath,
+            bool reload,
+            string cacheKey
+            )
+        {
+            var queueName = "Download";
+
+            // Get queue lock
+            var queueLock = StringCache.getCache(queueName);
+            var downloaded = false;
+            if (queueLock != "true")
+            {
+                StringCache.setCache(queueName, "true");
+                StringCache.setCache(cacheKey, null);
+                QueueManager.addToQueue(queueName, () => {
+                    try
+                    {
+                        while (!downloaded)
+                        {
+                            downloaded = Components.DownloadContent.Download(inputJson, downloadPath, localPath, reload);
+                            StringCache.setCache(cacheKey, downloaded.ToString());
+                            if (!downloaded)
+                            {
+                                Thread.Sleep(60000);
+                            }
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                        StringCache.setCache(cacheKey, "error");
+                    }
+                    StringCache.setCache(queueName, "");
+                });
+                ExpireSolutionThreadSafe(true);
+            }
+        }
+
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
+            var delegated = new ExpireSolutionDelegate(ExpireSolution);
+            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>
@@ -78,7 +146,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return Resources.IconFolder;
             }
         }
 
