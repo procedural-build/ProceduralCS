@@ -103,9 +103,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ILMerge" Version="3.0.29" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Resources\IconBoundaryCondition.png" />
     <Content Include="Resources\IconBoundaryLayerMesh.png" />
     <Content Include="Resources\IconCircDomain.png" />
@@ -137,7 +134,9 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)$(ProjectName).gha"
+    <PostBuildEvent>Copy "$(TargetPath)" $(SolutionDir)dist\$(ProjectName).gha
+Copy $(SolutionDir)dist\ComputeCS.dll %25appdata%25\Grasshopper\Libraries\ComputeCS.dll
+Copy "$(TargetPath)" %25appdata%25\Grasshopper\Libraries\$(ProjectName).gha
 Erase "$(TargetPath)"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
@@ -157,9 +156,6 @@ Erase "$(TargetPath)"</PostBuildEvent>
     <Error Condition="!Exists('..\packages\RhinoCommon.6.20.19322.20361\build\net45\RhinoCommon.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\RhinoCommon.6.20.19322.20361\build\net45\RhinoCommon.targets'))" />
     <Error Condition="!Exists('..\packages\Grasshopper.6.20.19322.20361\build\net45\Grasshopper.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Grasshopper.6.20.19322.20361\build\net45\Grasshopper.targets'))" />
     <Error Condition="!Exists('..\packages\ILMerge.3.0.29\build\ILMerge.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ILMerge.3.0.29\build\ILMerge.props'))" />
-  </Target>
-  <Target Name="ILMerge">
-    <Exec Command="$(ILMergeConsolePath) /out:$(TargetPath) ComputeCS.dll Newtonsoft.Json.dll" />
   </Target>
   <Import Project="..\packages\Grasshopper.6.20.19322.20361\build\net45\Grasshopper.targets" Condition="Exists('..\packages\Grasshopper.6.20.19322.20361\build\net45\Grasshopper.targets')" />
 </Project>

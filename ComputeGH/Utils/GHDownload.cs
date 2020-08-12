@@ -102,7 +102,10 @@ namespace ComputeCS.Grasshopper
             // Get queue lock
             var queueLock = StringCache.getCache(queueName);
             var downloaded = false;
-            if (queueLock != "true")
+            var inputData = new Inputs().FromJson(inputJson);
+
+
+            if (queueLock != "true" && inputData.Task != null)
             {
                 StringCache.setCache(queueName, "true");
                 StringCache.setCache(cacheKey, null);
@@ -126,8 +129,9 @@ namespace ComputeCS.Grasshopper
                         StringCache.setCache(cacheKey, "error");
                     }
                     StringCache.setCache(queueName, "");
+                    ExpireSolutionThreadSafe(true);
                 });
-                ExpireSolutionThreadSafe(true);
+                
             }
         }
 

@@ -44,7 +44,7 @@ namespace ComputeCS.Components
             {
                 if (downloadedFile.EndsWith(".zip"))
                 {
-                    if (reload && Directory.Exists(extractedFolder)) { Directory.Delete(extractedFolder); }
+                    if (reload && Directory.Exists(extractedFolder)) { Directory.Delete(extractedFolder, true); }
                     System.IO.Compression.ZipFile.ExtractToDirectory(downloadedFile, localPath);
                 }
                 return true;

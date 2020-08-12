@@ -1,0 +1,8 @@
+---
+name: ProceduralCS
+version: 2020.8.0
+authors:
+- Christian Kongsgaard
+- Mark Pitman
+description: Grasshopper plugin for interacting with Procedural's APIs, such as Compute.
+url: https://github.com/procedural-build/ProceduralCS
