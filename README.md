@@ -5,7 +5,7 @@ C# Client Library for Procedural Compute.
 This library contains the core (platform-agnostic) methods for interacting with the Procedural Compute API.  It is intended that this library is imported and "wrapped" by client UI's such as Rhino/Grasshopper and Revit/Dynamo.  This wrapping can be very "thin" (ie. a Grasshopper component can easily/trivially be made that simply wraps the exact inputs and outputs of a particular function in this library.)
 
 # Installation
-To install the ComputeGH plugin please refer to our [latest release](https://github.com/procedural-build/ProceduralCS/releases/tag/latest)
+To install the ComputeGH plugin please refer to our [latest release](https://github.com/procedural-build/ProceduralCS/releases/latest)
 
 # Development Notes
 
