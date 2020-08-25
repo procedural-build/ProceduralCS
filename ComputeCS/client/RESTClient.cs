@@ -56,7 +56,7 @@ namespace ComputeCS
             get { return $"{host}{endPoint}{QueryString}"; }
         }
 
-        private JsonSerializerSettings JsonSettings = new JsonSerializerSettings
+        public static JsonSerializerSettings JsonSettings = new JsonSerializerSettings
         {
             ContractResolver = new DefaultContractResolver
             {
@@ -68,7 +68,7 @@ namespace ComputeCS
         public T Request<T>() {
             /* Generic request that casts the response to a type provided
             */
-            string response = requestToString();
+            var response = requestToString();
             return JsonConvert.DeserializeObject<T>(response, JsonSettings);
         }
 
@@ -240,7 +240,7 @@ namespace ComputeCS
             }
             catch (Exception ex)
             {
-                responseString = "{\"errorMessages\":[\"" + ex.Message.ToString() + "\"],\"errors\":{}}";
+                responseString = "{\"error_messages\":[\"" + ex.Message.ToString() + "\"],\"errors\":{}}";
             }
             finally
             {

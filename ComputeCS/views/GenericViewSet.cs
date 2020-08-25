@@ -69,7 +69,7 @@ namespace ComputeCS
             // Do the Get or Create
             try {
                 return GetByQueryParams(query_params);
-            } catch (ArgumentNullException) {
+            } catch (ArgumentException err) {
                 if (create) {
                     // Merge the query_params with create_params
                     if (create_params == null) {
@@ -82,10 +82,8 @@ namespace ComputeCS
                     // Create the object
                     return Create(create_params);
                 }
+                return JsonConvert.DeserializeObject<ObjectType>("{\"error_messages\":[\"" + err.Message + "\"]}", RESTClient.JsonSettings);
             }
-
-            // Return null possible if no Project found and not created.
-            return default(ObjectType);
         }
 
         public ObjectType GetByQueryParams(
@@ -100,7 +98,7 @@ namespace ComputeCS
                     Please provide both a project number and a name to identify an unique project"
                 );
             } else if (items.Count == 0) {
-                throw new ArgumentNullException(
+                throw new ArgumentException(
                     "No object found."
                 );
             }

@@ -92,12 +92,18 @@ namespace ComputeCS.Grasshopper
                             );
                             cachedValues = results;
                             StringCache.setCache(cacheKey, cachedValues);
-
+                            StringCache.setCache(this.InstanceGuid.ToString(), "");
+                            if (create)
+                            {
+                                StringCache.setCache(cacheKey + "create", "true");
+                            }
+                            
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message + "\n");
                             StringCache.setCache(cacheKey, "error");
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
@@ -109,17 +115,22 @@ namespace ComputeCS.Grasshopper
             }
 
             // Read from Cache
-            string outputs = null;
             if (cachedValues != null)
             {
-                outputs = cachedValues;
+                var outputs = cachedValues;
                 DA.SetData(0, outputs);
+                Message = "";
+                if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Task Created";}
             }
 
             // Handle Errors
             var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
+            if (!string.IsNullOrEmpty(errors))
             {
+                if (errors.Contains("No object found"))
+                {
+                    errors = "Could not find the desired project. Click create to create a new project.";
+                }
                 throw new Exception(errors);
             }
 
@@ -139,7 +150,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Resources.IconFolder;
+                return null; // Resources.IconFolder;
             }
         }
 

@@ -86,9 +86,8 @@ namespace ComputeCS.Grasshopper
         {
             get
             {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return Resources.IconMesh;
+                //return Resources.IconMesh;
+                return null;
             }
         }
 

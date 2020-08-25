@@ -25,7 +25,8 @@ namespace ComputeGH.Grasshopper
         {
             get
             {
-                return Resources.IconGetName;
+                //return Resources.IconGetName;
+                return null;
             }
         }
 

@@ -15,5 +15,6 @@ namespace ComputeCS.types
         public string Path;
         public string PathType;
         public string Company;
+        public List<string> ErrorMessages = null;
     }
 }

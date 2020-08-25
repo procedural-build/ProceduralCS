@@ -68,7 +68,7 @@ namespace ComputeCS.Grasshopper
 
             var convertedPoints = new List<List<double>>();
 
-            foreach (Point3d point in points) {
+            foreach (var point in points) {
                 convertedPoints.Add(new List<double> { point.X, point.Y, point.Z });
             };
 
@@ -100,11 +100,17 @@ namespace ComputeCS.Grasshopper
                             );
                             cachedValues = results;
                             StringCache.setCache(cacheKey, cachedValues);
+                            if (create)
+                            {
+                                StringCache.setCache(cacheKey + "create", "true");
+                            }
 
                         }
                         catch (Exception e)
                         {
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.setCache(cacheKey, "error");
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
@@ -114,19 +120,21 @@ namespace ComputeCS.Grasshopper
 
             }
 
+            // Handle Errors
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                throw new Exception(errors);
+            }
+            
             // Read from Cache
             string outputs = null;
             if (cachedValues != null)
             {
                 outputs = cachedValues;
                 DA.SetData(0, outputs);
-            }
-
-            // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
-            {
-                throw new Exception(errors);
+                Message = "";
+                if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Task Created";}
             }
         }
 
@@ -145,7 +153,8 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Resources.IconMesh;
+                //return Resources.IconMesh;
+                return null;
             }
         }
 

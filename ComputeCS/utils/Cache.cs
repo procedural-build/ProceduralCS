@@ -48,6 +48,11 @@ namespace ComputeCS.utils.Cache
             return cache.ContainsKey(key);
         }
 
+        public static void ClearCache()
+        {
+            cache = new Dictionary<string, string>();
+        }
+
         public static void AppendCache(string key, string valueString) {
             string existingString = getCache(key);
             if (existingString == null) { existingString = ""; }

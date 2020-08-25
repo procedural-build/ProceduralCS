@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
@@ -77,13 +78,23 @@ namespace ComputeCS.Grasshopper
                         try
                         {
                             var results = client.Auth(username, password);
-                            cachedTokens = results.ToJson();
-                            StringCache.setCache(cacheKey, cachedTokens);
-
+                            
+                            if (results.ErrorMessages != null)
+                            {
+                                StringCache.setCache(cacheKey, "error");
+                                throw new Exception(results.ErrorMessages.First());
+                            }
+                            else if (results.ErrorMessages == null)
+                            {
+                                StringCache.ClearCache();
+                                cachedTokens = results.ToJson();
+                                StringCache.setCache(cacheKey, cachedTokens);
+                            }
+                            
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message + "\n");
                         }
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
@@ -96,6 +107,16 @@ namespace ComputeCS.Grasshopper
 
 
             // Read from Cache
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                if (errors.Contains("(401) Unauthorized"))
+                {
+                    errors = "Could not login with the provided credentials. Try again.";
+                }
+                throw new Exception(errors);
+            }
+            
             var tokens = new AuthTokens();
             if (cachedTokens != null)
             {
@@ -108,12 +129,6 @@ namespace ComputeCS.Grasshopper
 
                 DA.SetData(0, output.ToJson());
                 
-            }
-
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
-            {
-                throw new Exception(errors);
             }
 
         }
@@ -133,7 +148,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Resources.IconLicense;
+                return null; // Resources.IconLicense;
             }
         }
 
