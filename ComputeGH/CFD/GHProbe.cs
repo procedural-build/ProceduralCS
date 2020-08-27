@@ -74,16 +74,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(5, ref dependentOn);
             DA.GetData(6, ref create);
 
-            var convertedPoints = new List<List<List<double>>>();
-
-            foreach (var branch in points)
-            {
-                foreach (var point in branch)
-                {
-                    convertedPoints.Add(new List<double> { point.X, point.Y, point.Z });
-                };
-            }
-
+            var convertedPoints = ConvertToPointList(points);
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", points) + string.Join("", fields);
@@ -156,6 +147,27 @@ namespace ComputeCS.Grasshopper
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
             Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+        }
+
+        /// <summary>
+        /// Converts a Grasshopper data tree with points into a list of lists
+        /// </summary>
+        /// <param name="pointTree"></param>
+        /// <returns></returns>
+        private static List<List<List<double>>> ConvertToPointList(GH_Structure<GH_Point> pointTree)
+        {
+            var convertedPoints = new List<List<List<double>>>();
+            foreach (var branch in pointTree.Branches)
+            {
+                var branchPoints = new List<List<double>>();
+                foreach (var point in branch)
+                {
+                    branchPoints.Add(new List<double> { point.Value.X, point.Value.Y, point.Value.Z });
+                };
+                convertedPoints.Add(branchPoints);
+            }
+
+            return convertedPoints;
         }
 
         /// <summary>
