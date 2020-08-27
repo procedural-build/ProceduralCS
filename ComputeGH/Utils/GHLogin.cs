@@ -30,9 +30,12 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("username", "username", "User Name", GH_ParamAccess.item);
-            pManager.AddTextParameter("password", "password", "Password", GH_ParamAccess.item);
-            pManager.AddTextParameter("computeURL", "url", "URL for Compute", GH_ParamAccess.item);
+            pManager.AddTextParameter("Username", "Username", "Username", GH_ParamAccess.item);
+            pManager.AddTextParameter("Password", "Password", "Password", GH_ParamAccess.item);
+            pManager.AddTextParameter("Compute URL", "URL", "URL for Compute", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Retry", "Retry", "Force retry to connect to Compute", GH_ParamAccess.item);
+
+            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -52,15 +55,19 @@ namespace ComputeCS.Grasshopper
             string username = null;
             string password = null;
             string url = null;
+            var retry = false;
 
             if (!DA.GetData(0, ref username)) return;
             if (!DA.GetData(1, ref password)) return;
             if (!DA.GetData(2, ref url)) return;
+            DA.GetData(3, ref retry);
 
             var client = new ComputeClient(url);
 
-            // Sync Execution
-            //var tokens = client.Auth(username, password);
+            if (retry)
+            {
+                StringCache.ClearCache();
+            }
 
             //Async Execution
             var cacheKey = username + password + url;
