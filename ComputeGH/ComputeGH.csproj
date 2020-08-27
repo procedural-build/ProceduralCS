@@ -72,6 +72,7 @@
     <Compile Include="CFD\GHProbe.cs" />
     <Compile Include="CFD\GHRefinementRegion.cs" />
     <Compile Include="CFD\GHSetNames.cs" />
+    <Compile Include="CFD\GHWindThresholds.cs" />
     <Compile Include="ComputeGHInfo.cs" />
     <Compile Include="CFD\GHCompute.cs" />
     <Compile Include="GrasshopperUtils\Async.cs" />
@@ -84,6 +85,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Utils\GHDownload.cs" />
+    <Compile Include="Utils\GHDownloadEPW.cs" />
     <Compile Include="Utils\GHLogin.cs" />
     <Compile Include="CFD\GHMesh.cs" />
     <Compile Include="Utils\GHProbeResults.cs" />
@@ -120,7 +122,6 @@
     <Content Include="Resources\IconSetName.png" />
     <Content Include="Resources\IconSolver.png" />
   </ItemGroup>
-
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

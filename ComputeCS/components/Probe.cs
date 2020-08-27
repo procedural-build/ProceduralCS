@@ -100,15 +100,13 @@ namespace ComputeCS.Components
                 sampleSets.Add(
                     new Dictionary<string, object>()
                     {
-                         { "name", "set1" },
+                         { "name", name },
                          { "points", points[index]}
                     }
                     
                     );
                 index++;
             }
-             
-
             return  sampleSets;
         }
     }
