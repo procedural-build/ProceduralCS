@@ -10,8 +10,9 @@ namespace ComputeCS.Components
     {
         public static string ProbePoints(
             string inputJson,
-            List<List<double>> points,
+            List<List<List<double>>> points,
             List<string> fields,
+            List<string> names,
             List<int> cpus,
             string dependentOn = "",
             bool create = false
@@ -28,7 +29,7 @@ namespace ComputeCS.Components
             if (simulationTask == null) {return null;}
 
             var fieldsOpenFoamFormat = String.Join(" ", fields);
-            var sampleSets = GenerateSampleSet(points);
+            var sampleSets = GenerateSampleSet(points, names);
 
             var task = new GenericViewSet<Task>(
                 tokens,
@@ -88,15 +89,27 @@ namespace ComputeCS.Components
         }
 
         public static List<Dictionary<string, object>> GenerateSampleSet(
-            List<List<double>> points
+            List<List<List<double>>> points,
+            List<string> names
             )
         {
-            var sampleSet = new Dictionary<string, object> {
-                { "name", "set1" },
-                { "points", points}
-            };
+            var index = 0;
+            var sampleSets = new List<Dictionary<string, object>>();
+            foreach (var name in names)
+            {
+                sampleSets.Add(
+                    new Dictionary<string, object>()
+                    {
+                         { "name", "set1" },
+                         { "points", points[index]}
+                    }
+                    
+                    );
+                index++;
+            }
+             
 
-            return new List<Dictionary<string, object>> { sampleSet };
+            return  sampleSets;
         }
     }
 }
