@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ComputeCS.types;
 using Newtonsoft.Json.Linq;
@@ -111,6 +112,51 @@ namespace ComputeCS.Components
                 } 
             }
             return null;
+        }
+
+        public static Dictionary<string, Dictionary<string, object>> ReadThresholdResults(
+            string folder)
+        {
+            var data = new Dictionary<string, Dictionary<string, object>>();
+            var resultFileType = new List<string>
+            {
+                "dining", "sitting", "Uav", "Uav_std", "walkthru"
+            };
+
+            foreach (var file in Directory.GetFiles(folder))
+            {
+                
+                if (resultFileType.Contains(Path.GetExtension(file).Replace(".", "")))
+                {
+                    var fileName = Path.GetFileName(file).Split('.');
+                    var extension = fileName[1];
+                    var patchName = fileName[0];
+                    var values = ReadThresholdData(file);
+
+                    if (!data.ContainsKey(extension))
+                    {
+                        data.Add(extension, new Dictionary<string, object>());
+                    }
+
+                    data[extension].Add(patchName, values);
+                }
+            }
+
+            return data;
+        }
+
+        private static List<double> ReadThresholdData(string file)
+        {
+            var data = new List<double>();
+            var lines = File.ReadAllLines(file);
+            foreach (var line in lines)
+            {
+                var data_ = line.Split(',').Skip(1).Select(x => double.Parse(x)).ToList();
+                data.Add(data_.Average());
+                
+            }
+
+            return data;
         }
     }
 }
