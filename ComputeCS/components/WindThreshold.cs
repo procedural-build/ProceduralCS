@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using ComputeCS.types;
 using Newtonsoft.Json.Linq;
@@ -26,11 +27,15 @@ namespace ComputeCS.Components
             
             if (parentTask == null) {return null;}
 
-            var epwName = "";
+            if (!File.Exists(epwFile))
+            {
+                return null;
+            }
+            var epwName = Path.GetFileName(epwFile);
 
             if (create)
             {
-                var epwFileContent = new Byte();
+                var epwFileContent = File.ReadAllBytes(epwFile);
                 {
                     // Upload EPW File to parent task
                     new GenericViewSet<Dictionary<string, object>>(

@@ -45,7 +45,7 @@ namespace ComputeCS.Components
                     {"config", new Dictionary<string, object> {
                         {"task_type", "cfd"},
                         {"cmd", "pipeline"},
-                        {"commands", new List<string>{ "write_sample_set", $"postProcess -fields '({fieldsOpenFoamFormat})' -func internalCloud"} },
+                        {"commands", new List<string>{ "write_sample_set", "postProcess -func internalCloud"} },
                         {"case_dir", "VWT/" },
                         {"cpus", cpus },
                         {"sets", sampleSets },

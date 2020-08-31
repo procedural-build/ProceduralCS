@@ -6,6 +6,7 @@ using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Parameters;
 using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper
@@ -36,8 +37,6 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
-            pManager.AddPointParameter("U", "U", "Velocity vectors", GH_ParamAccess.tree);
-            pManager.AddNumberParameter("p", "p", "Pressure", GH_ParamAccess.tree);
 
         }
 
@@ -54,86 +53,141 @@ namespace ComputeCS.Grasshopper
             var results = ProbeResult.ReadProbeResults(folder);
             
 
-            foreach (string key in results.Keys)
+            foreach (var key in results.Keys)
             {
                 var data = ConvertToDataTree(results[key]);
-                int index = 0;
-                if (key == "U") { index = 1; }
-                else if (key == "p") { index = 2; }
-                DA.SetDataTree(index, data);
-                //AddToOutput(key, data);
+                AddToOutput(DA, key, data);
             }
 
             var info = UpdateInfo(results);
             DA.SetData(0, info);
-
-            // for key in results.keys()
-            //      var data = ConvertToDataTree(results[key])
-            //      AddToOutput(key, data)
-
-            //var UVectors = ConvertToGHVectors(results["U"]);
-            //var pValues = ConverToGHValues(results["p"]);
-
-            //DA.SetDataTree(0, UVectors);
-            //DA.SetDataTree(1, pValues);
+            
+            RemoveUnusedOutputs(results);
         }
 
-        private DataTree<object> ConvertToDataTree(Dictionary<string, object> data)
+        private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, object>> data)
         {
-            var counter = 0;
+            var patchCounter = 0;
+            
             var output = new DataTree<object>();
-            foreach (var key in data.Keys)
+            foreach (var patchKey in data.Keys)
             {
-                var path = new GH_Path(counter);
-                var data_ = (List<object>)data[key];
-                var dataType = data_.First().GetType();
-                if (dataType == typeof(double))
+                var angleCounter = 0;
+                foreach (var fieldKey in data[patchKey].Keys)
                 {
-                    foreach (double element in data_)
+                    var path = new GH_Path(new int[]{patchCounter, angleCounter});
+                    var data_ = (List<object>)data[patchKey][fieldKey];
+                    var dataType = data_.First().GetType();
+                    if (dataType == typeof(double))
                     {
-                        output.Add(element, path);
+                        foreach (double element in data_)
+                        {
+                            output.Add(element, path);
+                        }
+                    
                     }
-                    
-                }
-                else if (dataType == typeof(List<double>))
-                {
-                    
-                    foreach (List<double> row in data_)
+                    else if (dataType == typeof(List<double>))
                     {
-                        output.Add(new Point3d(row[0], row[1], row[2]), path);
-                    }
                     
+                        foreach (List<double> row in data_)
+                        {
+                            output.Add(new Point3d(row[0], row[1], row[2]), path);
+                        }
+                    
+                    }
+
+                    angleCounter++;
                 }
 
-                counter++;
+                patchCounter++;
+
             }
 
             return output;
         }
 
-        private void AddToOutput(string name, DataTree<object> data)
+        private void AddToOutput(IGH_DataAccess DA, string name, DataTree<object> data)
         {
-            
-            /*IGH_Param p = new Grasshopper.Kernel.Parameters.Param_GenericObject
+
+            var index = 0;
+            var found = false;
+
+            foreach (var param in Params.Output)
             {
-                Name = name,
-                NickName = name
-            };
-            this.Params.Output.Add(p);
-            */
+                if (param.Name == name)
+                {
+                    found = true;
+                    break;
+                }
+                index++;
+            }
+
+            if (!found)
+            {
+                var p = new Param_GenericObject
+                {
+                    Name = name,
+                    NickName = name,
+                    Access = GH_ParamAccess.tree
+                };
+                Params.RegisterOutputParam(p);
+                //Params.Output.Add(p);
+                //index = Params.Output.Count;
+                Params.OnParametersChanged();
+                ExpireSolution(true);
+            }
+            else
+            {
+                DA.SetDataTree(index, data);
+            }
+
+
+            
         }
 
-        private string UpdateInfo(Dictionary<string, Dictionary<string, object>> data)
+        private static string UpdateInfo(Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
         {
-            var MasterKey = data.Keys.ToList().First();
-            var info = "";
+            var fieldKey = data.Keys.ToList().First();
+            var info = "Patch Names:\n";
             var i = 0;
-            foreach (string key in data[MasterKey].Keys)
+            foreach (var key in data[fieldKey].Keys)
             {
-                info += $"{i} is {key}\n";
+                info += $"{{{i};*}} is {key}\n";
                 i++;
             }
+
+            var j = 0;
+            var patchKey = data[fieldKey].Keys.ToList().First();
+            info += "\nAngles:\n";
+            foreach (var key in data[fieldKey][patchKey].Keys)
+            {
+                info += $"{{*;{j}}} is {key} degrees\n";
+                j++;
+            }
             return info;
+        }
+
+        private void RemoveUnusedOutputs(Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
+        {
+            var keys = data.Keys.ToList();
+            keys.Add("Info");
+            var changes = false;
+            
+            foreach (var param in Params.Output)
+            {
+                if (!keys.Contains(param.Name))
+                {
+                    Params.UnregisterOutputParameter(param);
+                    changes = true;
+                }
+            }
+
+            if (changes)
+            {
+                Params.OnParametersChanged();
+                ExpireSolution(true);
+            }
+
         }
 
         /// <summary>

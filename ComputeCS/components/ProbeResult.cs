@@ -6,11 +6,11 @@ namespace ComputeCS.Components
 {
     public static class ProbeResult
     {
-        public static Dictionary<string, Dictionary<string, object>> ReadProbeResults(string folder)
+        public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> ReadProbeResults(string folder)
         {
-
-            var data = new Dictionary<string, Dictionary<string, object>>();
-            foreach (string subFolder in Directory.GetDirectories(folder))
+            var data = new Dictionary<string, Dictionary<string, Dictionary<string, object>>>();
+            var subFolders = Directory.GetDirectories(folder).OrderBy(f => float.Parse(FolderToDataPath(f)));
+            foreach (var subFolder in subFolders)
             {
                 data = GetDataFromFolder(subFolder, data);
             }
@@ -19,9 +19,14 @@ namespace ComputeCS.Components
             return data;
         }
 
-        public static string FileNameToFieldName(string filePath)
+        public static Dictionary<string, string> FileNameToNames(string filePath)
         {
-            return Path.GetFileName(filePath).Split('_').Last().Split('.')[0];
+            var names = Path.GetFileName(filePath).Split('.')[0].Split('_');
+            return new Dictionary<string, string>
+            {
+                {"field", names[1]},
+                {"patch", names[0]}
+            };
         }
 
         public static List<object> ReadProbeData(string file)
@@ -44,25 +49,35 @@ namespace ComputeCS.Components
             return data;
         }
 
-        public static Dictionary<string, Dictionary<string, object>> GetDataFromFolder(string folder,
-            Dictionary<string, Dictionary<string, object>> data)
+        public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> GetDataFromFolder(
+            string folder,
+            Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
         {
             var dataPath = FolderToDataPath(folder);
 
-            foreach (string file in Directory.GetFiles(folder))
+            foreach (var file in Directory.GetFiles(folder))
             {
                 if (!file.EndsWith(".xy"))
                 {
                     continue;
                 }
-                var fieldName = FileNameToFieldName(file);
+
+                var names = FileNameToNames(file);
+                var fieldName = names["field"];
+                var patchName = names["patch"];
                 var values = ReadProbeData(file);
+
                 if (!data.ContainsKey(fieldName))
                 {
-                    data.Add(fieldName, new Dictionary<string, object>());
+                    data.Add(fieldName, new Dictionary<string, Dictionary<string, object>>());
                 }
 
-                data[fieldName].Add(dataPath, values);
+                if (!data[fieldName].ContainsKey(patchName))
+                {
+                    data[fieldName].Add(patchName, new Dictionary<string, object>());
+                }
+
+                data[fieldName][patchName].Add(dataPath, values);
             }
 
             return data;
