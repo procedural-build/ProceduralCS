@@ -49,6 +49,18 @@ namespace ComputeCS.Components
             return data;
         }
 
+        public static List<object> ReadPoints(string file)
+        {
+            var data = new List<object>();
+            var lines = File.ReadAllLines(file);
+            foreach (var line in lines)
+            {
+                data.Add(line.Split('\t').Take(3).Select(x => double.Parse(x)).ToList());
+            }
+
+            return data;
+        }
+
         public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> GetDataFromFolder(
             string folder,
             Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
@@ -78,6 +90,7 @@ namespace ComputeCS.Components
                 }
 
                 data[fieldName][patchName].Add(dataPath, values);
+                //data = GetPointData(file, data, patchName);
             }
 
             return data;

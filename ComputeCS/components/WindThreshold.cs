@@ -25,13 +25,17 @@ namespace ComputeCS.Components
             var subTasks = inputData.SubTasks;
             var postProcessTask = GetPostProcessTask(subTasks, dependentOn);
             var project = inputData.Project;
-            
-            if (parentTask == null) {return null;}
+
+            if (parentTask == null)
+            {
+                return null;
+            }
 
             if (!File.Exists(epwFile))
             {
                 return null;
             }
+
             var epwName = Path.GetFileName(epwFile);
 
             if (create)
@@ -53,27 +57,32 @@ namespace ComputeCS.Components
                 }
             }
 
-            
+
             var task = new GenericViewSet<Task>(
                 tokens,
                 inputData.Url,
                 $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
-                new Dictionary<string, object> {
+                new Dictionary<string, object>
+                {
                     {"name", "Wind Thresholds"},
                     {"parent", parentTask.UID},
                     {"dependent_on", postProcessTask.UID}
                 },
-                new Dictionary<string, object> {
-                    {"config", new Dictionary<string, object> {
-                        {"task_type", "cfd"},
-                        {"cmd", "run_wind_thresholds"},
-                        {"case_dir", "VWT/" },
-                        {"epw_file", $"WeatherFiles/{epwName}"},
-                        {"patches", patches},
-                        {"set_foam_patch_fields", false},
-                        {"cpus", cpus },
-                    }}
+                new Dictionary<string, object>
+                {
+                    {
+                        "config", new Dictionary<string, object>
+                        {
+                            {"task_type", "cfd"},
+                            {"cmd", "run_wind_thresholds"},
+                            {"case_dir", "VWT/"},
+                            {"epw_file", $"WeatherFiles/{epwName}"},
+                            {"patches", patches},
+                            {"set_foam_patch_fields", false},
+                            {"cpus", cpus},
+                        }
+                    }
                 },
                 create
             );
@@ -82,23 +91,24 @@ namespace ComputeCS.Components
 
             return inputData.ToJson();
         }
-        
+
         private static Task GetPostProcessTask(
             List<Task> subTasks,
             string dependentName = ""
         )
         {
-
             foreach (Task subTask in subTasks)
             {
                 if (dependentName == subTask.Name)
                 {
                     return subTask;
                 }
+
                 if (subTask.Name == "PostProcess")
                 {
                     return subTask;
                 }
+
                 if (subTask.Config.ContainsKey("commands"))
                 {
                     // Have to do this conversion to be able to compare the strings
@@ -109,8 +119,9 @@ namespace ComputeCS.Components
                             return subTask;
                         }
                     }
-                } 
+                }
             }
+
             return null;
         }
 
@@ -125,7 +136,6 @@ namespace ComputeCS.Components
 
             foreach (var file in Directory.GetFiles(folder))
             {
-                
                 if (resultFileType.Contains(Path.GetExtension(file).Replace(".", "")))
                 {
                     var fileName = Path.GetFileName(file).Split('.');
@@ -145,18 +155,106 @@ namespace ComputeCS.Components
             return data;
         }
 
-        private static List<double> ReadThresholdData(string file)
+        private static List<List<double>> ReadThresholdData(string file)
         {
-            var data = new List<double>();
+            var data = new List<List<double>>();
             var lines = File.ReadAllLines(file);
             foreach (var line in lines)
             {
-                var data_ = line.Split(',').Skip(1).Select(x => double.Parse(x)).ToList();
-                data.Add(data_.Average());
-                
+                data.Add(line.Split(',').Skip(1).Select(x => double.Parse(x)).ToList());
             }
 
             return data;
+        }
+
+        public static Dictionary<string, Dictionary<string, List<int>>> LawsonsCriteria(
+            Dictionary<string, Dictionary<string, object>> data
+            )
+        {
+            var resultTypes = new List<string>
+            {
+                "dining", "sitting", "walkthru"
+            };
+
+            var newData = new Dictionary<string, Dictionary<string, object>>();
+            foreach (var resultType in resultTypes)
+            {
+                foreach (var patchName in data[resultType].Keys)
+                {
+                    if (!newData.ContainsKey(patchName))
+                    {
+                        newData.Add(patchName, new Dictionary<string, object>());
+                    }
+
+                    newData[patchName].Add(resultType, data[resultType][patchName]);
+                }
+            }
+
+            var output = new Dictionary<string, Dictionary<string, List<int>>>();
+            foreach (var patchKey in newData.Keys)
+            {
+                output = ComputeLawson(newData[patchKey], patchKey, output);
+            }
+
+            return output;
+        }
+
+        private static Dictionary<string, Dictionary<string, List<int>>> ComputeLawson(
+            Dictionary<string, object> patchValues,
+            string patchKey,
+            Dictionary<string, Dictionary<string, List<int>>> output
+        )
+        {
+            var seasons = new List<string>
+            {
+                "winter_morning", "winter_noon", "winter_afternoon", "winter_evenings",
+                "spring_morning", "spring_noon", "spring_afternoon", "spring_evenings",
+                "summer_morning", "summer_noon", "summer_afternoon", "summer_evenings",
+                "fall_morning", "fall_noon", "fall_afternoon", "fall_evenings",
+                "yearly"
+            };
+
+            // we get data in form {dinning: [point1: [winter, spring, summer, fall], point2: [...], ...], "sitting": [...], ...}
+            // return should be:
+            // {"winter": [point1, point2, ...], "spring": [point1, point2, ...], ...}
+            foreach (var resultKey in patchValues.Keys)
+            {
+                var pointValues = (List<List<double>>) patchValues[resultKey];
+                var pointLenght = pointValues.Count();
+                var pointIndex = 0;
+                foreach (var pointValue in pointValues)
+                {
+                    var seasonCounter = 0;
+                    foreach (var value in pointValue)
+                    {
+                        var seasonKey = seasons[seasonCounter];
+                        if (!output.ContainsKey(seasonKey))
+                        {
+                            output.Add(seasonKey, new Dictionary<string, List<int>>());
+                        }
+
+                        if (!output[seasonKey].ContainsKey(patchKey))
+                        {
+                            output[seasonKey].Add(patchKey, new List<int>());
+                        }
+
+                        if (output[seasonKey][patchKey].Count() < pointLenght)
+                        {
+                            output[seasonKey][patchKey].Add(Convert.ToInt32(value > 0.05));
+                        }
+                        else
+                        {
+                            output[seasonKey][patchKey][pointIndex] += Convert.ToInt32(value > 0.05);
+                        }
+                        
+                        seasonCounter++;
+                    }
+
+                    pointIndex++;
+                }
+            }
+
+            return output;
         }
     }
 }

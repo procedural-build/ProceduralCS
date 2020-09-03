@@ -17,9 +17,14 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the GHProbeResults class.
         /// </summary>
         public GHThresholdResults()
-          : base("Wind Threshold Results", "Wind Threshold Results",
-              "Loads wind threshold results from a file(s)",
-              "Compute", "Utils")
+            : base("Wind Threshold Results", "Wind Threshold Results",
+                "Loads wind threshold results from a file(s)." +
+                "\nLAWSON CRITERIA" +
+                "\n0: Comfortable for dining" +
+                "\n1: Comfortable for sitting" + 
+                "\n2: Comfortable for walking" +
+                "\n3: Exceeds all criteria",
+                "Compute", "Utils")
         {
         }
 
@@ -29,6 +34,10 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("ThresholdType", "ThresholdType", "0: Wind Thresholds\n1: Lawsons Criteria",
+                GH_ParamAccess.item, 0);
+
+            pManager[1].Optional = true;
         }
 
         /// <summary>
@@ -37,7 +46,6 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
-
         }
 
         /// <summary>
@@ -47,42 +55,84 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string folder = null;
+            var criteria = 0;
 
             if (!DA.GetData(0, ref folder)) return;
+            DA.GetData(1, ref criteria);
 
             var results = WindThreshold.ReadThresholdResults(folder);
-            
-
-            foreach (var key in results.Keys)
+            var info = string.Empty;
+            if (criteria == 1)
             {
-                var data = ConvertToDataTree(results[key]);
-                AddToOutput(DA, key, data);
+                var lawsons = WindThreshold.LawsonsCriteria(results);
+                foreach (var season in lawsons.Keys)
+                {
+                    var data = ConvertLawsonToDataTree(lawsons[season]);
+                    AddToOutput(DA, season, data);
+                }
+
+                info = UpdateInfo(lawsons.First().Value.Keys.ToList());
+                RemoveUnusedOutputs(lawsons.Keys.ToList());
+            }
+            else
+            {
+                foreach (var key in results.Keys)
+                {
+                    var data = ConvertToDataTree(results[key]);
+                    AddToOutput(DA, key, data);
+                }
+
+                info = UpdateInfo(results.First().Value.Keys.ToList());
+                RemoveUnusedOutputs(results.Keys.ToList());
             }
 
-            var info = UpdateInfo(results);
+
             DA.SetData(0, info);
-            
-            RemoveUnusedOutputs(results);
         }
+
+        private static DataTree<object> ConvertLawsonToDataTree(Dictionary<string, List<int>> data)
+        {
+            var patchCounter = 0;
+
+            var output = new DataTree<object>();
+            foreach (var patchKey in data.Keys)
+            {
+                var points = data[patchKey];
+                var path = new GH_Path(patchCounter);
+                foreach (var value in points)
+                {
+                    output.Add(value, path);
+                }
+
+                patchCounter++;
+            }
+
+            return output;
+        }
+
 
         private static DataTree<object> ConvertToDataTree(Dictionary<string, object> data)
         {
             var patchCounter = 0;
-            
+
             var output = new DataTree<object>();
             foreach (var patchKey in data.Keys)
             {
+                var seasonValues = (List<List<double>>) data[patchKey];
+                var seasonCounter = 0;
 
-                var path = new GH_Path(patchCounter);
-                var values = (List<double>)data[patchKey];
-                foreach (var value in values)
+                foreach (var value in seasonValues)
                 {
-                    output.Add(value, path);
-                }
-                //values.Select(double x => output.Add(x, path));
-                
-                patchCounter++;
+                    var path = new GH_Path(new[] {patchCounter, seasonCounter});
+                    foreach (var x in value)
+                    {
+                        output.Add(x, path);
+                    }
 
+                    seasonCounter++;
+                }
+
+                patchCounter++;
             }
 
             return output;
@@ -90,7 +140,6 @@ namespace ComputeCS.Grasshopper
 
         private void AddToOutput(IGH_DataAccess DA, string name, DataTree<object> data)
         {
-
             var index = 0;
             var found = false;
 
@@ -101,6 +150,7 @@ namespace ComputeCS.Grasshopper
                     found = true;
                     break;
                 }
+
                 index++;
             }
 
@@ -122,17 +172,13 @@ namespace ComputeCS.Grasshopper
             {
                 DA.SetDataTree(index, data);
             }
-
-
-            
         }
 
-        private static string UpdateInfo(Dictionary<string, Dictionary<string, object>> data)
+        private static string UpdateInfo(List<string> patchKeys)
         {
-            var fieldKey = data.Keys.ToList().First();
             var info = "Patch Names:\n";
             var i = 0;
-            foreach (var key in data[fieldKey].Keys)
+            foreach (var key in patchKeys)
             {
                 info += $"{{{i}}} is {key}\n";
                 i++;
@@ -140,28 +186,32 @@ namespace ComputeCS.Grasshopper
 
             return info;
         }
+        
 
-        private void RemoveUnusedOutputs(Dictionary<string, Dictionary<string, object>> data)
+        private void RemoveUnusedOutputs(List<string> keys)
         {
-            var keys = data.Keys.ToList();
-            keys.Add("Info");
-            var changes = false;
             
+            keys.Add("Info");
+            var parametersToDelete = new List<IGH_Param>();
+
             foreach (var param in Params.Output)
             {
                 if (!keys.Contains(param.Name))
                 {
-                    Params.UnregisterOutputParameter(param);
-                    changes = true;
+                    parametersToDelete.Add(param);
                 }
             }
 
-            if (changes)
+            if (parametersToDelete.Count() > 0)
             {
+                foreach (var param in parametersToDelete)
+                {
+                    Params.UnregisterOutputParameter(param);
+                    Params.Output.Remove(param);
+                }
                 Params.OnParametersChanged();
                 ExpireSolution(true);
             }
-
         }
 
         /// <summary>
