@@ -109,7 +109,8 @@ namespace ComputeCS.Components
                             "blockMesh",
                             "snappyHexMesh -overwrite",
                             "reconstructParMesh -constant -mergeTol 1e-6",
-                            "!checkMesh -writeSets vtk"
+                            "!checkMesh -writeSets vtk",
+                            "foamToSurface -constant surfaceMesh.obj"
                         }},
                         {"cpus", solution.CPUs},
                     }}

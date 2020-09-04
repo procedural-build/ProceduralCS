@@ -30,6 +30,12 @@ namespace ComputeCS.Components
             {
                 return null;
             }
+            
+            dependentOn = null;
+            if (postProcessTask != null)
+            {
+                dependentOn = postProcessTask.UID;
+            }
 
             if (!File.Exists(epwFile))
             {
@@ -67,7 +73,7 @@ namespace ComputeCS.Components
                 {
                     {"name", "Wind Thresholds"},
                     {"parent", parentTask.UID},
-                    {"dependent_on", postProcessTask.UID}
+                    {"dependent_on", dependentOn}
                 },
                 new Dictionary<string, object>
                 {
@@ -87,6 +93,10 @@ namespace ComputeCS.Components
                 create
             );
 
+            if (task.ErrorMessages != null)
+            {
+                throw new Exception(task.ErrorMessages[0]);
+            }
             inputData.SubTasks.Add(task);
 
             return inputData.ToJson();
@@ -99,6 +109,10 @@ namespace ComputeCS.Components
         {
             foreach (Task subTask in subTasks)
             {
+                if (string.IsNullOrEmpty(subTask.UID))
+                {
+                    continue;
+                }
                 if (dependentName == subTask.Name)
                 {
                     return subTask;

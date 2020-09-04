@@ -18,7 +18,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public GHThresholdResults()
             : base("Wind Threshold Results", "Wind Threshold Results",
-                "Loads wind threshold results from a file(s)." +
+                @"Loads wind threshold results from a file(s)." +
                 "\nLAWSON CRITERIA" +
                 "\n0: Comfortable for dining" +
                 "\n1: Comfortable for sitting" + 
@@ -163,8 +163,6 @@ namespace ComputeCS.Grasshopper
                     Access = GH_ParamAccess.tree
                 };
                 Params.RegisterOutputParam(p);
-                //Params.Output.Add(p);
-                //index = Params.Output.Count;
                 Params.OnParametersChanged();
                 ExpireSolution(true);
             }

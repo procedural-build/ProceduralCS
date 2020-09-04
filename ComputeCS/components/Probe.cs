@@ -26,9 +26,14 @@ namespace ComputeCS.Components
             var project = inputData.Project;
 
             if (parentTask == null) {return null;}
-            if (simulationTask == null) {return null;}
 
-            var fieldsOpenFoamFormat = String.Join(" ", fields);
+            dependentOn = null;
+            if (simulationTask != null)
+            {
+                dependentOn = simulationTask.UID;
+            }
+
+            var fieldsOpenFoamFormat = string.Join(" ", fields);
             var sampleSets = GenerateSampleSet(points, names);
 
             var task = new GenericViewSet<Task>(
@@ -37,9 +42,9 @@ namespace ComputeCS.Components
                 $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
-                    {"name", "PostProcess"},
+                    {"name", "PostProcess GH"},
                     {"parent", parentTask.UID},
-                    {"dependent_on", simulationTask.UID}
+                    {"dependent_on", dependentOn}
                 },
                 new Dictionary<string, object> {
                     {"config", new Dictionary<string, object> {
@@ -68,6 +73,10 @@ namespace ComputeCS.Components
 
             foreach (Task subTask in subTasks)
             {
+                if (string.IsNullOrEmpty(subTask.UID))
+                {
+                    continue;
+                }
                 if (dependentName == subTask.Name)
                 {
                     return subTask;

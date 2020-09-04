@@ -7,7 +7,9 @@ using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using Mesh = Rhino.Geometry.Mesh;
 
 namespace ComputeCS.Grasshopper
 {
@@ -17,9 +19,9 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the GHProbeResults class.
         /// </summary>
         public GHProbeResults()
-          : base("Probe Results", "Probe Results",
-              "Loads the probe results from a file",
-              "Compute", "Utils")
+            : base("Probe Results", "Probe Results",
+                "Loads the probe results from a file",
+                "Compute", "Utils")
         {
         }
 
@@ -29,6 +31,10 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Original mesh from where the probe points is generated",
+                GH_ParamAccess.tree);
+
+            pManager[1].Optional = true;
         }
 
         /// <summary>
@@ -36,8 +42,11 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
-
+            pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Points", "Points", "Points that were extracted from probe files",
+                GH_ParamAccess.tree);
+            //pManager.AddMeshParameter("New Mesh", "Mesh",
+            //    "Correct mesh that matches the extracted points from probe files", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -47,36 +56,67 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string folder = null;
+            var meshes = new GH_Structure<GH_Mesh>(); 
 
             if (!DA.GetData(0, ref folder)) return;
+            DA.GetDataTree(1, out meshes);
 
             var results = ProbeResult.ReadProbeResults(folder);
             
-
             foreach (var key in results.Keys)
             {
                 var data = ConvertToDataTree(results[key]);
                 AddToOutput(DA, key, data);
             }
+            
+            var points = ProbeResult.ReadPointsFromResults(folder);
+            var GHPoints = ConvertPointsToDataTree(points);
+            DA.SetDataTree(1, GHPoints);
+            
+            /*if (meshes.Any())
+            {
+                var newMesh = CorrectMesh(meshes, points);    
+                DA.SetDataTree(2, newMesh);
+            }*/
 
             var info = UpdateInfo(results);
-            DA.SetData(0, info);
-            
-            RemoveUnusedOutputs(results);
+            DA.SetDataTree(0, info);
+
+            var keys = results.Keys.ToList();
+            keys.Add("Info");
+            keys.Add("Points");
+            RemoveUnusedOutputs(keys);
+        }
+
+        private static DataTree<object> CorrectMesh(GH_Structure<GH_Mesh> meshes, Dictionary<string, List<List<double>>> points)
+        {
+            var newMeshes = new DataTree<object>();
+            foreach (var branch in meshes.Branches)
+            {
+                var mesh = new Mesh();
+                GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
+                
+                foreach (var index in Enumerable.Range(0, mesh.Faces.Count()))
+                {
+                    mesh.Faces.GetFaceCenter(index);
+                }
+            }
+
+            return newMeshes;
         }
 
         private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, object>> data)
         {
             var patchCounter = 0;
-            
+
             var output = new DataTree<object>();
             foreach (var patchKey in data.Keys)
             {
                 var angleCounter = 0;
                 foreach (var fieldKey in data[patchKey].Keys)
                 {
-                    var path = new GH_Path(new int[]{patchCounter, angleCounter});
-                    var data_ = (List<object>)data[patchKey][fieldKey];
+                    var path = new GH_Path(new int[] {patchCounter, angleCounter});
+                    var data_ = (List<object>) data[patchKey][fieldKey];
                     var dataType = data_.First().GetType();
                     if (dataType == typeof(double))
                     {
@@ -84,23 +124,38 @@ namespace ComputeCS.Grasshopper
                         {
                             output.Add(element, path);
                         }
-                    
                     }
                     else if (dataType == typeof(List<double>))
                     {
-                    
                         foreach (List<double> row in data_)
                         {
                             output.Add(new Point3d(row[0], row[1], row[2]), path);
                         }
-                    
                     }
 
                     angleCounter++;
                 }
 
                 patchCounter++;
+            }
 
+            return output;
+        }
+        
+        private static DataTree<object> ConvertPointsToDataTree(Dictionary<string, List<List<double>>> data)
+        {
+            var patchCounter = 0;
+
+            var output = new DataTree<object>();
+            foreach (var patchKey in data.Keys)
+            {
+                var path = new GH_Path(patchCounter);
+                foreach (var point in data[patchKey])
+                {
+                    output.Add(new Point3d(point[0], point[1], point[2]), path);
+                }
+
+                patchCounter++;
             }
 
             return output;
@@ -108,7 +163,6 @@ namespace ComputeCS.Grasshopper
 
         private void AddToOutput(IGH_DataAccess DA, string name, DataTree<object> data)
         {
-
             var index = 0;
             var found = false;
 
@@ -119,6 +173,7 @@ namespace ComputeCS.Grasshopper
                     found = true;
                     break;
                 }
+
                 index++;
             }
 
@@ -131,8 +186,6 @@ namespace ComputeCS.Grasshopper
                     Access = GH_ParamAccess.tree
                 };
                 Params.RegisterOutputParam(p);
-                //Params.Output.Add(p);
-                //index = Params.Output.Count;
                 Params.OnParametersChanged();
                 ExpireSolution(true);
             }
@@ -140,12 +193,9 @@ namespace ComputeCS.Grasshopper
             {
                 DA.SetDataTree(index, data);
             }
-
-
-            
         }
 
-        private static string UpdateInfo(Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
+        private static DataTree<object> UpdateInfo(Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
         {
             var fieldKey = data.Keys.ToList().First();
             var info = "Patch Names:\n";
@@ -157,37 +207,50 @@ namespace ComputeCS.Grasshopper
             }
 
             var j = 0;
+            var angles = new List<string>();
             var patchKey = data[fieldKey].Keys.ToList().First();
             info += "\nAngles:\n";
             foreach (var key in data[fieldKey][patchKey].Keys)
             {
                 info += $"{{*;{j}}} is {key} degrees\n";
+                angles.Add(key);
                 j++;
             }
-            return info;
+
+            var output = new DataTree<object>();
+            output.Add(info, new GH_Path(0));
+
+            foreach (var angle in angles)
+            {
+                output.Add(angle, new GH_Path(1));    
+            }
+            
+            return output;
         }
 
-        private void RemoveUnusedOutputs(Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
+        private void RemoveUnusedOutputs(List<string> keys)
         {
-            var keys = data.Keys.ToList();
-            keys.Add("Info");
-            var changes = false;
-            
+            var parametersToDelete = new List<IGH_Param>();
+
             foreach (var param in Params.Output)
             {
                 if (!keys.Contains(param.Name))
                 {
-                    Params.UnregisterOutputParameter(param);
-                    changes = true;
+                    parametersToDelete.Add(param);
                 }
             }
 
-            if (changes)
+            if (parametersToDelete.Count() > 0)
             {
+                foreach (var param in parametersToDelete)
+                {
+                    Params.UnregisterOutputParameter(param);
+                    Params.Output.Remove(param);
+                }
+
                 Params.OnParametersChanged();
                 ExpireSolution(true);
             }
-
         }
 
         /// <summary>

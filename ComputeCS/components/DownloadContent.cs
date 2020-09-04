@@ -22,7 +22,7 @@ namespace ComputeCS.Components
 
             if (parentTask == null)
             {
-                throw new System.Exception("Cannot download content without a parent task.");
+                throw new Exception("Cannot download content without a parent task.");
             }
 
             // If local path exists; return true
