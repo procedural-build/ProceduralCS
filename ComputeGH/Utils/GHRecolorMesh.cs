@@ -6,6 +6,7 @@ using Grasshopper3D = Grasshopper;
 using Grasshopper.Kernel;
 using System.Drawing;
 using System.Linq;
+using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
@@ -15,9 +16,9 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the GHRecolorMesh class.
         /// </summary>
         public GHRecolorMesh()
-          : base("Recolor Mesh", "RecolorMesh",
-              "Recoloring mesh with parallel threading",
-              "Compute", "Utils")
+            : base("Recolor Mesh", "Recolor Mesh",
+                "Recoloring mesh with parallel threading",
+                "Compute", "Utils")
         {
         }
 
@@ -27,10 +28,13 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "Mesh", "Mesh to recolor", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Result", "Result", "Result with the same number of faces as mesh", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Result", "Result", "Result with the same number of faces as mesh",
+                GH_ParamAccess.list);
             pManager.AddColourParameter("List Of Colors", "Colors", "List of colours", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Lower Boundary", "LowBound", "Optional lower bound for the coloring. Default is 0.0", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Upper Boundary", "UpperBound", "Optional upper bound for the coloring. Default is the max value of Result.", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Lower Boundary", "LowBound",
+                "Optional lower bound for the coloring. Default is 0.0", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Upper Boundary", "UpperBound",
+                "Optional upper bound for the coloring. Default is the max value of Result.", GH_ParamAccess.item);
 
             pManager[3].Optional = true;
             pManager[4].Optional = true;
@@ -41,7 +45,12 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Recolored", "NewMesh", "Recoloured mesh based on result and colors", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Colored Mesh", "Colored Mesh", "Recoloured mesh based on result and colors",
+                GH_ParamAccess.item);
+            pManager.AddColourParameter("Colors", "Colors",
+                "Colors use in the mesh. Can be used to create a legend with.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Values", "Values", "Values that be be use the create a legend with",
+                GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -57,7 +66,8 @@ namespace ComputeCS.Grasshopper
             List<Color> coloraslist = new List<Color>();
 
             double ming = 0.0;
-            double maxg = 0.0;
+            double maxg = 1.0;
+            var legendText = string.Empty;
 
             //1.1 Return conditions
             if ((!DA.GetData(0, ref mesh)))
@@ -71,13 +81,18 @@ namespace ComputeCS.Grasshopper
 
             DA.GetData(3, ref ming);
 
-            if (!DA.GetData(4, ref maxg)) { maxg = result.Max(); }
-               
-
+            if (!DA.GetData(4, ref maxg))
+            {
+                maxg = result.Max();
+            }
 
             //2.0 Setting up the run;
 
-            if (mesh.Faces.Count() != result.Count()) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "unequal faces and result"); return; }
+            if (mesh.Faces.Count() != result.Count())
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "unequal faces and result");
+                return;
+            }
 
             List<Mesh> meshall = new List<Mesh>();
             Mesh ms = new Mesh();
@@ -87,10 +102,10 @@ namespace ComputeCS.Grasshopper
             var _result = numbers.AsParallel().AsOrdered();
 
             int fA = 0;
-
+            var gradients = Gradients(coloraslist.ToArray(), ming, maxg);
             foreach (var i in _result)
             {
-                Color cf = gradientlist(coloraslist.ToArray(), ming, maxg).ColourAt(result[i]);
+                var cf = gradients.ColourAt(result[i]);
                 MeshFace face = mesh.Faces[i];
 
                 ms.Vertices.Add(mesh.Vertices[face.A]);
@@ -107,7 +122,6 @@ namespace ComputeCS.Grasshopper
                     ms.VertexColors.Add(cf);
                     ms.Faces.AddFace(fA, fA + 1, fA + 2, fA + +3);
                     fA = fA + 4;
-
                 }
                 else
                 {
@@ -115,20 +129,55 @@ namespace ComputeCS.Grasshopper
                     fA = fA + 3;
                 }
             }
+
             DA.SetData(0, ms);
+            GenerateLegendValues(DA, gradients, maxg, ming);
         }
 
         // X. Extra additional useful functions
         // X.01 Gradient maker 
-        private Grasshopper3D.GUI.Gradient.GH_Gradient gradientlist(Color[] colorarray, double t0, double t1)
+        private Grasshopper3D.GUI.Gradient.GH_Gradient Gradients(Color[] colorarray, double t0, double t1)
         {
             Grasshopper3D.GUI.Gradient.GH_Gradient gradient2 = new Grasshopper3D.GUI.Gradient.GH_Gradient();
             for (int i = 0; i < colorarray.Count(); i++)
             {
-                double grip = t0 + (double)i * (t1 - t0) / (colorarray.Count() - 1); //fix 10.10.17 add t0, to rescale the gradient grip
+                double grip =
+                    t0 + (double) i * (t1 - t0) /
+                    (colorarray.Count() - 1); //fix 10.10.17 add t0, to rescale the gradient grip
                 gradient2.AddGrip(grip, colorarray[i]);
             }
+
             return gradient2;
+        }
+
+
+        private void GenerateLegendValues(
+            IGH_DataAccess DA,
+            Grasshopper3D.GUI.Gradient.GH_Gradient gradient,
+            double max,
+            double min
+        )
+        {
+            if (max <= min)
+            {
+                return;
+            }
+
+            var colors = new List<Color>();
+            var values = new List<double>();
+            var stepSize = (max - min) / 10;
+
+            for (var i = min; i < max; i += stepSize)
+            {
+                colors.Add(gradient.ColourAt(i));
+                values.Add(i);
+            }
+
+            colors.Reverse();
+            values.Reverse();
+
+            DA.SetDataList(1, colors);
+            DA.SetDataList(2, values);
         }
 
         /// <summary>
@@ -136,12 +185,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return Resources.IconMesh;
-            }
+            get { return Resources.IconMesh; }
         }
 
         /// <summary>

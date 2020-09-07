@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using Grasshopper;
 using Grasshopper.Kernel;
-using ComputeCS;
+using Grasshopper.Kernel.Data;
 using Rhino.Geometry;
+using ComputeCS;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
+using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
@@ -15,9 +18,9 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the GHProbe class.
         /// </summary>
         public GHProbe()
-          : base("Probe Points", "Probe Points",
-              "Probe Points to get result",
-              "Compute", "CFD")
+            : base("Probe Points", "Probe Points",
+                "Probe Points to get result",
+                "Compute", "CFD")
         {
         }
 
@@ -27,15 +30,25 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Fields", "Fields", "", GH_ParamAccess.list);
+            pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.",
+                GH_ParamAccess.tree);
+            pManager.AddTextParameter("Names", "Names",
+                "Give names to each branch of in the points tree. The names can later be used to identify the points.",
+                GH_ParamAccess.list);
+            pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
+                GH_ParamAccess.list);
             pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]", GH_ParamAccess.list);
-            pManager.AddTextParameter("DependentOn", "DependentOn", "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist", GH_ParamAccess.item, false);
+            pManager.AddTextParameter("DependentOn", "DependentOn",
+                "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
+                GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist",
+                GH_ParamAccess.item, false);
 
+            pManager[2].Optional = true;
             pManager[3].Optional = true;
             pManager[4].Optional = true;
             pManager[5].Optional = true;
+            pManager[6].Optional = true;
         }
 
         /// <summary>
@@ -53,24 +66,34 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            var points = new List<Point3d>();
+            var points = new GH_Structure<GH_Point>();
+            var names = new List<string>();
             var fields = new List<string>();
             var cpus = new List<int>();
             string dependentOn = null;
             var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
-            if (!DA.GetDataList(1, points)) return;
-            if (!DA.GetDataList(2, fields)) return;
-            if (!DA.GetDataList(3, cpus)) { cpus = new List<int> { 1, 1, 1 }; }
-            DA.GetData(4, ref dependentOn);
-            DA.GetData(5, ref create);
+            if (!DA.GetDataTree(1, out points)) return;
+            if (!DA.GetDataList(2, names))
+            {
+                names.Add("set1");
+            }
 
-            var convertedPoints = new List<List<double>>();
+            if (!DA.GetDataList(3, fields))
+            {
+                fields.Add("U");
+            }
 
-            foreach (Point3d point in points) {
-                convertedPoints.Add(new List<double> { point.X, point.Y, point.Z });
-            };
+            if (!DA.GetDataList(4, cpus))
+            {
+                cpus = new List<int> {1, 1, 1};
+            }
+
+            DA.GetData(5, ref dependentOn);
+            DA.GetData(6, ref create);
+
+            var convertedPoints = ConvertToPointList(points);
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", points) + string.Join("", fields);
@@ -87,31 +110,44 @@ namespace ComputeCS.Grasshopper
                 {
                     StringCache.setCache(queueName, "true");
                     StringCache.setCache(cacheKey, null);
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = ComputeCS.Components.Probe.ProbePoints(
                                 inputJson,
                                 convertedPoints,
                                 fields,
+                                names,
                                 cpus,
                                 dependentOn,
                                 create
                             );
                             cachedValues = results;
                             StringCache.setCache(cacheKey, cachedValues);
-
+                            if (create)
+                            {
+                                StringCache.setCache(cacheKey + "create", "true");
+                            }
                         }
                         catch (Exception e)
                         {
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.setCache(cacheKey, "error");
+                            StringCache.setCache(cacheKey + "create", "");
                         }
+
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
                     });
-                  
                 }
+            }
 
+            // Handle Errors
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                throw new Exception(errors);
             }
 
             // Read from Cache
@@ -120,13 +156,11 @@ namespace ComputeCS.Grasshopper
             {
                 outputs = cachedValues;
                 DA.SetData(0, outputs);
-            }
-
-            // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
-            {
-                throw new Exception(errors);
+                Message = "";
+                if (StringCache.getCache(cacheKey + "create") == "true")
+                {
+                    Message = "Task Created";
+                }
             }
         }
 
@@ -137,6 +171,29 @@ namespace ComputeCS.Grasshopper
         }
 
         /// <summary>
+        /// Converts a Grasshopper data tree with points into a list of lists
+        /// </summary>
+        /// <param name="pointTree"></param>
+        /// <returns></returns>
+        private static List<List<List<double>>> ConvertToPointList(GH_Structure<GH_Point> pointTree)
+        {
+            var convertedPoints = new List<List<List<double>>>();
+            foreach (var branch in pointTree.Branches)
+            {
+                var branchPoints = new List<List<double>>();
+                foreach (var point in branch)
+                {
+                    branchPoints.Add(new List<double> {point.Value.X, point.Value.Y, point.Value.Z});
+                }
+
+                ;
+                convertedPoints.Add(branchPoints);
+            }
+
+            return convertedPoints;
+        }
+
+        /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
@@ -144,7 +201,6 @@ namespace ComputeCS.Grasshopper
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
                 return Resources.IconMesh;
             }
         }

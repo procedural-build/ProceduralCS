@@ -11,7 +11,7 @@ namespace ComputeCS.Grasshopper
 {
     public class cfdDomain : GH_Component
     {
-        public cfdDomain() : base("CFD Domain", "cfdDomain", "Create a CFD Domainn", "Compute", "Mesh")
+        public cfdDomain() : base("CFD Domain", "Domain", "Create a CFD Domain", "Compute", "Mesh")
         {
         }
 
@@ -37,8 +37,8 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
-            pManager.AddBoxParameter("Bounding Box", "Bounding Box", "BoundingBox", GH_ParamAccess.item);
-            pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
+            pManager.AddBoxParameter("Bounding Box", "Bounding Box", "Bounding boxes representing the domain", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
         }
 
         protected override System.Drawing.Bitmap Icon
@@ -56,66 +56,89 @@ namespace ComputeCS.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            var geometry = new List<IGH_GeometricGoo>();
+            var cellSize = 1.0;
+            var z0 = false;
+            var centerXY = true;
+            var xyScale = 1.2;
+            var xyOffset = 10.0;
+            var zScale = 2.0;
+            var square = true;
 
-            List<IGH_GeometricGoo> geometry = new List<IGH_GeometricGoo>();
-            double cellSize = 1.0;
-            bool z0 = false;
-            bool centerXY = true;
-            double xyScale = 1.2;
-            double xyOffset = 10;
-            double zScale = 2.0;
-            bool square = true;
+            if (!DA.GetDataList(0, geometry))
+            {
+                return;
+            }
 
-            if (!DA.GetDataList(0, geometry)) { return; }
-            if (!DA.GetData(1, ref cellSize)) { return; }
-            if (!DA.GetData(2, ref z0)) { return; }
-            if (!DA.GetData(3, ref centerXY)) { return; }
-            if (!DA.GetData(4, ref square)) { return; }
-            if (!DA.GetData(5, ref xyScale)) { return; }
-            if (!DA.GetData(6, ref xyOffset)) { return; }
-            if (!DA.GetData(7, ref zScale)) { return; }
+            if (!DA.GetData(1, ref cellSize))
+            {
+                return;
+            }
+
+            DA.GetData(2, ref z0);
+            DA.GetData(3, ref centerXY);
+            DA.GetData(4, ref square);
+            DA.GetData(5, ref xyScale);
+            DA.GetData(6, ref xyOffset);
+            DA.GetData(7, ref zScale);
 
             // Create Bounding Box
-            List<BoundingBox> bbs = new List<BoundingBox>();
-            foreach (IGH_GeometricGoo o in geometry) { bbs.Add(o.Boundingbox); }
-            BoundingBox bb = Domain.getMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
+            var bbs = new List<BoundingBox>();
+            foreach (var element in geometry)
+            {
+                bbs.Add(element.Boundingbox);
+            }
+
+            var bb = Domain.getMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
 
             // Construct Surface Dict
-            
-            Dictionary<string, object> surfaces = new Dictionary<string, object>();
-            foreach (IGH_GeometricGoo mesh in geometry) {
+
+            var surfaces = new Dictionary<string, object>();
+            foreach (var mesh in geometry)
+            {
                 surfaces.Add(
-                Geometry.getUserString(mesh, "ComputeName"), new Dictionary<string, object>
+                    Geometry.getUserString(mesh, "ComputeName"), new Dictionary<string, object>
                     {
-                        { "level", new Dictionary<string, string>{
-                                { "min", Geometry.getUserString(mesh, "ComputeMeshMinLevel")},
-                                { "max", Geometry.getUserString(mesh, "ComputeMeshMaxLevel")},
+                        {
+                            "level", new Dictionary<string, string>
+                            {
+                                {"min", Geometry.getUserString(mesh, "ComputeMeshMinLevel")},
+                                {"max", Geometry.getUserString(mesh, "ComputeMeshMaxLevel")},
+                            }
                         }
-                        }
-                    }                
+                    }
                 );
             }
 
             var locationInMesh = Domain.getLocationInMesh(new Box(bb));
 
-            var outputs = new Inputs {
-                Mesh = new CFDMesh {
+            var outputs = new Inputs
+            {
+                Mesh = new CFDMesh
+                {
                     BaseMesh = new BaseMesh
                     {
                         Type = "simpleBox",
                         CellSize = cellSize,
-                        BoundingBox = new Dictionary<string, object> {
-                        {"min", new List<double>{
-                            bb.Min.X, bb.Min.Y, bb.Min.Z
-                        } },
-                        {"max", new List<double>{
-                            bb.Max.X, bb.Max.Y, bb.Max.Z
-                        } }
+                        BoundingBox = new Dictionary<string, object>
+                        {
+                            {
+                                "min", new List<double>
+                                {
+                                    bb.Min.X, bb.Min.Y, bb.Min.Z
+                                }
+                            },
+                            {
+                                "max", new List<double>
+                                {
+                                    bb.Max.X, bb.Max.Y, bb.Max.Z
+                                }
+                            }
                         },
                         Parameters = new Dictionary<string, string>
                         {
-                            {"square", Convert.ToString(square) },
-                            {"z0", Convert.ToString(z0) }
+                            {"square", Convert.ToString(square)},
+                            {"z0", Convert.ToString(z0)}
                         }
                     },
                     SnappyHexMesh = new SnappyHexMesh
@@ -123,14 +146,16 @@ namespace ComputeCS.Grasshopper
                         Surfaces = surfaces,
                         Overrides = new Dictionary<string, object>
                         {
-                            { "castellatedMeshControls", new Dictionary<string, object>
                             {
-                                { "locationInMesh", new List<double>
+                                "castellatedMeshControls", new Dictionary<string, object>
                                 {
-                                    locationInMesh.X, locationInMesh.Y, locationInMesh.Z
+                                    {
+                                        "locationInMesh", new List<double>
+                                        {
+                                            locationInMesh.X, locationInMesh.Y, locationInMesh.Z
+                                        }
+                                    }
                                 }
-                                }
-                            }
                             }
                         }
                     }

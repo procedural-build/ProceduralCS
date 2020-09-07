@@ -53,8 +53,8 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            List<GH_Mesh> geometry = new List<GH_Mesh>();
-            bool compute = false;
+            var geometry = new List<GH_Mesh>();
+            var compute = false;
 
 
 
@@ -67,9 +67,9 @@ namespace ComputeCS.Grasshopper
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null && compute)
+            if (cachedValues == null || compute)
             {
-                var queueName = "compute";
+                const string queueName = "compute";
 
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
@@ -87,11 +87,18 @@ namespace ComputeCS.Grasshopper
                             );
                             cachedValues = results;
                             StringCache.setCache(cacheKey, cachedValues);
+                            StringCache.setCache(this.InstanceGuid.ToString(), "");
+                            if (compute)
+                            {
+                                StringCache.setCache(cacheKey + "create", "true");
+                            }
 
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message);
+                            StringCache.setCache(cacheKey, "error");
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
@@ -101,21 +108,23 @@ namespace ComputeCS.Grasshopper
 
             }
 
-
-            // Read from Cache
-            string outputs = null;
-            if (cachedValues != null)
-            {
-                outputs = cachedValues;
-                DA.SetData(0, outputs);
-            }
-
             // Handle Errors
             var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
+            if (!string.IsNullOrEmpty(errors))
             {
                 throw new Exception(errors);
             }
+            
+            // Read from Cache
+            if (cachedValues != null)
+            {
+                var outputs = cachedValues;
+                DA.SetData(0, outputs);
+                Message = "";
+                if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Tasks Created";}
+            }
+
+
         }
 
         private void ExpireSolutionThreadSafe(bool recompute = false)
@@ -132,7 +141,6 @@ namespace ComputeCS.Grasshopper
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
                 return Resources.IconRun;
             }
         }

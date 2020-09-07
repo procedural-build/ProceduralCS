@@ -11,7 +11,7 @@ namespace ComputeCS.Grasshopper
 {
     public class cfdMeshLevel : GH_Component
     {
-        public cfdMeshLevel() : base("cfdMeshLevel", "cfdMeshLevel", "Defines a CFD Mesh Level", "Compute", "Mesh")
+        public cfdMeshLevel() : base("CFD Mesh Level", "Mesh Level", "Defines a CFD Mesh Level", "Compute", "Mesh")
         {
         }
 
@@ -31,10 +31,7 @@ namespace ComputeCS.Grasshopper
 
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                return Resources.IconMeshLevel;
-            }
+            get { return Resources.IconMeshLevel; }
         }
 
         public override Guid ComponentGuid
@@ -44,18 +41,32 @@ namespace ComputeCS.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<IGH_GeometricGoo> ghObjs = new List<IGH_GeometricGoo>();
+            var ghObjs = new List<IGH_GeometricGoo>();
             double minLevel = 2;
             double maxLevel = 2;
 
-            if (!DA.GetDataList(0, ghObjs)) { return; }
-            if (!DA.GetData(1, ref minLevel)) { return; }
-            if (!DA.GetData(2, ref maxLevel)) { return; }
+            if (!DA.GetDataList(0, ghObjs))
+            {
+                return;
+            }
 
-            if (maxLevel < minLevel) { maxLevel = minLevel; }
+            if (!DA.GetData(1, ref minLevel))
+            {
+                return;
+            }
+
+            if (!DA.GetData(2, ref maxLevel))
+            {
+                return;
+            }
+
+            if (maxLevel < minLevel)
+            {
+                maxLevel = minLevel;
+            }
 
             // Get a list of object references in the Rhino model
-            for (int i = 0; i < ghObjs.Count(); i++)
+            for (var i = 0; i < ghObjs.Count(); i++)
             {
                 Geometry.setUserString(ghObjs[i], "ComputeMeshMinLevel", minLevel.ToString());
                 Geometry.setUserString(ghObjs[i], "ComputeMeshMaxLevel", maxLevel.ToString());

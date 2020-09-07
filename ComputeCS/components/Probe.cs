@@ -10,8 +10,9 @@ namespace ComputeCS.Components
     {
         public static string ProbePoints(
             string inputJson,
-            List<List<double>> points,
+            List<List<List<double>>> points,
             List<string> fields,
+            List<string> names,
             List<int> cpus,
             string dependentOn = "",
             bool create = false
@@ -25,10 +26,15 @@ namespace ComputeCS.Components
             var project = inputData.Project;
 
             if (parentTask == null) {return null;}
-            if (simulationTask == null) {return null;}
 
-            var fieldsOpenFoamFormat = String.Join(" ", fields);
-            var sampleSets = GenerateSampleSet(points);
+            dependentOn = null;
+            if (simulationTask != null)
+            {
+                dependentOn = simulationTask.UID;
+            }
+
+            var fieldsOpenFoamFormat = string.Join(" ", fields);
+            var sampleSets = GenerateSampleSet(points, names);
 
             var task = new GenericViewSet<Task>(
                 tokens,
@@ -36,15 +42,15 @@ namespace ComputeCS.Components
                 $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
                 new Dictionary<string, object> {
-                    {"name", "PostProcess"},
+                    {"name", "PostProcess GH"},
                     {"parent", parentTask.UID},
-                    {"dependent_on", simulationTask.UID}
+                    {"dependent_on", dependentOn}
                 },
                 new Dictionary<string, object> {
                     {"config", new Dictionary<string, object> {
                         {"task_type", "cfd"},
                         {"cmd", "pipeline"},
-                        {"commands", new List<string>{ "write_sample_set", $"postProcess -fields '({fieldsOpenFoamFormat})' -func internalCloud"} },
+                        {"commands", new List<string>{ "write_sample_set", "postProcess -func internalCloud"} },
                         {"case_dir", "VWT/" },
                         {"cpus", cpus },
                         {"sets", sampleSets },
@@ -67,6 +73,10 @@ namespace ComputeCS.Components
 
             foreach (Task subTask in subTasks)
             {
+                if (string.IsNullOrEmpty(subTask.UID))
+                {
+                    continue;
+                }
                 if (dependentName == subTask.Name)
                 {
                     return subTask;
@@ -88,15 +98,25 @@ namespace ComputeCS.Components
         }
 
         public static List<Dictionary<string, object>> GenerateSampleSet(
-            List<List<double>> points
+            List<List<List<double>>> points,
+            List<string> names
             )
         {
-            var sampleSet = new Dictionary<string, object> {
-                { "name", "set1" },
-                { "points", points}
-            };
-
-            return new List<Dictionary<string, object>> { sampleSet };
+            var index = 0;
+            var sampleSets = new List<Dictionary<string, object>>();
+            foreach (var name in names)
+            {
+                sampleSets.Add(
+                    new Dictionary<string, object>()
+                    {
+                         { "name", name },
+                         { "points", points[index]}
+                    }
+                    
+                    );
+                index++;
+            }
+            return  sampleSets;
         }
     }
 }

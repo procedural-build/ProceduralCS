@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Newtonsoft.Json;
@@ -11,16 +12,15 @@ using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
-
     public class ComputeLogin : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
         public ComputeLogin()
-          : base("Compute Login", "Login",
-              "Login to Procedural Compute",
-              "Compute", "Utils")
+            : base("Compute Login", "Login",
+                "Login to Procedural Compute",
+                "Compute", "Utils")
         {
         }
 
@@ -29,9 +29,12 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("username", "username", "User Name", GH_ParamAccess.item);
-            pManager.AddTextParameter("password", "password", "Password", GH_ParamAccess.item);
-            pManager.AddTextParameter("computeURL", "url", "URL for Compute", GH_ParamAccess.item);
+            pManager.AddTextParameter("Username", "Username", "Username", GH_ParamAccess.item);
+            pManager.AddTextParameter("Password", "Password", "Password", GH_ParamAccess.item);
+            pManager.AddTextParameter("Compute URL", "URL", "URL for Compute", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Retry", "Retry", "Force retry to connect to Compute", GH_ParamAccess.item);
+
+            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -51,15 +54,19 @@ namespace ComputeCS.Grasshopper
             string username = null;
             string password = null;
             string url = null;
+            var retry = false;
 
             if (!DA.GetData(0, ref username)) return;
             if (!DA.GetData(1, ref password)) return;
             if (!DA.GetData(2, ref url)) return;
+            DA.GetData(3, ref retry);
 
             var client = new ComputeClient(url);
 
-            // Sync Execution
-            //var tokens = client.Auth(username, password);
+            if (retry)
+            {
+                StringCache.ClearCache();
+            }
 
             //Async Execution
             var cacheKey = username + password + url;
@@ -73,29 +80,48 @@ namespace ComputeCS.Grasshopper
                 if (queueLock != "true")
                 {
                     StringCache.setCache(queueName, "true");
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = client.Auth(username, password);
-                            cachedTokens = results.ToJson();
-                            StringCache.setCache(cacheKey, cachedTokens);
 
+                            if (results.ErrorMessages != null)
+                            {
+                                StringCache.setCache(cacheKey, "error");
+                                throw new Exception(results.ErrorMessages.First());
+                            }
+                            else if (results.ErrorMessages == null)
+                            {
+                                StringCache.ClearCache();
+                                cachedTokens = results.ToJson();
+                                StringCache.setCache(cacheKey, cachedTokens);
+                            }
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message + "\n");
                         }
+
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
-
                     });
-                    
                 }
-
             }
 
 
             // Read from Cache
+            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            if (errors != null)
+            {
+                if (errors.Contains("(401) Unauthorized"))
+                {
+                    errors = "Could not login with the provided credentials. Try again.";
+                }
+
+                throw new Exception(errors);
+            }
+
             var tokens = new AuthTokens();
             if (cachedTokens != null)
             {
@@ -107,15 +133,7 @@ namespace ComputeCS.Grasshopper
                 };
 
                 DA.SetData(0, output.ToJson());
-                
             }
-
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
-            {
-                throw new Exception(errors);
-            }
-
         }
 
         private void ExpireSolutionThreadSafe(bool recompute = false)
@@ -129,12 +147,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return Resources.IconLicense;
-            }
+            get { return Resources.IconLicense; }
         }
 
         /// <summary>

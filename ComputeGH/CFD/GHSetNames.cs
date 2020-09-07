@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ComputeCS.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
@@ -10,7 +9,6 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
-
     public class SetNames : GH_Component
     {
         public SetNames() : base("setNames", "setNames", "Set the Compute Name of Objects", "Compute", "Utils")
@@ -32,10 +30,7 @@ namespace ComputeCS.Grasshopper
 
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                return Resources.IconSetName;
-            }
+            get { return Resources.IconSetName; }
         }
 
         public override Guid ComponentGuid
@@ -49,7 +44,11 @@ namespace ComputeCS.Grasshopper
             List<string> names = new List<string>();
             string name;
 
-            if (!DA.GetDataList(0, ghObjs)) { return; }
+            if (!DA.GetDataList(0, ghObjs))
+            {
+                return;
+            }
+
             DA.GetDataList(1, names);
 
             // If the number of names is less than the number of objects then pad it out
@@ -57,8 +56,12 @@ namespace ComputeCS.Grasshopper
             {
                 int shortFall = ghObjs.Count - names.Count;
                 string lastName = names.Last();
-                int padLen = ((int)Math.Log10(ghObjs.Count)) + 1;
-                if (padLen < 3) { padLen = 3; }
+                int padLen = ((int) Math.Log10(ghObjs.Count)) + 1;
+                if (padLen < 3)
+                {
+                    padLen = 3;
+                }
+
                 names[names.Count - 1] = lastName + "." + 0.ToString().PadLeft(padLen);
                 for (int i = 0; i < shortFall; i++)
                 {
@@ -68,11 +71,19 @@ namespace ComputeCS.Grasshopper
 
             for (int i = 0; i < ghObjs.Count(); i++)
             {
-                if (names.Count() >= ghObjs.Count()) { name = names[i]; } else { name = ""; }
+                if (names.Count() >= ghObjs.Count())
+                {
+                    name = names[i];
+                }
+                else
+                {
+                    name = "";
+                }
+
                 Geometry.setUserString(ghObjs[i], "ComputeName", Geometry.fixName(name));
             }
+
             DA.SetDataList(0, ghObjs);
         }
     }
-
 }

@@ -10,14 +10,13 @@ namespace ComputeCS.Grasshopper
 {
     public class ComputeMesh : GH_Component
     {
-
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
         public ComputeMesh()
-          : base("Compute Mesh", "Mesh",
-              "Create the Mesh Parameters for a CFD Case",
-              "Compute", "Mesh")
+            : base("Compute Mesh", "Mesh",
+                "Create the Mesh Parameters for a CFD Case",
+                "Compute", "Mesh")
         {
         }
 
@@ -51,21 +50,25 @@ namespace ComputeCS.Grasshopper
         {
             string inputJson = null;
             string domain = null;
-            Dictionary<string, object> defaultSurfaces = new Dictionary<string, object> {
-                { "Plane", new Dictionary<string, object>{
-                        { "level", new Dictionary<string, string>{
-                                { "min", "3"},
-                                { "max", "3"},
+            Dictionary<string, object> defaultSurfaces = new Dictionary<string, object>
+            {
+                {
+                    "Plane", new Dictionary<string, object>
+                    {
+                        {
+                            "level", new Dictionary<string, string>
+                            {
+                                {"min", "3"},
+                                {"max", "3"},
+                            }
                         }
-                        }
-                }
+                    }
                 }
             };
             Dictionary<string, object> overrides = new Dictionary<string, object>();
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref domain)) return;
-            
 
 
             var outputs = Components.Mesh.Setup(
@@ -76,7 +79,6 @@ namespace ComputeCS.Grasshopper
             );
 
             DA.SetData(0, outputs["out"]);
-
         }
 
         /// <summary>
@@ -84,12 +86,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return Resources.IconMesh;
-            }
+            get { return Resources.IconMesh; }
         }
 
         /// <summary>

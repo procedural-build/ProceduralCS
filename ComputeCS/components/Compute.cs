@@ -64,7 +64,7 @@ namespace ComputeCS.Components
                         {"snappyhex_mesh", inputData.Mesh.SnappyHexMesh},
                     }}
                 }, 
-                true
+                create
             );
 
             // Then Action Task to create CFD files
@@ -109,12 +109,13 @@ namespace ComputeCS.Components
                             "blockMesh",
                             "snappyHexMesh -overwrite",
                             "reconstructParMesh -constant -mergeTol 1e-6",
-                            "!checkMesh -writeSets vtk"
+                            "!checkMesh -writeSets vtk",
+                            "foamToSurface -constant surfaceMesh.obj"
                         }},
                         {"cpus", solution.CPUs},
                     }}
                 }, 
-                true
+                create
             );
             
             // Task to Handle CFD
@@ -169,7 +170,7 @@ namespace ComputeCS.Components
                     {"dependent_on", meshTask.UID}
                 }, 
                 createParams, 
-                true
+                create
             );
 
             var tasks = new List<Task> {

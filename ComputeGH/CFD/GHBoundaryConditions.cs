@@ -15,7 +15,8 @@ namespace ComputeCS.Grasshopper
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public cfdBoundaryCondition() : base("CFD Boundary Condition", "CFD Boundary Condition", "Defines a CFD Boundary Condition", "Compute", "CFD")
+        public cfdBoundaryCondition() : base("CFD Boundary Condition", "CFD BC",
+            "Defines a CFD Boundary Condition", "Compute", "CFD")
         {
         }
 
@@ -24,10 +25,11 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            //pManager.AddBrepParameter("breps", "breps", "breps", GH_ParamAccess.list);
-            pManager.AddTextParameter("names", "names", "names", GH_ParamAccess.list);
-            pManager.AddTextParameter("preset", "preset", "preset", GH_ParamAccess.item, "wall");
-            pManager.AddTextParameter("overrides", "overrides", "overrides", GH_ParamAccess.item, "");
+            pManager.AddTextParameter("Names", "Names", "The names of the boundary condition", GH_ParamAccess.list);
+            pManager.AddTextParameter("Preset", "Preset", "Presets of the boundary condition", GH_ParamAccess.item,
+                "wall");
+            pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets",
+                GH_ParamAccess.item, "");
 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
@@ -38,7 +40,8 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("bcs", "bcs", "bcs", GH_ParamAccess.item);
+            pManager.AddTextParameter("Boundary Condition", "BC", "Boundary Condition",
+                GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -50,7 +53,6 @@ namespace ComputeCS.Grasshopper
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.IconForThisComponent;
                 return Resources.IconBoundaryCondition;
             }
         }
@@ -72,13 +74,20 @@ namespace ComputeCS.Grasshopper
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<string> names = new List<string>();
-            string overrides = "";
-            string preset = "";
+            var names = new List<string>();
+            var overrides = "";
+            var preset = "";
 
             DA.GetDataList(0, names);
-            if (!DA.GetData(1, ref preset)) { return; }
-            if (!DA.GetData(2, ref overrides)) { return; }
+            if (!DA.GetData(1, ref preset))
+            {
+                return;
+            }
+
+            if (!DA.GetData(2, ref overrides))
+            {
+                return;
+            }
 
             Dictionary<string, object> boundaryConditions = new Dictionary<string, object>();
             Dictionary<string, string> overrides_ = null;
@@ -86,8 +95,10 @@ namespace ComputeCS.Grasshopper
             {
                 overrides_ = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
             }
-            catch (JsonReaderException e){}
-            
+            catch (JsonReaderException e)
+            {
+            }
+
             foreach (string name in names)
             {
                 Dictionary<string, object> thisBC = new Dictionary<string, object>();
@@ -105,11 +116,11 @@ namespace ComputeCS.Grasshopper
                 {
                     thisBC.Add("overrides", overrides);
                 }
+
                 boundaryConditions.Add(name, thisBC);
             }
 
             DA.SetData(0, JsonConvert.SerializeObject(boundaryConditions, Formatting.Indented));
         }
     }
-
 }
