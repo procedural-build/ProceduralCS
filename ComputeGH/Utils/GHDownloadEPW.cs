@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -12,9 +12,9 @@ namespace ComputeGH.Utils
         /// Initializes a new instance of the GHDownloadEPW class.
         /// </summary>
         public GHDownloadEPW()
-          : base("Download EPW", "Download EPW",
-              "Download an EPW file from EnergyPlus' website. This component will open your web browser directly to EnergyPlus' website so you can download an EPW file.",
-              "Compute", "Utils")
+            : base("Download EPW", "Download EPW",
+                "Download an EPW file from EnergyPlus' website. This component will open your web browser directly to EnergyPlus' website so you can download an EPW file.",
+                "Compute", "Utils")
         {
         }
 
@@ -23,7 +23,8 @@ namespace ComputeGH.Utils
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("Open Browser", "Open Browser", "Connect a button to lauch your webbrowser onto the EnergyPlus website", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Open Browser", "Open Browser",
+                "Connect a button to lauch your webbrowser onto the EnergyPlus website", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -48,7 +49,6 @@ namespace ComputeGH.Utils
             {
                 System.Diagnostics.Process.Start(url);
             }
-            
         }
 
         /// <summary>
@@ -56,12 +56,7 @@ namespace ComputeGH.Utils
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
+            get { return Resources.IconFolder; }
         }
 
         /// <summary>

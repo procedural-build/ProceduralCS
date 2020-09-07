@@ -21,7 +21,7 @@ namespace ComputeCS.Grasshopper
                 @"Loads wind threshold results from a file(s)." +
                 "\nLAWSON CRITERIA" +
                 "\n0: Comfortable for dining" +
-                "\n1: Comfortable for sitting" + 
+                "\n1: Comfortable for sitting" +
                 "\n2: Comfortable for walking" +
                 "\n3: Exceeds all criteria",
                 "Compute", "Utils")
@@ -184,11 +184,10 @@ namespace ComputeCS.Grasshopper
 
             return info;
         }
-        
+
 
         private void RemoveUnusedOutputs(List<string> keys)
         {
-            
             keys.Add("Info");
             var parametersToDelete = new List<IGH_Param>();
 
@@ -207,6 +206,7 @@ namespace ComputeCS.Grasshopper
                     Params.UnregisterOutputParameter(param);
                     Params.Output.Remove(param);
                 }
+
                 Params.OnParametersChanged();
                 ExpireSolution(true);
             }
@@ -217,12 +217,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null; // Resources.IconMesh;
-            }
+            get { return Resources.IconMesh; }
         }
 
         /// <summary>

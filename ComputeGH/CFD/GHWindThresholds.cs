@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Properties;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
 
 namespace ComputeGH.CFD
 {
@@ -14,9 +14,9 @@ namespace ComputeGH.CFD
         /// Initializes a new instance of the WindThresholds class.
         /// </summary>
         public GHWindThresholds()
-          : base("Wind Thresholds", "Wind Thresholds",
-              "Compute the Lawson criteria for a CFD case.",
-              "Compute", "CFD")
+            : base("Wind Thresholds", "Wind Thresholds",
+                "Compute the Lawson criteria for a CFD case.",
+                "Compute", "CFD")
         {
         }
 
@@ -25,12 +25,19 @@ namespace ComputeGH.CFD
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Input", "Input", "Input from the previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("EPW File", "EPW Files", "Path to where the EPW file is located.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Patch Names", "Patch Names", "Give names to each branch of in the points tree. The names can later be used to identify the points.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Input", "Input", "Input from the previous Compute Component",
+                GH_ParamAccess.item);
+            pManager.AddTextParameter("EPW File", "EPW Files", "Path to where the EPW file is located.",
+                GH_ParamAccess.item);
+            pManager.AddTextParameter("Patch Names", "Patch Names",
+                "Give names to each branch of in the points tree. The names can later be used to identify the points.",
+                GH_ParamAccess.list);
             pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]", GH_ParamAccess.list);
-            pManager.AddTextParameter("DependentOn", "DependentOn", "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new Wind Threshold task, if one doesn't exist", GH_ParamAccess.item, false);
+            pManager.AddTextParameter("DependentOn", "DependentOn",
+                "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
+                GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Create", "Create",
+                "Whether to create a new Wind Threshold task, if one doesn't exist", GH_ParamAccess.item, false);
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
@@ -61,11 +68,19 @@ namespace ComputeGH.CFD
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref epwFile)) return;
-            if (!DA.GetDataList(2, patches)) { patches.Add("set1"); }
-            if (!DA.GetDataList(3, cpus)) { cpus = new List<int> { 1, 1, 1 }; }
+            if (!DA.GetDataList(2, patches))
+            {
+                patches.Add("set1");
+            }
+
+            if (!DA.GetDataList(3, cpus))
+            {
+                cpus = new List<int> {1, 1, 1};
+            }
+
             DA.GetData(4, ref dependentOn);
             DA.GetData(5, ref create);
-            
+
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", patches) + epwFile;
             var cachedValues = StringCache.getCache(cacheKey);
@@ -81,7 +96,8 @@ namespace ComputeGH.CFD
                 {
                     StringCache.setCache(queueName, "true");
                     StringCache.setCache(cacheKey, null);
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = ComputeCS.Components.WindThreshold.ComputeWindThresholds(
@@ -98,7 +114,6 @@ namespace ComputeGH.CFD
                             {
                                 StringCache.setCache(cacheKey + "create", "true");
                             }
-
                         }
                         catch (Exception e)
                         {
@@ -106,12 +121,11 @@ namespace ComputeGH.CFD
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
+
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
                     });
-                  
                 }
-
             }
 
             // Handle Errors
@@ -120,7 +134,7 @@ namespace ComputeGH.CFD
             {
                 throw new Exception(errors);
             }
-            
+
             // Read from Cache
             string outputs = null;
             if (cachedValues != null)
@@ -128,7 +142,10 @@ namespace ComputeGH.CFD
                 outputs = cachedValues;
                 DA.SetData(0, outputs);
                 Message = "";
-                if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Task Created";}
+                if (StringCache.getCache(cacheKey + "create") == "true")
+                {
+                    Message = "Task Created";
+                }
             }
         }
 
@@ -137,12 +154,7 @@ namespace ComputeGH.CFD
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
+            get { return Resources.IconSolver; }
         }
 
         /// <summary>
@@ -152,7 +164,7 @@ namespace ComputeGH.CFD
         {
             get { return new Guid("235182ea-f739-4bea-be24-907de80e58fa"); }
         }
-        
+
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);

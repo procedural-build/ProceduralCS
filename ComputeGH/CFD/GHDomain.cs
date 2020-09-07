@@ -45,8 +45,7 @@ namespace ComputeCS.Grasshopper
         {
             get
             {
-                //return Resources.IconRectDomain;
-                return null;
+                return Resources.IconRectDomain;
             }
         }
 

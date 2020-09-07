@@ -19,9 +19,9 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
         public ComputeProjectTask()
-          : base("Get or Create Project and Task", "Project and Task",
-              "Get or Create a project and/or a parent Task on Procedural Compute",
-              "Compute", "Utils")
+            : base("Get or Create Project and Task", "Project and Task",
+                "Get or Create a project and/or a parent Task on Procedural Compute",
+                "Compute", "Utils")
         {
         }
 
@@ -30,11 +30,13 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Auth", "Auth", "Authentication from the Compute Login component", GH_ParamAccess.item);
+            pManager.AddTextParameter("Auth", "Auth", "Authentication from the Compute Login component",
+                GH_ParamAccess.item);
             pManager.AddTextParameter("ProjectName", "ProjectName", "Project Name", GH_ParamAccess.item);
             pManager.AddIntegerParameter("ProjectNumber", "ProjectNumber", "Project  Number", GH_ParamAccess.item);
             pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
+            pManager.AddBooleanParameter("Create", "Create",
+                "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
 
             pManager[2].Optional = true;
             pManager[4].Optional = true;
@@ -80,13 +82,14 @@ namespace ComputeCS.Grasshopper
                 {
                     StringCache.setCache(queueName, "true");
                     StringCache.setCache(cacheKey, null);
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = Components.ProjectAndTask.GetOrCreate(
                                 auth,
                                 projectName,
-                                (int)projectNumber,
+                                (int) projectNumber,
                                 taskName,
                                 create
                             );
@@ -97,7 +100,6 @@ namespace ComputeCS.Grasshopper
                             {
                                 StringCache.setCache(cacheKey + "create", "true");
                             }
-                            
                         }
                         catch (Exception e)
                         {
@@ -105,13 +107,11 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
+
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
-
                     });
-                   
                 }
-
             }
 
             // Read from Cache
@@ -120,7 +120,10 @@ namespace ComputeCS.Grasshopper
                 var outputs = cachedValues;
                 DA.SetData(0, outputs);
                 Message = "";
-                if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Task Created";}
+                if (StringCache.getCache(cacheKey + "create") == "true")
+                {
+                    Message = "Task Created";
+                }
             }
 
             // Handle Errors
@@ -131,12 +134,13 @@ namespace ComputeCS.Grasshopper
                 {
                     errors = "Could not find the desired project. Click create to create a new project.";
                 }
+
                 throw new Exception(errors);
             }
-
         }
 
-        private void ExpireSolutionThreadSafe(bool recompute=false) {
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
             Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
@@ -146,12 +150,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null; // Resources.IconFolder;
-            }
+            get { return Resources.IconFolder; }
         }
 
         /// <summary>

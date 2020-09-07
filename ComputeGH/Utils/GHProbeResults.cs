@@ -56,23 +56,23 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string folder = null;
-            var meshes = new GH_Structure<GH_Mesh>(); 
+            var meshes = new GH_Structure<GH_Mesh>();
 
             if (!DA.GetData(0, ref folder)) return;
             DA.GetDataTree(1, out meshes);
 
             var results = ProbeResult.ReadProbeResults(folder);
-            
+
             foreach (var key in results.Keys)
             {
                 var data = ConvertToDataTree(results[key]);
                 AddToOutput(DA, key, data);
             }
-            
+
             var points = ProbeResult.ReadPointsFromResults(folder);
             var GHPoints = ConvertPointsToDataTree(points);
             DA.SetDataTree(1, GHPoints);
-            
+
             /*if (meshes.Any())
             {
                 var newMesh = CorrectMesh(meshes, points);    
@@ -88,14 +88,15 @@ namespace ComputeCS.Grasshopper
             RemoveUnusedOutputs(keys);
         }
 
-        private static DataTree<object> CorrectMesh(GH_Structure<GH_Mesh> meshes, Dictionary<string, List<List<double>>> points)
+        private static DataTree<object> CorrectMesh(GH_Structure<GH_Mesh> meshes,
+            Dictionary<string, List<List<double>>> points)
         {
             var newMeshes = new DataTree<object>();
             foreach (var branch in meshes.Branches)
             {
                 var mesh = new Mesh();
                 GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
-                
+
                 foreach (var index in Enumerable.Range(0, mesh.Faces.Count()))
                 {
                     mesh.Faces.GetFaceCenter(index);
@@ -141,7 +142,7 @@ namespace ComputeCS.Grasshopper
 
             return output;
         }
-        
+
         private static DataTree<object> ConvertPointsToDataTree(Dictionary<string, List<List<double>>> data)
         {
             var patchCounter = 0;
@@ -195,7 +196,8 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static DataTree<object> UpdateInfo(Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
+        private static DataTree<object> UpdateInfo(
+            Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
         {
             var fieldKey = data.Keys.ToList().First();
             var info = "Patch Names:\n";
@@ -222,9 +224,9 @@ namespace ComputeCS.Grasshopper
 
             foreach (var angle in angles)
             {
-                output.Add(angle, new GH_Path(1));    
+                output.Add(angle, new GH_Path(1));
             }
-            
+
             return output;
         }
 
@@ -258,12 +260,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null; // Resources.IconMesh;
-            }
+            get { return Resources.IconMesh; }
         }
 
         /// <summary>

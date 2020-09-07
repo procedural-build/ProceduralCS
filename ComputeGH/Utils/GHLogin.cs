@@ -12,16 +12,15 @@ using ComputeGH.Properties;
 
 namespace ComputeCS.Grasshopper
 {
-
     public class ComputeLogin : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
         public ComputeLogin()
-          : base("Compute Login", "Login",
-              "Login to Procedural Compute",
-              "Compute", "Utils")
+            : base("Compute Login", "Login",
+                "Login to Procedural Compute",
+                "Compute", "Utils")
         {
         }
 
@@ -81,11 +80,12 @@ namespace ComputeCS.Grasshopper
                 if (queueLock != "true")
                 {
                     StringCache.setCache(queueName, "true");
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = client.Auth(username, password);
-                            
+
                             if (results.ErrorMessages != null)
                             {
                                 StringCache.setCache(cacheKey, "error");
@@ -97,19 +97,16 @@ namespace ComputeCS.Grasshopper
                                 cachedTokens = results.ToJson();
                                 StringCache.setCache(cacheKey, cachedTokens);
                             }
-                            
                         }
                         catch (Exception e)
                         {
                             StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message + "\n");
                         }
+
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
-
                     });
-                    
                 }
-
             }
 
 
@@ -121,9 +118,10 @@ namespace ComputeCS.Grasshopper
                 {
                     errors = "Could not login with the provided credentials. Try again.";
                 }
+
                 throw new Exception(errors);
             }
-            
+
             var tokens = new AuthTokens();
             if (cachedTokens != null)
             {
@@ -135,9 +133,7 @@ namespace ComputeCS.Grasshopper
                 };
 
                 DA.SetData(0, output.ToJson());
-                
             }
-
         }
 
         private void ExpireSolutionThreadSafe(bool recompute = false)
@@ -151,12 +147,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null; // Resources.IconLicense;
-            }
+            get { return Resources.IconLicense; }
         }
 
         /// <summary>

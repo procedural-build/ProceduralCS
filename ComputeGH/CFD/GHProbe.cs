@@ -18,9 +18,9 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the GHProbe class.
         /// </summary>
         public GHProbe()
-          : base("Probe Points", "Probe Points",
-              "Probe Points to get result",
-              "Compute", "CFD")
+            : base("Probe Points", "Probe Points",
+                "Probe Points to get result",
+                "Compute", "CFD")
         {
         }
 
@@ -30,12 +30,19 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.", GH_ParamAccess.tree);
-            pManager.AddTextParameter("Names", "Names", "Give names to each branch of in the points tree. The names can later be used to identify the points.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U", GH_ParamAccess.list);
+            pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.",
+                GH_ParamAccess.tree);
+            pManager.AddTextParameter("Names", "Names",
+                "Give names to each branch of in the points tree. The names can later be used to identify the points.",
+                GH_ParamAccess.list);
+            pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
+                GH_ParamAccess.list);
             pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]", GH_ParamAccess.list);
-            pManager.AddTextParameter("DependentOn", "DependentOn", "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist", GH_ParamAccess.item, false);
+            pManager.AddTextParameter("DependentOn", "DependentOn",
+                "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
+                GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist",
+                GH_ParamAccess.item, false);
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
@@ -68,9 +75,21 @@ namespace ComputeCS.Grasshopper
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetDataTree(1, out points)) return;
-            if (!DA.GetDataList(2, names)) { names.Add("set1"); }
-            if (!DA.GetDataList(3, fields)) { fields.Add("U"); }
-            if (!DA.GetDataList(4, cpus)) { cpus = new List<int> { 1, 1, 1 }; }
+            if (!DA.GetDataList(2, names))
+            {
+                names.Add("set1");
+            }
+
+            if (!DA.GetDataList(3, fields))
+            {
+                fields.Add("U");
+            }
+
+            if (!DA.GetDataList(4, cpus))
+            {
+                cpus = new List<int> {1, 1, 1};
+            }
+
             DA.GetData(5, ref dependentOn);
             DA.GetData(6, ref create);
 
@@ -91,7 +110,8 @@ namespace ComputeCS.Grasshopper
                 {
                     StringCache.setCache(queueName, "true");
                     StringCache.setCache(cacheKey, null);
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = ComputeCS.Components.Probe.ProbePoints(
@@ -109,7 +129,6 @@ namespace ComputeCS.Grasshopper
                             {
                                 StringCache.setCache(cacheKey + "create", "true");
                             }
-
                         }
                         catch (Exception e)
                         {
@@ -117,12 +136,11 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
+
                         StringCache.setCache(queueName, "");
                         ExpireSolutionThreadSafe(true);
                     });
-                  
                 }
-
             }
 
             // Handle Errors
@@ -131,7 +149,7 @@ namespace ComputeCS.Grasshopper
             {
                 throw new Exception(errors);
             }
-            
+
             // Read from Cache
             string outputs = null;
             if (cachedValues != null)
@@ -139,7 +157,10 @@ namespace ComputeCS.Grasshopper
                 outputs = cachedValues;
                 DA.SetData(0, outputs);
                 Message = "";
-                if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Task Created";}
+                if (StringCache.getCache(cacheKey + "create") == "true")
+                {
+                    Message = "Task Created";
+                }
             }
         }
 
@@ -162,8 +183,10 @@ namespace ComputeCS.Grasshopper
                 var branchPoints = new List<List<double>>();
                 foreach (var point in branch)
                 {
-                    branchPoints.Add(new List<double> { point.Value.X, point.Value.Y, point.Value.Z });
-                };
+                    branchPoints.Add(new List<double> {point.Value.X, point.Value.Y, point.Value.Z});
+                }
+
+                ;
                 convertedPoints.Add(branchPoints);
             }
 
@@ -178,9 +201,7 @@ namespace ComputeCS.Grasshopper
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                //return Resources.IconMesh;
-                return null;
+                return Resources.IconMesh;
             }
         }
 

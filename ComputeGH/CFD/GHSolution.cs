@@ -10,14 +10,13 @@ namespace ComputeCS.Grasshopper
 {
     public class ComputeSolution : GH_Component
     {
-
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
         public ComputeSolution()
-          : base("Compute Solution", "CFD Solution",
-              "Create the Solution Parameters for a CFD Case",
-              "Compute", "CFD")
+            : base("Compute Solution", "CFD Solution",
+                "Create the Solution Parameters for a CFD Case",
+                "Compute", "CFD")
         {
         }
 
@@ -29,17 +28,18 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddIntegerParameter("CPUs", "CPUs", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Solver", "Solver", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Case Type", "Case Type", "Avaible Options: SimpleCase, VirtualWindTunnel", GH_ParamAccess.item, "SimpleCase");
+            pManager.AddTextParameter("Case Type", "Case Type", "Avaible Options: SimpleCase, VirtualWindTunnel",
+                GH_ParamAccess.item, "SimpleCase");
             pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.list);
             pManager.AddTextParameter("Iterations", "Iterations", "", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Number of Angles", "Number of Angles", "Number of Angles. Default is 16", GH_ParamAccess.item, 16);
+            pManager.AddIntegerParameter("Number of Angles", "Number of Angles", "Number of Angles. Default is 16",
+                GH_ParamAccess.item, 16);
             pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.item);
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
             pManager[6].Optional = true;
             pManager[7].Optional = true;
-
         }
 
         /// <summary>
@@ -91,7 +91,6 @@ namespace ComputeCS.Grasshopper
 
 
             DA.SetData(0, outputs["out"]);
-
         }
 
         /// <summary>
@@ -103,7 +102,7 @@ namespace ComputeCS.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null; // Resources.IconSolver;
+                return Resources.IconSolver;
             }
         }
 
