@@ -45,9 +45,6 @@
       <HintPath>..\packages\Grasshopper.6.20.19322.20361\lib\net45\Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="Rhino.UI, Version=6.20.19322.20360, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
       <HintPath>..\packages\RhinoCommon.6.20.19322.20361\lib\net45\Rhino.UI.dll</HintPath>
     </Reference>
@@ -93,6 +90,7 @@
     <Compile Include="CFD\GHSetNames.cs" />
     <Compile Include="CFD\GHThresholdResults.cs" />
     <Compile Include="CFD\GHWindThresholds.cs" />
+    <Compile Include="CFD\GHsetSet.cs" />
     <Compile Include="ComputeGHInfo.cs" />
     <Compile Include="CFD\GHCompute.cs" />
     <Compile Include="GrasshopperUtils\Async.cs" />

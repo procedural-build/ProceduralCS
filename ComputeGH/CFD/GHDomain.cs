@@ -124,16 +124,38 @@ namespace ComputeCS.Grasshopper
             var surfaces = new Dictionary<string, object>();
             foreach (var mesh in geometry)
             {
+                var surfaceName = Geometry.getUserString(mesh, "ComputeName");
+                var minLevel = Geometry.getUserString(mesh, "ComputeMeshMinLevel");
+                var maxLevel = Geometry.getUserString(mesh, "ComputeMeshMaxLevel");
+
+                if (surfaceName == null || minLevel == null) { continue; }
+
                 surfaces.Add(
-                    Geometry.getUserString(mesh, "ComputeName"), new Dictionary<string, object>
+                    surfaceName, new Dictionary<string, object>
                     {
                         {
                             "level", new Dictionary<string, string>
                             {
-                                {"min", Geometry.getUserString(mesh, "ComputeMeshMinLevel")},
-                                {"max", Geometry.getUserString(mesh, "ComputeMeshMaxLevel")},
+                                {"min", minLevel},
+                                {"max", maxLevel},
                             }
                         }
+                    }
+                );
+            }
+
+            var refinementRegions = new List<RefinementRegion>();
+            foreach (var mesh in geometry)
+            {
+                var regionName = Geometry.getUserString(mesh, "ComputeName");
+                var refinementDetails = Geometry.getUserString(mesh, "ComputeRefinementRegion");
+                if (regionName == null || refinementDetails == null) { continue; }
+
+                refinementRegions.Add(
+                    new RefinementRegion
+                    {
+                        Name = regionName,
+                        Details = new RefinementDetails().FromJson(refinementDetails)
                     }
                 );
             }
@@ -185,7 +207,8 @@ namespace ComputeCS.Grasshopper
                                     }
                                 }
                             }
-                        }
+                        },
+                        RefinementRegions = refinementRegions
                     }
                 }
             };

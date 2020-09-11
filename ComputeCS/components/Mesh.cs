@@ -9,7 +9,8 @@ namespace ComputeCS.Components
             string inputJson,
             string domain,
             Dictionary<string, object> defaultSurface,
-            Dictionary<string, object> overrides = null
+            Dictionary<string, object> overrides = null,
+            List<string> setSetRegions = null
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
@@ -22,6 +23,16 @@ namespace ComputeCS.Components
             if (overrides != null)
             {
                 inputData.Mesh.SnappyHexMesh.Overrides = overrides;    
+            }
+
+            if (setSetRegions != null)
+            {
+                var setSetRegions_ = new List<setSetRegion>();
+                foreach (var region in setSetRegions)
+                {
+                    setSetRegions_.Add(new setSetRegion().FromJson(region));
+                }
+                inputData.Mesh.BaseMesh.setSetRegions = setSetRegions_;
             }
 
             return inputData.ToJson();

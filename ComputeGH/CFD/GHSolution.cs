@@ -27,15 +27,15 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("CPUs", "CPUs", "", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Solver", "Solver", "", GH_ParamAccess.item, 0);
+            pManager.AddIntegerParameter("CPUs", "CPUs", "Number of CPUs to run the simulation acros. Expects a list of 3 numbers. The sum of the numbers is the amount of CPUs you want to run acros. Visit https://compute.procedural.build/pricing to see how many CPUs the different EC2 instances have. EC2 instances is the virtural machines in the cloud, on which the simulation runs.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Solver", "Solver", "Select which OpenFOAM solver to use.", GH_ParamAccess.item, 0);
             pManager.AddIntegerParameter("Case Type", "Case Type", "Available Options: SimpleCase, VirtualWindTunnel",
                 GH_ParamAccess.item, 0);
             pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Iterations", "Iterations", "", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Number of Angles", "Number of Angles", "Number of Angles. Default is 16",
+            pManager.AddTextParameter("Iterations", "Iterations", "Number of iterations to run. Expects recieve the JSON format: {'init': 100, 'run': '100'}. The 'run' key is optional.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Number of Angles", "Number of Angles", "Number of Angles. Only used for Virtual Wind Tunnel. Default is 16",
                 GH_ParamAccess.item, 16);
-            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Overrides", "Overrides", "Takes overrides in JSON format: {'setup': [...], 'fields': [...], 'presets': [...], 'caseFiles: [...]'}", GH_ParamAccess.item);
             pManager.AddTextParameter("Files", "Files",
                 "Extra files to write. This input should be a list of dictionaries in the format of: {'path': 'path/to/file/on/server', 'text': 'text to write in the file.'}",
                 GH_ParamAccess.list);
@@ -96,7 +96,7 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(5, ref iterations)) return;
             DA.GetData(6, ref numberOfAngles);
             DA.GetData(7, ref overrides);
-            DA.GetData(8, ref files);
+            //DA.GetData(8, ref files);
 
             
             var outputs = Components.CFDSolution.Setup(

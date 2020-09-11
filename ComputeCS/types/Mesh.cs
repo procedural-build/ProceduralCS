@@ -18,6 +18,7 @@ namespace ComputeCS.types
         public double CellSize;
         public Dictionary<string, object> BoundingBox;
         public Dictionary<string, string> Parameters;
+        public List<setSetRegion> setSetRegions;
     }
 
     public class SnappyHexMesh
@@ -25,5 +26,26 @@ namespace ComputeCS.types
         public Dictionary<string, object> Overrides;
         public Dictionary<string, object> DefaultSurface;
         public Dictionary<string, object> Surfaces;
+        public List<RefinementRegion> RefinementRegions;
+    }
+
+    public class RefinementRegion : SerializeBase<RefinementRegion>
+    {
+        public string Name;
+        public RefinementDetails Details;
+    }
+
+
+    public class RefinementDetails : SerializeBase<RefinementDetails>
+    {
+        public string Mode;
+        public string Levels;
+    }
+
+    public class setSetRegion : SerializeBase<setSetRegion>
+    {
+        public string Name;
+        public List<bool> Locations;
+        public List<double> KeepPoint;
     }
 }

@@ -29,6 +29,7 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Domain", "Domain", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("setSet", "setSet", "setSet regions", GH_ParamAccess.list);
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
@@ -66,17 +67,20 @@ namespace ComputeCS.Grasshopper
                 }
             };
             var overrides = new Dictionary<string, object>();
+            var setSets = new List<string>();
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref domain)) return;
             DA.GetData(2, ref overrides);
+            DA.GetDataList(2, setSets);
 
 
             var outputs = Components.Mesh.Setup(
                 inputJson,
                 domain,
                 defaultSurfaces,
-                overrides
+                overrides,
+                setSets
             );
 
             DA.SetData(0, outputs);

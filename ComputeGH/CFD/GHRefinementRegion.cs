@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ComputeCS.Grasshopper.Utils;
+using ComputeCS.types;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
@@ -70,10 +71,14 @@ namespace ComputeCS.Grasshopper
             // Get a list of object references in the Rhino model
             foreach (var mesh in meshes)
             {
+                var refinementRegion = new RefinementDetails {
+                    Mode =  location,
+                    Levels = refLevels
+                };
                 Geometry.setUserString(
                     mesh,
                     "ComputeRefinementRegion",
-                    $"mode {location}; levels {refLevels};"
+                    refinementRegion.ToJson()
                 );
             }
 
