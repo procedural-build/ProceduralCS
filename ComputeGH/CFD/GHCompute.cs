@@ -140,7 +140,10 @@ namespace ComputeCS.Grasshopper
         {
             get
             {
-                //You can add image files to your project resources and access them like this:
+                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
                 return Resources.IconRun;
             }
         }

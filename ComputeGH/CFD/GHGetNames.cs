@@ -25,7 +25,11 @@ namespace ComputeGH.Grasshopper
 
         protected override System.Drawing.Bitmap Icon
         {
-            get { return Resources.IconGetName; }
+            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+                return Resources.IconGetName; }
         }
 
         public override Guid ComponentGuid

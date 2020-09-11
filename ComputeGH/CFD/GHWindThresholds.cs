@@ -154,7 +154,11 @@ namespace ComputeGH.CFD
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get { return Resources.IconSolver; }
+            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+                return Resources.IconSolver; }
         }
 
         /// <summary>

@@ -4,7 +4,7 @@ using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper.Utils
 {
-    public class Domain
+    public static class Domain
     {
         public static BoundingBox getMultiBoundingBox(List<BoundingBox> x)
         {
@@ -67,7 +67,7 @@ namespace ComputeCS.Grasshopper.Utils
             return A;
         }
 
-        public static BoundingBox getMultiBoundingBox(List<BoundingBox> x, double cellSize, bool z0, bool centerXY, double xyScale, double xyOffset, double zScale, bool square)
+        public static Box getMultiBoundingBox(List<BoundingBox> x, double cellSize, bool z0, bool centerXY, double xyScale, double xyOffset, double zScale, bool square)
         {
             Point3d pmin;
             Point3d pmax;
@@ -126,7 +126,7 @@ namespace ComputeCS.Grasshopper.Utils
             }
             A = new BoundingBox(pmin, pmax);
 
-            return A;
+            return new Box(A);
         }
 
         public static Point3d getLocationInMesh(Box boundingBox)
@@ -140,6 +140,45 @@ namespace ComputeCS.Grasshopper.Utils
             kPoint += kPointVect;
 
             return kPoint;
+        }
+
+        public static Box Create2DDomain(Box boundingBox, Plane cutPlane, double cellSize)
+        {
+            // Adjust for the cutPlane
+            Point3d[] intersectionPoints;
+            Curve[] intersectionCurves;
+            var isIntersect = Rhino.Geometry.Intersect.Intersection.BrepPlane(
+                boundingBox.ToBrep(),
+                cutPlane,
+                0,
+                out intersectionCurves,
+                out intersectionPoints
+            );
+
+            if (!isIntersect)
+            {
+                throw new Exception("Plane must intersect geometry bounding box");
+            }
+
+            if (intersectionCurves.Length == 0)
+            {
+                throw new Exception("No intersection curves found");
+            }
+
+            // Get all of the points intersected by the box.
+            var points = new List<Point3d>();
+            foreach (var curve in intersectionCurves)
+            {
+                Polyline edges;
+                curve.TryGetPolyline(out edges);
+                points.AddRange(edges.ToArray());
+            }
+
+            return new Box(cutPlane, points)
+            {
+                Z = new Interval(cutPlane.OriginZ - cellSize / 2, cutPlane.OriginZ + cellSize / 2)
+            };
+
         }
     }
 }

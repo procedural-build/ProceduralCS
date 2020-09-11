@@ -50,7 +50,7 @@ namespace ComputeCS.Grasshopper
         {
             string inputJson = null;
             string domain = null;
-            Dictionary<string, object> defaultSurfaces = new Dictionary<string, object>
+            var defaultSurfaces = new Dictionary<string, object>
             {
                 {
                     "Plane", new Dictionary<string, object>
@@ -65,10 +65,11 @@ namespace ComputeCS.Grasshopper
                     }
                 }
             };
-            Dictionary<string, object> overrides = new Dictionary<string, object>();
+            var overrides = new Dictionary<string, object>();
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref domain)) return;
+            DA.GetData(2, ref overrides);
 
 
             var outputs = Components.Mesh.Setup(
@@ -78,7 +79,7 @@ namespace ComputeCS.Grasshopper
                 overrides
             );
 
-            DA.SetData(0, outputs["out"]);
+            DA.SetData(0, outputs);
         }
 
         /// <summary>
@@ -86,7 +87,11 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get { return Resources.IconMesh; }
+            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+                return Resources.IconMesh; }
         }
 
         /// <summary>

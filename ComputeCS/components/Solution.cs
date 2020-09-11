@@ -8,7 +8,7 @@ namespace ComputeCS.Components
 {
     public static class CFDSolution
     {
-        public static Dictionary<string, object> Setup(
+        public static string Setup(
             string inputJson,
             List<int> cpus,
             string solver,
@@ -16,7 +16,8 @@ namespace ComputeCS.Components
             List<string> boundaryConditions,
             string iterations,
             int numberOfAngles,
-            string overrides = null
+            string overrides = null,
+            List<string> files = null
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
@@ -36,6 +37,16 @@ namespace ComputeCS.Components
             {
                 overrides_ = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
             }
+            // Convert overrides to dict
+            var files_ = new List<Dictionary<string, object>>();
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    files_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(file));    
+                }
+                
+            }
             
             var solution = new types.CFDSolution
             {
@@ -45,16 +56,12 @@ namespace ComputeCS.Components
                 BoundaryConditions = bcs,
                 Iterations = iterations_,
                 Angles = GetAngleListFromNumber(numberOfAngles),
-                Overrides = overrides_
+                Overrides = overrides_,
+                Files = files_
             };
 
             inputData.CFDSolution = solution;
-            var output = inputData.ToJson();
-
-            return new Dictionary<string, object>
-            {
-                {"out", output}
-            };
+            return inputData.ToJson();
         }
 
         static List<double> GetAngleListFromNumber(

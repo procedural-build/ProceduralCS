@@ -5,7 +5,7 @@ namespace ComputeCS.Components
 {
     public static class Mesh
     {
-        public static Dictionary<string, object> Setup(
+        public static string Setup(
             string inputJson,
             string domain,
             Dictionary<string, object> defaultSurface,
@@ -19,12 +19,12 @@ namespace ComputeCS.Components
             inputData.Mesh = domainData.Mesh;
             inputData.Mesh.SnappyHexMesh.DefaultSurface = defaultSurface;
 
-            var output = inputData.ToJson();
-            
-            return new Dictionary<string, object>
+            if (overrides != null)
             {
-                {"out", output}
-            };
+                inputData.Mesh.SnappyHexMesh.Overrides = overrides;    
+            }
+
+            return inputData.ToJson();
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Grasshopper.Kernel;
 using ComputeGH.Properties;
+using Grasshopper.Kernel.Parameters;
 
 namespace ComputeCS.Grasshopper
 {
@@ -26,15 +27,26 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Names", "Names", "The names of the boundary condition", GH_ParamAccess.list);
-            pManager.AddTextParameter("Preset", "Preset", "Presets of the boundary condition", GH_ParamAccess.item,
-                "wall");
+            pManager.AddIntegerParameter("Preset", "Preset", "Presets of the boundary condition", GH_ParamAccess.item,
+                0);
             pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets",
                 GH_ParamAccess.item, "");
 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
+            
+            AddNamedValues(pManager[1] as Param_Integer, Presets);
         }
 
+        private static void AddNamedValues(Param_Integer param, List<string> values)
+        {
+            var index = 0;
+            foreach (var value in values)
+            {
+                param.AddNamedValue(value, index);
+                index++;
+            }
+        }
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
@@ -53,6 +65,11 @@ namespace ComputeCS.Grasshopper
             get
             {
                 // You can add image files to your project resources and access them like this:
+                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+
                 return Resources.IconBoundaryCondition;
             }
         }
@@ -76,51 +93,61 @@ namespace ComputeCS.Grasshopper
         {
             var names = new List<string>();
             var overrides = "";
-            var preset = "";
+            var preset_ = 0;
 
             DA.GetDataList(0, names);
-            if (!DA.GetData(1, ref preset))
+            if (!DA.GetData(1, ref preset_))
             {
                 return;
             }
+
+            var preset = Presets[preset_];
 
             if (!DA.GetData(2, ref overrides))
             {
                 return;
             }
 
-            Dictionary<string, object> boundaryConditions = new Dictionary<string, object>();
+            var boundaryConditions = new Dictionary<string, object>();
             Dictionary<string, string> overrides_ = null;
             try
             {
                 overrides_ = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
             }
-            catch (JsonReaderException e)
-            {
-            }
+            catch (JsonReaderException){}
 
-            foreach (string name in names)
+            foreach (var name in names)
             {
-                Dictionary<string, object> thisBC = new Dictionary<string, object>();
+                var boundaryCondition = new Dictionary<string, object>();
 
                 if (preset.Length > 0)
                 {
-                    thisBC.Add("preset", preset);
+                    boundaryCondition.Add("preset", preset);
                 }
 
                 if (overrides_ != null)
                 {
-                    thisBC.Add("overrides", overrides_);
+                    boundaryCondition.Add("overrides", overrides_);
                 }
                 else if (overrides.Length > 0)
                 {
-                    thisBC.Add("overrides", overrides);
+                    boundaryCondition.Add("overrides", overrides);
                 }
 
-                boundaryConditions.Add(name, thisBC);
+                boundaryConditions.Add(name, boundaryCondition);
             }
 
             DA.SetData(0, JsonConvert.SerializeObject(boundaryConditions, Formatting.Indented));
         }
+        
+        private static readonly List<string> Presets = new List<string>
+        {
+            "wall",
+            "wallSlip",
+            "fixedVelocity",
+            "fixedPressure",
+            "fixedPressureOutOnly",
+            "atmBoundaryLayer",
+        };
     }
 }

@@ -15,5 +15,6 @@ namespace ComputeCS.types
         public Dictionary<string, int> Iterations;
         public List<double> Angles;
         public Dictionary<string, object> Overrides;
+        public List<Dictionary<string, object>> Files;
     }
 }

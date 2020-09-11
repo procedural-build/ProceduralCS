@@ -30,7 +30,11 @@ namespace ComputeCS.Grasshopper
 
         protected override System.Drawing.Bitmap Icon
         {
-            get { return Resources.IconSetName; }
+            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+                return Resources.IconSetName; }
         }
 
         public override Guid ComponentGuid
