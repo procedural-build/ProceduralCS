@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using Grasshopper.Kernel;
-using Grasshopper;
-using Rhino.Geometry;
-using Newtonsoft.Json;
-using ComputeCS.types;
+using System.Drawing;
+using ComputeCS.Components;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
+using Grasshopper.Kernel;
+using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
@@ -28,7 +26,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Auth", "Auth", "Authentication from the Compute Login component",
                 GH_ParamAccess.item);
@@ -45,7 +43,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
         }
@@ -86,7 +84,7 @@ namespace ComputeCS.Grasshopper
                     {
                         try
                         {
-                            var results = Components.ProjectAndTask.GetOrCreate(
+                            var results = ProjectAndTask.GetOrCreate(
                                 auth,
                                 projectName,
                                 (int) projectNumber,
@@ -142,19 +140,23 @@ namespace ComputeCS.Grasshopper
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
+        protected override Bitmap Icon
         {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+            get
+            {
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
-                return Resources.IconFolder; }
+
+                return Resources.IconFolder;
+            }
         }
 
         /// <summary>

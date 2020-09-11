@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Grasshopper.Kernel;
+using System.Drawing;
 using ComputeGH.Properties;
+using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
+using Newtonsoft.Json;
 
 namespace ComputeCS.Grasshopper
 {
@@ -24,7 +25,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Names", "Names", "The names of the boundary condition", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Preset", "Preset", "Presets of the boundary condition", GH_ParamAccess.item,
@@ -34,7 +35,7 @@ namespace ComputeCS.Grasshopper
 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
-            
+
             AddNamedValues(pManager[1] as Param_Integer, Presets);
         }
 
@@ -47,10 +48,11 @@ namespace ComputeCS.Grasshopper
                 index++;
             }
         }
+
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Boundary Condition", "BC", "Boundary Condition",
                 GH_ParamAccess.item);
@@ -60,12 +62,12 @@ namespace ComputeCS.Grasshopper
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
+        protected override Bitmap Icon
         {
             get
             {
                 // You can add image files to your project resources and access them like this:
-                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
@@ -114,7 +116,9 @@ namespace ComputeCS.Grasshopper
             {
                 overrides_ = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
             }
-            catch (JsonReaderException){}
+            catch (JsonReaderException)
+            {
+            }
 
             foreach (var name in names)
             {
@@ -139,7 +143,7 @@ namespace ComputeCS.Grasshopper
 
             DA.SetData(0, JsonConvert.SerializeObject(boundaryConditions, Formatting.Indented));
         }
-        
+
         private static readonly List<string> Presets = new List<string>
         {
             "wall",

@@ -47,7 +47,7 @@ namespace ComputeGH.Grasshopper
             var keepPoint = new Point3d();
 
             if (!DA.GetDataList(0, names)) return;
-            DA.GetData(1, ref location);
+            DA.GetDataList(1, location);
             DA.GetData(2, ref keepPoint);
 
             var outputs = new List<string>();
@@ -62,7 +62,7 @@ namespace ComputeGH.Grasshopper
             }
  
 
-            DA.SetData(0, outputs);
+            DA.SetDataList(0, outputs);
         }
 
         /// <summary>
