@@ -26,7 +26,7 @@ namespace ComputeCS.Components
             var bcs_ = new List<Dictionary<string, object>>();
             foreach (string bc in boundaryConditions) { bcs_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(bc)); }
             
-            Dictionary<string, object> bcs = bcs_.SelectMany(x => x).GroupBy(d => d.Key).ToDictionary(x => x.Key, y => y.First().Value);
+            var bcs = bcs_.SelectMany(x => x).GroupBy(d => d.Key).ToDictionary(x => x.Key, y => y.First().Value);
 
             // Convert iterations from json to dict
             var iterations_ = JsonConvert.DeserializeObject<Dictionary<string, int>>(iterations);
@@ -50,7 +50,7 @@ namespace ComputeCS.Components
             
             var solution = new types.CFDSolution
             {
-                CPUs = cpus,
+                CPUS = cpus,
                 Solver = solver,
                 CaseType = caseType,
                 BoundaryConditions = bcs,
@@ -64,7 +64,7 @@ namespace ComputeCS.Components
             return inputData.ToJson();
         }
 
-        static List<double> GetAngleListFromNumber(
+        private static List<double> GetAngleListFromNumber(
             int numberOfAngles
         )
         {

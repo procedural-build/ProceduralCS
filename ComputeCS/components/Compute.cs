@@ -98,7 +98,7 @@ namespace ComputeCS.Components
 
             // Task to Handle Meshing
             var includeSetSet = inputData.Mesh.BaseMesh.setSetRegions != null;
-            var cpus = solution.CPUs;
+            var cpus = solution.CPUS;
             var meshTask = CreateMeshTask(tokens, inputData.Url, project.UID, parentTask.UID, actionTask.UID, cpus,
                 includeSetSet, create);
 
@@ -115,7 +115,7 @@ namespace ComputeCS.Components
                             {"task_type", "cfd"},
                             {"cmd", "wind_tunnel"},
                             {"commands", solution.Angles},
-                            {"cpus", solution.CPUs},
+                            {"cpus", cpus},
                             {"iterations", solution.Iterations}
                         }
                     }
@@ -137,7 +137,7 @@ namespace ComputeCS.Components
                                     "reconstructPar -skipZero"
                                 }
                             },
-                            {"cpus", solution.CPUs},
+                            {"cpus", cpus},
                             {"iterations", solution.Iterations}
                         }
                     }

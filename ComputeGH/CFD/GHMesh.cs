@@ -27,7 +27,9 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Domain", "Domain", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Default Surface", "Default Surface", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Overrides", "Overrides", "Takes overrides in JSON format: {'setup': [...], 'fields': [...], 'presets': [...], 'caseFiles: [...]'}", GH_ParamAccess.item);
+            pManager.AddTextParameter("Overrides", "Overrides",
+                "Takes overrides in JSON format: {'setup': [...], 'fields': [...], 'presets': [...], 'caseFiles: [...]'}",
+                GH_ParamAccess.item);
             pManager.AddTextParameter("setSet", "setSet", "setSet regions", GH_ParamAccess.list);
 
             pManager[2].Optional = true;
@@ -92,11 +94,15 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override Bitmap Icon
         {
-            get {                 if (Environment.GetEnvironmentVariable("RIDER") == "true")
+            get
+            {
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
-                return Resources.IconMesh; }
+
+                return Resources.IconMesh;
+            }
         }
 
         /// <summary>

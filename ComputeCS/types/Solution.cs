@@ -8,7 +8,7 @@ namespace ComputeCS.types
 {
     public class CFDSolution
     {
-        public List<int> CPUs;
+        public List<int> CPUS;
         public string Solver;
         public string CaseType;
         public Dictionary<string, object> BoundaryConditions;

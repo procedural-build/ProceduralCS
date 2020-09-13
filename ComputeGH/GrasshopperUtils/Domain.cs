@@ -67,7 +67,7 @@ namespace ComputeCS.Grasshopper.Utils
             return A;
         }
 
-        public static Box getMultiBoundingBox(List<BoundingBox> x, double cellSize, bool z0, bool centerXY, double xyScale, double xyOffset, double zScale, bool square)
+        public static BoundingBox getMultiBoundingBox(List<BoundingBox> x, double cellSize, bool z0, bool centerXY, double xyScale, double xyOffset, double zScale, bool square)
         {
             Point3d pmin;
             Point3d pmax;
@@ -126,10 +126,10 @@ namespace ComputeCS.Grasshopper.Utils
             }
             A = new BoundingBox(pmin, pmax);
 
-            return new Box(A);
+            return A;
         }
 
-        public static Point3d getLocationInMesh(Box boundingBox)
+        public static Point3d GetLocationInMesh(Box boundingBox)
         {
             double r = (4 + (new Random().NextDouble() - 1)) / 16.0;
             Point3d kPoint = boundingBox.Center;
@@ -142,7 +142,7 @@ namespace ComputeCS.Grasshopper.Utils
             return kPoint;
         }
 
-        public static Box Create2DDomain(Box boundingBox, Plane cutPlane, double cellSize)
+        public static BoundingBox Create2DDomain(BoundingBox boundingBox, Plane cutPlane, double cellSize)
         {
             // Adjust for the cutPlane
             Point3d[] intersectionPoints;
@@ -174,10 +174,12 @@ namespace ComputeCS.Grasshopper.Utils
                 points.AddRange(edges.ToArray());
             }
 
-            return new Box(cutPlane, points)
+            var box = new Box(cutPlane, points)
             {
                 Z = new Interval(cutPlane.OriginZ - cellSize / 2, cutPlane.OriginZ + cellSize / 2)
             };
+
+            return box.BoundingBox;
 
         }
     }

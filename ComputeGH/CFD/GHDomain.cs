@@ -121,46 +121,11 @@ namespace ComputeCS.Grasshopper
 
             // Construct Surface Dict
 
-            var surfaces = new Dictionary<string, object>();
-            foreach (var mesh in geometry)
-            {
-                var surfaceName = Geometry.getUserString(mesh, "ComputeName");
-                var minLevel = Geometry.getUserString(mesh, "ComputeMeshMinLevel");
-                var maxLevel = Geometry.getUserString(mesh, "ComputeMeshMaxLevel");
+            var surfaces = GetSurfaces(geometry);
 
-                if (surfaceName == null || minLevel == null) { continue; }
+            var refinementRegions = GetRefinementRegions(geometry);
 
-                surfaces.Add(
-                    surfaceName, new Dictionary<string, object>
-                    {
-                        {
-                            "level", new Dictionary<string, string>
-                            {
-                                {"min", minLevel},
-                                {"max", maxLevel},
-                            }
-                        }
-                    }
-                );
-            }
-
-            var refinementRegions = new List<RefinementRegion>();
-            foreach (var mesh in geometry)
-            {
-                var regionName = Geometry.getUserString(mesh, "ComputeName");
-                var refinementDetails = Geometry.getUserString(mesh, "ComputeRefinementRegion");
-                if (regionName == null || refinementDetails == null) { continue; }
-
-                refinementRegions.Add(
-                    new RefinementRegion
-                    {
-                        Name = regionName,
-                        Details = new RefinementDetails().FromJson(refinementDetails)
-                    }
-                );
-            }
-
-            var locationInMesh = Domain.getLocationInMesh(bb);
+            var locationInMesh = Domain.GetLocationInMesh(new Box(bb));
 
             var outputs = new Inputs
             {
@@ -175,13 +140,13 @@ namespace ComputeCS.Grasshopper
                             {
                                 "min", new List<double>
                                 {
-                                    bb.X.Min, bb.Y.Min, bb.Z.Min
+                                    bb.Min.X, bb.Min.X, bb.Min.Z
                                 }
                             },
                             {
                                 "max", new List<double>
                                 {
-                                    bb.X.Max, bb.Y.Max, bb.Z.Max
+                                    bb.Max.X, bb.Max.Y, bb.Max.Z
                                 }
                             }
                         },
@@ -222,5 +187,54 @@ namespace ComputeCS.Grasshopper
         {
             "3D", "2D"
         };
+
+        private static List<RefinementRegion> GetRefinementRegions(List<IGH_GeometricGoo> meshes)
+        {
+            var refinementRegions = new List<RefinementRegion>();
+            foreach (var mesh in meshes)
+            {
+                var regionName = Geometry.getUserString(mesh, "ComputeName");
+                var refinementDetails = Geometry.getUserString(mesh, "ComputeRefinementRegion");
+                if (regionName == null || refinementDetails == null) { continue; }
+
+                refinementRegions.Add(
+                    new RefinementRegion
+                    {
+                        Name = regionName,
+                        Details = new RefinementDetails().FromJson(refinementDetails)
+                    }
+                );
+            }
+
+            return refinementRegions;
+        }
+
+        private static Dictionary<string, object> GetSurfaces(List<IGH_GeometricGoo> meshes)
+        {
+            var surfaces = new Dictionary<string, object>();
+            foreach (var mesh in meshes)
+            {
+                var surfaceName = Geometry.getUserString(mesh, "ComputeName");
+                var minLevel = Geometry.getUserString(mesh, "ComputeMeshMinLevel");
+                var maxLevel = Geometry.getUserString(mesh, "ComputeMeshMaxLevel");
+
+                if (surfaceName == null || minLevel == null) { continue; }
+
+                surfaces.Add(
+                    surfaceName, new Dictionary<string, object>
+                    {
+                        {
+                            "level", new Dictionary<string, string>
+                            {
+                                {"min", minLevel},
+                                {"max", maxLevel},
+                            }
+                        }
+                    }
+                );
+            }
+
+            return surfaces;
+        }
     }
 }
