@@ -98,7 +98,7 @@ namespace ComputeCS.Components
 
             // Task to Handle Meshing
             var includeSetSet = inputData.Mesh.BaseMesh.setSetRegions != null;
-            var cpus = solution.CPUS;
+            var cpus = solution.CPUs;
             var meshTask = CreateMeshTask(tokens, inputData.Url, project.UID, parentTask.UID, actionTask.UID, cpus,
                 includeSetSet, create);
 

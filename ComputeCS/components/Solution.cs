@@ -50,12 +50,12 @@ namespace ComputeCS.Components
             
             var solution = new types.CFDSolution
             {
-                CPUS = cpus,
+                CPUs = cpus,
                 Solver = solver,
                 CaseType = caseType,
                 BoundaryConditions = bcs,
                 Iterations = iterations_,
-                Angles = GetAngleListFromNumber(numberOfAngles),
+                Angles = caseType == "VirtualWindTunnel"? GetAngleListFromNumber(numberOfAngles): null,
                 Overrides = overrides_,
                 Files = files_
             };

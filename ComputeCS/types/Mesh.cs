@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace ComputeCS.types
 {
@@ -21,11 +22,13 @@ namespace ComputeCS.types
         public List<setSetRegion> setSetRegions;
     }
 
-    public class SnappyHexMesh
+    public class SnappyHexMesh :  SerializeBase<SnappyHexMesh>
     {
         public Dictionary<string, object> Overrides;
         public Dictionary<string, object> DefaultSurface;
         public Dictionary<string, object> Surfaces;
+        
+        [JsonProperty("refinementRegions")]
         public List<RefinementRegion> RefinementRegions;
     }
 
