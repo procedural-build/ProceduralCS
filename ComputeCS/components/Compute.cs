@@ -134,7 +134,7 @@ namespace ComputeCS.Components
                                 "commands", new List<string>
                                 {
                                     solution.Solver,
-                                    "reconstructPar -skipZero"
+                                    "reconstructPar -noZero"
                                 }
                             },
                             {"cpus", cpus},

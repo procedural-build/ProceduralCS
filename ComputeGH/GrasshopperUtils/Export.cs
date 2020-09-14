@@ -11,7 +11,11 @@ namespace ComputeCS.Grasshopper.Utils
 {
     public static class Export
     {
-        public static byte[] STLObject(List<GH_Mesh> surfaceMeshes)
+        public static byte[] STLObject
+            (
+            List<GH_Mesh> surfaceMeshes,
+            bool WriteRefinementRegions = false
+            )
         {
             UnicodeEncoding uniEncoding = new UnicodeEncoding();
             MemoryStream stream = new MemoryStream();
@@ -21,6 +25,11 @@ namespace ComputeCS.Grasshopper.Utils
                 {
                     Mesh mesh = ghMesh.Value;
                     string name = Geometry.getUserString(ghMesh, "ComputeName");
+                    var refinementDetails = Geometry.getUserString(ghMesh, "ComputeRefinementRegion");
+                    if (refinementDetails != null && WriteRefinementRegions == false)
+                    {
+                        continue;
+                    }
 
                     mesh.Faces.ConvertQuadsToTriangles();
                     mesh.FaceNormals.ComputeFaceNormals();
@@ -73,7 +82,7 @@ namespace ComputeCS.Grasshopper.Utils
                 }
 
                 stls.Add(
-                    new Dictionary<string, byte[]> {{regionName, STLObject(new List<GH_Mesh>() {mesh})}}
+                    new Dictionary<string, byte[]> {{regionName, STLObject(new List<GH_Mesh>() {mesh}, true)}}
                 );
             }
 

@@ -41,6 +41,7 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
+            pManager.AddTextParameter("Case Directory", "Case Dir", "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist",
                 GH_ParamAccess.item, false);
 
@@ -49,6 +50,7 @@ namespace ComputeCS.Grasshopper
             pManager[4].Optional = true;
             pManager[5].Optional = true;
             pManager[6].Optional = true;
+            pManager[7].Optional = true;
         }
 
         /// <summary>
@@ -71,6 +73,7 @@ namespace ComputeCS.Grasshopper
             var fields = new List<string>();
             var cpus = new List<int>();
             string dependentOn = null;
+            var caseDir = "VWT";
             var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
@@ -91,7 +94,8 @@ namespace ComputeCS.Grasshopper
             }
 
             DA.GetData(5, ref dependentOn);
-            DA.GetData(6, ref create);
+            DA.GetData(6, ref caseDir);
+            DA.GetData(7, ref create);
 
             var convertedPoints = ConvertToPointList(points);
 
@@ -121,6 +125,7 @@ namespace ComputeCS.Grasshopper
                                 names,
                                 cpus,
                                 dependentOn,
+                                caseDir,
                                 create
                             );
                             cachedValues = results;

@@ -140,7 +140,7 @@ namespace ComputeCS.Grasshopper
                             {
                                 "min", new List<double>
                                 {
-                                    bb.Min.X, bb.Min.X, bb.Min.Z
+                                    bb.Min.X, bb.Min.Y, bb.Min.Z
                                 }
                             },
                             {

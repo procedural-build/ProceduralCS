@@ -15,6 +15,7 @@ namespace ComputeCS.Components
             List<string> names,
             List<int> cpus,
             string dependentOn = "",
+            string caseDir = "VWT/",
             bool create = false
         )
         {
@@ -50,7 +51,7 @@ namespace ComputeCS.Components
                         {"task_type", "cfd"},
                         {"cmd", "pipeline"},
                         {"commands", new List<string>{ "write_sample_set", "postProcess -func internalCloud"} },
-                        {"case_dir", "VWT/" },
+                        {"case_dir", caseDir },
                         {"cpus", cpus },
                         {"sets", sampleSets },
                         {"fields", fields},
