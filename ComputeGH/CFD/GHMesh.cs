@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Grasshopper.Kernel;
-using Rhino.Geometry;
-using Newtonsoft.Json;
-using ComputeCS.types;
+using System.Drawing;
+using ComputeCS.Components;
 using ComputeGH.Properties;
+using Grasshopper.Kernel;
 
 namespace ComputeCS.Grasshopper
 {
@@ -23,21 +22,25 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Domain", "Domain", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Default Surfaces", "Default Surfaces", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Overrides", "Overrides", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Default Surface", "Default Surface", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Overrides", "Overrides",
+                "Takes overrides in JSON format: {'setup': [...], 'fields': [...], 'presets': [...], 'caseFiles: [...]'}",
+                GH_ParamAccess.item);
+            pManager.AddTextParameter("setSet", "setSet", "setSet regions", GH_ParamAccess.list);
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
+            pManager[4].Optional = true;
         }
 
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
         }
@@ -50,7 +53,7 @@ namespace ComputeCS.Grasshopper
         {
             string inputJson = null;
             string domain = null;
-            Dictionary<string, object> defaultSurfaces = new Dictionary<string, object>
+            var defaultSurfaces = new Dictionary<string, object>
             {
                 {
                     "Plane", new Dictionary<string, object>
@@ -65,28 +68,41 @@ namespace ComputeCS.Grasshopper
                     }
                 }
             };
-            Dictionary<string, object> overrides = new Dictionary<string, object>();
+            var overrides = new Dictionary<string, object>();
+            var setSets = new List<string>();
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetData(1, ref domain)) return;
+            DA.GetData(2, ref defaultSurfaces);
+            DA.GetData(3, ref overrides);
+            DA.GetDataList(4, setSets);
 
 
-            var outputs = Components.Mesh.Setup(
+            var outputs = Mesh.Setup(
                 inputJson,
                 domain,
                 defaultSurfaces,
-                overrides
+                overrides,
+                setSets
             );
 
-            DA.SetData(0, outputs["out"]);
+            DA.SetData(0, outputs);
         }
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
+        protected override Bitmap Icon
         {
-            get { return Resources.IconMesh; }
+            get
+            {
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+
+                return Resources.IconMesh;
+            }
         }
 
         /// <summary>

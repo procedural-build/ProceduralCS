@@ -8,7 +8,7 @@ namespace ComputeCS.Components
 {
     public static class CFDSolution
     {
-        public static Dictionary<string, object> Setup(
+        public static string Setup(
             string inputJson,
             List<int> cpus,
             string solver,
@@ -16,7 +16,8 @@ namespace ComputeCS.Components
             List<string> boundaryConditions,
             string iterations,
             int numberOfAngles,
-            string overrides = null
+            string overrides = null,
+            List<string> files = null
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
@@ -25,7 +26,7 @@ namespace ComputeCS.Components
             var bcs_ = new List<Dictionary<string, object>>();
             foreach (string bc in boundaryConditions) { bcs_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(bc)); }
             
-            Dictionary<string, object> bcs = bcs_.SelectMany(x => x).GroupBy(d => d.Key).ToDictionary(x => x.Key, y => y.First().Value);
+            var bcs = bcs_.SelectMany(x => x).GroupBy(d => d.Key).ToDictionary(x => x.Key, y => y.First().Value);
 
             // Convert iterations from json to dict
             var iterations_ = JsonConvert.DeserializeObject<Dictionary<string, int>>(iterations);
@@ -36,6 +37,16 @@ namespace ComputeCS.Components
             {
                 overrides_ = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
             }
+            // Convert overrides to dict
+            var files_ = new List<Dictionary<string, object>>();
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    files_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(file));    
+                }
+                
+            }
             
             var solution = new types.CFDSolution
             {
@@ -44,20 +55,16 @@ namespace ComputeCS.Components
                 CaseType = caseType,
                 BoundaryConditions = bcs,
                 Iterations = iterations_,
-                Angles = GetAngleListFromNumber(numberOfAngles),
-                Overrides = overrides_
+                Angles = caseType == "VirtualWindTunnel"? GetAngleListFromNumber(numberOfAngles): null,
+                Overrides = overrides_,
+                Files = files_
             };
 
             inputData.CFDSolution = solution;
-            var output = inputData.ToJson();
-
-            return new Dictionary<string, object>
-            {
-                {"out", output}
-            };
+            return inputData.ToJson();
         }
 
-        static List<double> GetAngleListFromNumber(
+        private static List<double> GetAngleListFromNumber(
             int numberOfAngles
         )
         {

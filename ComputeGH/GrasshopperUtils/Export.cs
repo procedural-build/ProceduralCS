@@ -11,7 +11,11 @@ namespace ComputeCS.Grasshopper.Utils
 {
     public static class Export
     {
-        public static byte[] STLObject(List<GH_Mesh> surfaceMeshes)
+        public static byte[] STLObject
+            (
+            List<GH_Mesh> surfaceMeshes,
+            bool WriteRefinementRegions = false
+            )
         {
             UnicodeEncoding uniEncoding = new UnicodeEncoding();
             MemoryStream stream = new MemoryStream();
@@ -21,13 +25,18 @@ namespace ComputeCS.Grasshopper.Utils
                 {
                     Mesh mesh = ghMesh.Value;
                     string name = Geometry.getUserString(ghMesh, "ComputeName");
+                    var refinementDetails = Geometry.getUserString(ghMesh, "ComputeRefinementRegion");
+                    if (refinementDetails != null && WriteRefinementRegions == false)
+                    {
+                        continue;
+                    }
 
                     mesh.Faces.ConvertQuadsToTriangles();
                     mesh.FaceNormals.ComputeFaceNormals();
                     mesh.FaceNormals.UnitizeFaceNormals();
 
                     MeshFace face;
-                    int[] verts = new int[3] { 0, 0, 0 };
+                    int[] verts = new int[3] {0, 0, 0};
                     memStream.Write($"solid {name}\n");
 
                     for (int f = 0; f < mesh.Faces.Count; f++)
@@ -37,13 +46,16 @@ namespace ComputeCS.Grasshopper.Utils
                         verts[1] = face.B;
                         verts[2] = face.C;
 
-                        memStream.Write($"facet normal {mesh.FaceNormals[f].X} {mesh.FaceNormals[f].Y} {mesh.FaceNormals[f].Z}\n");
+                        memStream.Write(
+                            $"facet normal {mesh.FaceNormals[f].X} {mesh.FaceNormals[f].Y} {mesh.FaceNormals[f].Z}\n");
 
                         memStream.Write(" outer loop\n");
                         foreach (int v in verts)
                         {
-                            memStream.Write($"  vertex {mesh.Vertices[v].X} {mesh.Vertices[v].Y} {mesh.Vertices[v].Z}\n");
+                            memStream.Write(
+                                $"  vertex {mesh.Vertices[v].X} {mesh.Vertices[v].Y} {mesh.Vertices[v].Z}\n");
                         }
+
                         memStream.Write(" endloop\n");
 
                         memStream.Write("endfacet\n");
@@ -54,6 +66,27 @@ namespace ComputeCS.Grasshopper.Utils
             }
 
             return stream.ToArray();
+        }
+
+        public static List<Dictionary<string, byte[]>> RefinementRegionsToSTL(List<GH_Mesh> surfaceMeshes)
+        {
+            var stls = new List<Dictionary<string, byte[]>>();
+
+            foreach (var mesh in surfaceMeshes)
+            {
+                var regionName = Geometry.getUserString(mesh, "ComputeName");
+                var refinementDetails = Geometry.getUserString(mesh, "ComputeRefinementRegion");
+                if (regionName == null || refinementDetails == null)
+                {
+                    continue;
+                }
+
+                stls.Add(
+                    new Dictionary<string, byte[]> {{regionName, STLObject(new List<GH_Mesh>() {mesh}, true)}}
+                );
+            }
+
+            return stls;
         }
     }
 }

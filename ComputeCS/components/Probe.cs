@@ -15,6 +15,7 @@ namespace ComputeCS.Components
             List<string> names,
             List<int> cpus,
             string dependentOn = "",
+            string caseDir = "VWT/",
             bool create = false
         )
         {
@@ -27,31 +28,30 @@ namespace ComputeCS.Components
 
             if (parentTask == null) {return null;}
 
-            dependentOn = null;
-            if (simulationTask != null)
-            {
-                dependentOn = simulationTask.UID;
-            }
-
             var fieldsOpenFoamFormat = string.Join(" ", fields);
             var sampleSets = GenerateSampleSet(points, names);
 
+            var taskQueryParams = new Dictionary<string, object>
+            {
+                {"name", "Probe"},
+                {"parent", parentTask.UID},
+            };
+            if (simulationTask != null)
+            {
+                taskQueryParams.Add("dependent_on", simulationTask.UID);
+            }
             var task = new GenericViewSet<Task>(
                 tokens,
                 inputData.Url,
                 $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
-                new Dictionary<string, object> {
-                    {"name", "PostProcess GH"},
-                    {"parent", parentTask.UID},
-                    {"dependent_on", dependentOn}
-                },
+                taskQueryParams,
                 new Dictionary<string, object> {
                     {"config", new Dictionary<string, object> {
                         {"task_type", "cfd"},
                         {"cmd", "pipeline"},
                         {"commands", new List<string>{ "write_sample_set", "postProcess -func internalCloud"} },
-                        {"case_dir", "VWT/" },
+                        {"case_dir", caseDir },
                         {"cpus", cpus },
                         {"sets", sampleSets },
                         {"fields", fields},

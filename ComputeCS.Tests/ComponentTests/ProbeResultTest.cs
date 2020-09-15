@@ -23,7 +23,7 @@ namespace ComputeCS.Tests.ComponentTests
             }
             else
             {
-                FileSystem.MkDir(folder);
+                //FileSystem.MkDir(folder);
             }
 
             ZipFile.ExtractToDirectory(

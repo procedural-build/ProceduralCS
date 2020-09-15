@@ -155,6 +155,10 @@ namespace ComputeCS.Grasshopper
         {
             get
             {
+                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
                 return Resources.IconFolder;
             }
         }

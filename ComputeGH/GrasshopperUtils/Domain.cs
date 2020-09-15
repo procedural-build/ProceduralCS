@@ -4,7 +4,7 @@ using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper.Utils
 {
-    public class Domain
+    public static class Domain
     {
         public static BoundingBox getMultiBoundingBox(List<BoundingBox> x)
         {
@@ -129,7 +129,7 @@ namespace ComputeCS.Grasshopper.Utils
             return A;
         }
 
-        public static Point3d getLocationInMesh(Box boundingBox)
+        public static Point3d GetLocationInMesh(Box boundingBox)
         {
             double r = (4 + (new Random().NextDouble() - 1)) / 16.0;
             Point3d kPoint = boundingBox.Center;
@@ -140,6 +140,47 @@ namespace ComputeCS.Grasshopper.Utils
             kPoint += kPointVect;
 
             return kPoint;
+        }
+
+        public static BoundingBox Create2DDomain(BoundingBox boundingBox, Plane cutPlane, double cellSize)
+        {
+            // Adjust for the cutPlane
+            Point3d[] intersectionPoints;
+            Curve[] intersectionCurves;
+            var isIntersect = Rhino.Geometry.Intersect.Intersection.BrepPlane(
+                boundingBox.ToBrep(),
+                cutPlane,
+                0,
+                out intersectionCurves,
+                out intersectionPoints
+            );
+
+            if (!isIntersect)
+            {
+                throw new Exception("Plane must intersect geometry bounding box");
+            }
+
+            if (intersectionCurves.Length == 0)
+            {
+                throw new Exception("No intersection curves found");
+            }
+
+            // Get all of the points intersected by the box.
+            var points = new List<Point3d>();
+            foreach (var curve in intersectionCurves)
+            {
+                Polyline edges;
+                curve.TryGetPolyline(out edges);
+                points.AddRange(edges.ToArray());
+            }
+
+            var box = new Box(cutPlane, points)
+            {
+                Z = new Interval(cutPlane.OriginZ - cellSize / 2, cutPlane.OriginZ + cellSize / 2)
+            };
+
+            return box.BoundingBox;
+
         }
     }
 }

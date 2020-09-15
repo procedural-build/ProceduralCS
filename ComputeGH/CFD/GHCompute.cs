@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
-using Rhino.Geometry;
-using Newtonsoft.Json;
-using ComputeCS.types;
+using System.Drawing;
+using ComputeCS.Components;
 using ComputeCS.Grasshopper.Utils;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
@@ -27,7 +27,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddMeshParameter("Mesh", "Mesh", "Case Geometry as a list of meshes", GH_ParamAccess.list);
@@ -41,7 +41,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.list);
         }
@@ -80,9 +80,11 @@ namespace ComputeCS.Grasshopper
                         try
                         {
                             var geometryFile = Export.STLObject(geometry);
-                            var results = Components.Compute.Create(
+                            var refinementGeometry = Export.RefinementRegionsToSTL(geometry);
+                            var results = Compute.Create(
                                 inputJson,
                                 geometryFile,
+                                refinementGeometry,
                                 compute
                             );
                             cachedValues = results;
@@ -130,17 +132,20 @@ namespace ComputeCS.Grasshopper
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
+        protected override Bitmap Icon
         {
             get
             {
-                //You can add image files to your project resources and access them like this:
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
                 return Resources.IconRun;
             }
         }

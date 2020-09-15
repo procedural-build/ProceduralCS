@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ComputeCS.Grasshopper.Utils;
+using ComputeCS.types;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
@@ -36,7 +37,11 @@ namespace ComputeCS.Grasshopper
 
         protected override System.Drawing.Bitmap Icon
         {
-            get { return Resources.IconRefinementRegion; }
+            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+                {
+                    return null;
+                }
+                return Resources.IconRefinementRegion; }
         }
 
         public override Guid ComponentGuid
@@ -66,10 +71,14 @@ namespace ComputeCS.Grasshopper
             // Get a list of object references in the Rhino model
             foreach (var mesh in meshes)
             {
+                var refinementRegion = new RefinementDetails {
+                    Mode =  location,
+                    Levels = refLevels
+                };
                 Geometry.setUserString(
                     mesh,
                     "ComputeRefinementRegion",
-                    $"mode {location}; levels {refLevels};"
+                    refinementRegion.ToJson()
                 );
             }
 
