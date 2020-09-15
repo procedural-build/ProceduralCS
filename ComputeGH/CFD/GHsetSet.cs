@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ComputeCS.types;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
@@ -21,7 +22,7 @@ namespace ComputeGH.Grasshopper
         {
             pManager.AddTextParameter("Names", "Names", "Mesh names", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Location", "Location", "This input takes a list of false and true. Inside, Surface, Outside", GH_ParamAccess.list, new List<bool>(){ true, true, false });
-            pManager.AddPointParameter("Keep Point", "Keep Point", "Keep Point", GH_ParamAccess.item, new Point3d { X = 0, Y = 0, Z = 0});
+            pManager.AddPointParameter("Keep Point", "Keep Point", "Keep Point. If no point is provided, the point is set to the same as the SnappyHexMesh keep point.", GH_ParamAccess.item);
 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
@@ -45,22 +46,16 @@ namespace ComputeGH.Grasshopper
             var names = new List<string>();
             var location = new List<bool>();
             var keepPoint = new Point3d();
-
+            List<double> keepList = null;
+            
             if (!DA.GetDataList(0, names)) return;
             DA.GetDataList(1, location);
-            DA.GetData(2, ref keepPoint);
-
-            var outputs = new List<string>();
-            foreach (var name in names)
+            if (DA.GetData(2, ref keepPoint))
             {
-                outputs.Add(new setSetRegion
-                {
-                    Name = name,
-                    Locations = location,
-                    KeepPoint = new List<double>() { keepPoint.X, keepPoint.Y, keepPoint.Z }
-                }.ToJson());
+                keepList = new List<double>() {keepPoint.X, keepPoint.Y, keepPoint.Z};
             }
- 
+
+            var outputs = names.Select(name => new setSetRegion {Name = name, Locations = location, KeepPoint = keepList}.ToJson()).ToList();
 
             DA.SetDataList(0, outputs);
         }

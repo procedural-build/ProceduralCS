@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ComputeCS.types;
+using Newtonsoft.Json;
 
 namespace ComputeCS.Components
 {
@@ -39,6 +42,25 @@ namespace ComputeCS.Components
             if (setSetRegions != null)
             {
                 var setSetRegions_ = setSetRegions.Select(region => new setSetRegion().FromJson(region)).ToList();
+                List<double> locationInMesh = null;
+                if (inputData.Mesh.SnappyHexMesh.Overrides.ContainsKey("castellatedMeshControls"))
+                {
+                    
+                    var castellatedMeshControls = new CastellatedMeshControls().FromJson(inputData.Mesh.SnappyHexMesh.Overrides["castellatedMeshControls"].ToString());
+                    locationInMesh = castellatedMeshControls.LocationInMesh;
+                }
+                
+                foreach (var setSetRegion in setSetRegions_)
+                {
+                    if (setSetRegion.KeepPoint == null)
+                    {
+                        if (locationInMesh == null)
+                        {
+                            throw new Exception("Could not find castellatedMeshControls.locationInMesh in SnappyHexMesh.Overrides. You need to provide locationInMesh if you haven't specified the keep point for the setSet regions.");
+                        }
+                        setSetRegion.KeepPoint = locationInMesh;
+                    }
+                }
                 inputData.Mesh.BaseMesh.setSetRegions = setSetRegions_;
             }
 

@@ -18,16 +18,22 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Objects", "Objects", "Objects to include in the CFD domain", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Domain Type", "Domain Type", "Domain type. Choose between: 0: 3D domain, 1: 2D domain.", GH_ParamAccess.item, 0);
+            pManager.AddGenericParameter("Objects", "Objects", "Objects to include in the CFD domain",
+                GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Domain Type", "Domain Type",
+                "Domain type. Choose between: 0: 3D domain, 1: 2D domain.", GH_ParamAccess.item, 0);
             pManager.AddNumberParameter("Cell Size", "Cell Size", "Cell Size", GH_ParamAccess.item);
             pManager.AddBooleanParameter("z0", "z0", "Base z=0", GH_ParamAccess.item, true);
             pManager.AddBooleanParameter("Center XY", "Center XY", "centerXY", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("Square", "Square", "Whether the domain should be square or not.", GH_ParamAccess.item, true);
-            pManager.AddNumberParameter("XY Scale", "XY Scale", "Scale in the X and Y directions", GH_ParamAccess.item, 1.25);
-            pManager.AddNumberParameter("XY Offset", "XY Offset", "Offset in the X and Y directions", GH_ParamAccess.item, 1.0);
+            pManager.AddBooleanParameter("Square", "Square", "Whether the domain should be square or not.",
+                GH_ParamAccess.item, true);
+            pManager.AddNumberParameter("XY Scale", "XY Scale", "Scale in the X and Y directions", GH_ParamAccess.item,
+                1.25);
+            pManager.AddNumberParameter("XY Offset", "XY Offset", "Offset in the X and Y directions",
+                GH_ParamAccess.item, 1.0);
             pManager.AddNumberParameter("Z Scale", "Z Scale", "Scale in the Z direction", GH_ParamAccess.item, 2.0);
-            pManager.AddPlaneParameter("Plane", "Plane", "Plane for creating a 2D domain. Is not used if you create a 3D Domain", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Plane", "Plane",
+                "Plane for creating a 2D domain. Is not used if you create a 3D Domain", GH_ParamAccess.item);
 
             pManager[3].Optional = true;
             pManager[4].Optional = true;
@@ -36,7 +42,7 @@ namespace ComputeCS.Grasshopper
             pManager[7].Optional = true;
             pManager[8].Optional = true;
             pManager[9].Optional = true;
-            
+
             AddNamedValues(pManager[1] as Param_Integer, DomainTypes);
         }
 
@@ -49,10 +55,12 @@ namespace ComputeCS.Grasshopper
                 index++;
             }
         }
+
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
-            pManager.AddBoxParameter("Bounding Box", "Bounding Box", "Bounding boxes representing the domain", GH_ParamAccess.item);
+            pManager.AddBoxParameter("Bounding Box", "Bounding Box", "Bounding boxes representing the domain",
+                GH_ParamAccess.item);
             pManager.AddGenericParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
         }
 
@@ -64,6 +72,7 @@ namespace ComputeCS.Grasshopper
                 {
                     return null;
                 }
+
                 return Resources.IconRectDomain;
             }
         }
@@ -90,21 +99,21 @@ namespace ComputeCS.Grasshopper
             {
                 return;
             }
-            
+
             DA.GetData(1, ref domainType);
-            
+
             if (!DA.GetData(2, ref cellSize))
             {
                 return;
             }
-            
+
             DA.GetData(3, ref z0);
             DA.GetData(4, ref centerXY);
             DA.GetData(5, ref square);
             DA.GetData(6, ref xyScale);
             DA.GetData(7, ref xyOffset);
             DA.GetData(8, ref zScale);
-            DA.GetData(9, ref plane);    
+            DA.GetData(9, ref plane);
 
             // Create Bounding Box
             var bbs = new List<BoundingBox>();
@@ -162,13 +171,11 @@ namespace ComputeCS.Grasshopper
                         Overrides = new Dictionary<string, object>
                         {
                             {
-                                "castellatedMeshControls", new Dictionary<string, object>
+                                "castellatedMeshControls", new CastellatedMeshControls
                                 {
+                                    LocationInMesh = new List<double>
                                     {
-                                        "locationInMesh", new List<double>
-                                        {
-                                            locationInMesh.X, locationInMesh.Y, locationInMesh.Z
-                                        }
+                                        locationInMesh.X, locationInMesh.Y, locationInMesh.Z
                                     }
                                 }
                             }
@@ -182,7 +189,7 @@ namespace ComputeCS.Grasshopper
             DA.SetData(1, bb);
             DA.SetDataList(2, geometry);
         }
-        
+
         private static readonly List<string> DomainTypes = new List<string>
         {
             "3D", "2D"
@@ -195,7 +202,10 @@ namespace ComputeCS.Grasshopper
             {
                 var regionName = Geometry.getUserString(mesh, "ComputeName");
                 var refinementDetails = Geometry.getUserString(mesh, "ComputeRefinementRegion");
-                if (regionName == null || refinementDetails == null) { continue; }
+                if (regionName == null || refinementDetails == null)
+                {
+                    continue;
+                }
 
                 refinementRegions.Add(
                     new RefinementRegion
@@ -218,7 +228,10 @@ namespace ComputeCS.Grasshopper
                 var minLevel = Geometry.getUserString(mesh, "ComputeMeshMinLevel");
                 var maxLevel = Geometry.getUserString(mesh, "ComputeMeshMaxLevel");
 
-                if (surfaceName == null || minLevel == null) { continue; }
+                if (surfaceName == null || minLevel == null)
+                {
+                    continue;
+                }
 
                 surfaces.Add(
                     surfaceName, new Dictionary<string, object>

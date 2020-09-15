@@ -45,8 +45,8 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.tree);
             pManager.AddPointParameter("Points", "Points", "Points that were extracted from probe files",
                 GH_ParamAccess.tree);
-            //pManager.AddMeshParameter("New Mesh", "Mesh",
-            //    "Correct mesh that matches the extracted points from probe files", GH_ParamAccess.tree);
+            pManager.AddMeshParameter("Mesh", "Mesh",
+                "Correct mesh that matches the extracted points from probe files", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -73,11 +73,11 @@ namespace ComputeCS.Grasshopper
             var GHPoints = ConvertPointsToDataTree(points);
             DA.SetDataTree(1, GHPoints);
 
-            /*if (meshes.Any())
+            if (meshes.Any())
             {
                 var newMesh = CorrectMesh(meshes, points);    
                 DA.SetDataTree(2, newMesh);
-            }*/
+            }
 
             var info = UpdateInfo(results);
             DA.SetDataTree(0, info);
@@ -85,22 +85,42 @@ namespace ComputeCS.Grasshopper
             var keys = results.Keys.ToList();
             keys.Add("Info");
             keys.Add("Points");
+            keys.Add("Mesh");
             RemoveUnusedOutputs(keys);
         }
 
-        private static DataTree<object> CorrectMesh(GH_Structure<GH_Mesh> meshes,
-            Dictionary<string, List<List<double>>> points)
+        private static DataTree<object> CorrectMesh(
+            GH_Structure<GH_Mesh> meshes,
+            Dictionary<string, List<List<double>>> points
+            )
         {
+
             var newMeshes = new DataTree<object>();
+            var patches = points.Keys.ToList();
+            var j = 0;
             foreach (var branch in meshes.Branches)
             {
+                var patchPoints = points[patches[j]];
+                var GHPoints = patchPoints.Select(point => new Point3d(point[0], point[1], point[2])).ToList();
                 var mesh = new Mesh();
                 GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
+                var faceCenters = Enumerable.Range(0, mesh.Faces.Count()).Select(index => mesh.Faces.GetFaceCenter(index)).ToList();
+                var faceIndices = RTree.Point3dClosestPoints(faceCenters, GHPoints, 0.1);
 
-                foreach (var index in Enumerable.Range(0, mesh.Faces.Count()))
+                var newMesh = new Mesh();
+                newMesh.Vertices.AddVertices(mesh.Vertices);
+                foreach (var face in faceIndices)
                 {
-                    mesh.Faces.GetFaceCenter(index);
+                    newMesh.Faces.AddFace(mesh.Faces[face[0]]);
                 }
+
+                newMesh.Normals.ComputeNormals();
+                newMesh.UnifyNormals();
+                newMesh.Compact();
+                
+                var path = new GH_Path(j);
+                newMeshes.Add(newMesh, path);
+                j++;
             }
 
             return newMeshes;
@@ -260,11 +280,15 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+            get
+            {
+                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
-                return Resources.IconMesh; }
+
+                return Resources.IconMesh;
+            }
         }
 
         /// <summary>
