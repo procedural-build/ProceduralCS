@@ -135,8 +135,9 @@ namespace ComputeCS.Grasshopper
                         StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
                         StringCache.setCache(cacheKey, "error");
                     }
-                    StringCache.setCache(queueName, "");
                     ExpireSolutionThreadSafe(true);
+                    Thread.Sleep(2000);
+                    StringCache.setCache(queueName, "");
                 });
                 
             }

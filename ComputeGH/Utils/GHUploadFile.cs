@@ -91,8 +91,8 @@ namespace ComputeCS.Grasshopper
                         StringCache.setCache(cacheKey + "create", "");
                     }
 
-                    StringCache.setCache(queueName, "");
                     ExpireSolutionThreadSafe(true);
+                    StringCache.setCache(queueName, "");
                 }
             }
 

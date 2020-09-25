@@ -81,6 +81,10 @@ namespace ComputeCS.Components
                 {
                     return subTask;
                 }
+                if (subTask.Name == "SimpleCase")
+                {
+                    return subTask;
+                }
                 else if ((string)subTask.Config["cmd"] == "wind_tunnel")
                 {
                     return subTask;

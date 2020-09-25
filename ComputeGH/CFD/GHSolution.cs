@@ -34,24 +34,25 @@ namespace ComputeCS.Grasshopper
             pManager.AddIntegerParameter("Case Type", "Case Type", "Available Options: SimpleCase, VirtualWindTunnel",
                 GH_ParamAccess.item, 0);
             pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Iterations", "Iterations",
-                "Number of iterations to run. Expects recieve the JSON format: {'init': 100, 'run': '100'}. The 'run' key is optional.",
-                GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Iterations", "Iterations",
+                "Number of iterations to run.",
+                GH_ParamAccess.item, 100);
             pManager.AddIntegerParameter("Number of Angles", "Number of Angles",
                 "Number of Angles. Only used for Virtual Wind Tunnel. Default is 16",
                 GH_ParamAccess.item, 16);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: {'setup': [...], 'fields': [...], 'presets': [...], 'caseFiles: [...]'}",
                 GH_ParamAccess.item);
-            pManager.AddTextParameter("Files", "Files",
+            /*pManager.AddTextParameter("Files", "Files",
                 "Extra files to write. This input should be a list of dictionaries in the format of: {'path': 'path/to/file/on/server', 'text': 'text to write in the file.'}",
-                GH_ParamAccess.list);
+                GH_ParamAccess.list);*/
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
+            pManager[5].Optional = true;
             pManager[6].Optional = true;
             pManager[7].Optional = true;
-            pManager[8].Optional = true;
+            //pManager[8].Optional = true;
 
             AddNamedValues(pManager[2] as Param_Integer, _solvers);
             AddNamedValues(pManager[3] as Param_Integer, _caseTypes);
@@ -88,7 +89,7 @@ namespace ComputeCS.Grasshopper
             var caseType = 0;
             var boundaryConditions = new List<string>();
 
-            string iterations = null;
+            var iterations = 100;
 
             var numberOfAngles = 16;
             string overrides = null;
@@ -100,11 +101,11 @@ namespace ComputeCS.Grasshopper
             DA.GetData(2, ref solver);
             DA.GetData(3, ref caseType);
             if (!DA.GetDataList(4, boundaryConditions)) return;
-            if (!DA.GetData(5, ref iterations)) return;
+            DA.GetData(5, ref iterations);
             DA.GetData(6, ref numberOfAngles);
             DA.GetData(7, ref overrides);
             //DA.GetData(8, ref files);
-
+            var _iterations = $"{{'init': {iterations}}}";
 
             var outputs = CFDSolution.Setup(
                 inputJson,
@@ -112,7 +113,7 @@ namespace ComputeCS.Grasshopper
                 _solvers[solver],
                 _caseTypes[caseType],
                 boundaryConditions,
-                iterations,
+                _iterations,
                 numberOfAngles,
                 overrides,
                 files

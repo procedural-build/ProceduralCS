@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
@@ -122,8 +123,10 @@ namespace ComputeGH.CFD
                             StringCache.setCache(cacheKey + "create", "");
                         }
 
-                        StringCache.setCache(queueName, "");
+
                         ExpireSolutionThreadSafe(true);
+                        Thread.Sleep(2000);
+                        StringCache.setCache(queueName, "");
                     });
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.Grasshopper.Utils;
 using ComputeCS.utils.Cache;
@@ -102,8 +103,10 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
-                        StringCache.setCache(queueName, "");
+
                         ExpireSolutionThreadSafe(true);
+                        Thread.Sleep(2000);
+                        StringCache.setCache(queueName, "");
                     });
                     
                 }

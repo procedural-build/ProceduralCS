@@ -22,12 +22,14 @@ namespace ComputeCS.Components
 
             if (parentTask == null)
             {
-                throw new System.Exception("Cannot upload a case without a parent task.");
+                return null;
+                //throw new System.Exception("Cannot upload a case without a parent task.");
             }
 
             if (project == null)
             {
-                throw new System.Exception("Cannot upload a case without a project.");
+                return null;
+                //throw new System.Exception("Cannot upload a case without a project.");
             }
 
             if (create)
@@ -97,7 +99,7 @@ namespace ComputeCS.Components
 
 
             // Task to Handle Meshing
-            var includeSetSet = inputData.Mesh.BaseMesh.setSetRegions != null;
+            var includeSetSet = inputData.Mesh.BaseMesh.setSetRegions.Count > 0;
             var cpus = solution.CPUs;
             var meshTask = CreateMeshTask(tokens, inputData.Url, project.UID, parentTask.UID, actionTask.UID, cpus,
                 includeSetSet, create);
@@ -184,14 +186,19 @@ namespace ComputeCS.Components
             bool create
         )
         {
+            var nCPUs = 1;
+            cpus.ForEach(cpu => nCPUs = nCPUs*cpu);
             var commands = new List<string>
             {
                 "blockMesh",
-                "snappyHexMesh -overwrite",
-                "reconstructParMesh -constant -mergeTol 1e-6",
-                "!checkMesh -writeSets vtk",
-                "foamToSurface -constant surfaceMesh.obj"
+                "snappyHexMesh -overwrite"
             };
+            if (nCPUs > 1) {
+                commands.Add("reconstructParMesh -constant -mergeTol 1e-6");
+            }
+
+            commands.Add("!checkMesh -writeSets vtk");
+            commands.Add("foamToSurface -constant surfaceMesh.obj");
 
             if (includeSetSet)
             {

@@ -111,7 +111,10 @@ namespace ComputeCS.Grasshopper
                 newMesh.Vertices.AddVertices(mesh.Vertices);
                 foreach (var face in faceIndices)
                 {
-                    newMesh.Faces.AddFace(mesh.Faces[face[0]]);
+                    if (face.Length > 0) {
+                        newMesh.Faces.AddFace(mesh.Faces[face[0]]);
+                    }
+                    
                 }
 
                 newMesh.Normals.ComputeNormals();

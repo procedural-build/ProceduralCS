@@ -9,6 +9,7 @@ using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
 using Grasshopper.Kernel.Types;
+using System.Threading;
 
 namespace ComputeCS.Grasshopper
 {
@@ -142,8 +143,10 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey + "create", "");
                         }
 
-                        StringCache.setCache(queueName, "");
+
                         ExpireSolutionThreadSafe(true);
+                        Thread.Sleep(2000);
+                        StringCache.setCache(queueName, "");
                     });
                 }
             }

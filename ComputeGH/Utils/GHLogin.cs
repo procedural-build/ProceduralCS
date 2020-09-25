@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
@@ -102,6 +103,7 @@ namespace ComputeCS.Grasshopper
                         }
 
                         ExpireSolutionThreadSafe(true);
+                        Thread.Sleep(2000);
                         StringCache.setCache(queueName, "");
                     });
                 }
