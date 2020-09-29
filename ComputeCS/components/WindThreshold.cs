@@ -31,10 +31,14 @@ namespace ComputeCS.Components
                 return null;
             }
             
-            dependentOn = null;
+            var taskQueryParams = new Dictionary<string, object>
+            {
+                {"name", "Wind Thresholds"},
+                {"parent", parentTask.UID},
+            };
             if (postProcessTask != null)
             {
-                dependentOn = postProcessTask.UID;
+                taskQueryParams.Add("dependent_on", postProcessTask.UID);
             }
 
             if (!File.Exists(epwFile))
@@ -69,12 +73,7 @@ namespace ComputeCS.Components
                 inputData.Url,
                 $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
-                new Dictionary<string, object>
-                {
-                    {"name", "Wind Thresholds"},
-                    {"parent", parentTask.UID},
-                    {"dependent_on", dependentOn}
-                },
+                taskQueryParams,
                 new Dictionary<string, object>
                 {
                     {
