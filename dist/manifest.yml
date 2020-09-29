@@ -1,6 +1,6 @@
 ---
 name: ProceduralCS
-version: 2020.9.1
+version: $version
 authors:
 - Christian Kongsgaard
 - Mark Pitman
