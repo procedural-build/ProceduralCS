@@ -38,7 +38,7 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list);
             pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
                 GH_ParamAccess.list);
-            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]. In most cases it is not adviced to use more CPUs as the time it takes to decompose and reconstruct the case will exceede the speed-up gained by multiprocssing the probing.", GH_ParamAccess.list);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);

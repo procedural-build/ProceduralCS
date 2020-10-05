@@ -17,7 +17,8 @@ namespace ComputeGH
 
         public override string Version
         {
-            get { return NextVersion(); }
+            //get { return NextVersion(); }
+            get { return "2020.9.3"; }
         }
 
         public override Bitmap Icon

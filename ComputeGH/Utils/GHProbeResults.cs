@@ -21,7 +21,7 @@ namespace ComputeCS.Grasshopper
         public GHProbeResults()
             : base("Probe Results", "Probe Results",
                 "Loads the probe results from a file",
-                "Compute", "Utils")
+                "Compute", "CFD")
         {
         }
 
@@ -82,11 +82,15 @@ namespace ComputeCS.Grasshopper
             var info = UpdateInfo(results);
             DA.SetDataTree(0, info);
 
-            var keys = results.Keys.ToList();
-            keys.Add("Info");
-            keys.Add("Points");
-            keys.Add("Mesh");
-            RemoveUnusedOutputs(keys);
+            if (results != null)
+            {
+                var keys = results.Keys.ToList();
+                keys.Add("Info");
+                keys.Add("Points");
+                keys.Add("Mesh");
+                RemoveUnusedOutputs(keys);
+            }
+
         }
 
         private static DataTree<object> CorrectMesh(
