@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.IO;
 using ComputeCS.types;
 using System.Linq;
+using ComputeCS.utils.Cache;
 
 namespace ComputeCS.Components
 {
@@ -10,48 +12,97 @@ namespace ComputeCS.Components
     {
         public static bool Download(
             string inputJson,
-            string downloadPath, 
+            string downloadPath,
             string localPath,
-            bool reload
+            List<string> exclude
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
-        
+
 
             if (parentTask == null)
             {
                 throw new Exception("Cannot download content without a parent task.");
             }
 
-            // If local path exists; return true
-            var extractedFolder = Path.Combine(localPath, downloadPath.Split('/').Last());
-            if (Directory.Exists(extractedFolder) && !reload)
+            var localFiles = Directory.EnumerateFiles(localPath, "*", SearchOption.AllDirectories)
+                .Select(file => file.Remove(0, localPath.Length + 1)).ToList();
+            foreach (var fileWin in localFiles)
             {
-                return true;
+                var fileUnix = fileWin.Replace('\\', '/');
+                if (StringCache.getCache(fileUnix) == null)
+                {
+                    StringCache.setCache(fileUnix, GetMD5(Path.Combine(localPath, fileWin)));
+                }
             }
 
-            // Download file from task task
-            var downloadedFile = new GenericViewSet<string>(
+            var queryParams = new Dictionary<string, object> {{"filepath", downloadPath}, {"hash", true}};
+            if (exclude.Count > 0)
+            {
+                queryParams.Add("exclude", exclude);
+            }
+            var serverFiles = new GenericViewSet<TaskFile>(
                 tokens,
                 inputData.Url,
                 $"/api/task/{parentTask.UID}/file/"
-            ).Retrieve(downloadPath, localPath, new Dictionary<string, object> { {"download", true } });
+            ).List(queryParams);
 
-            // If the file was downloaded return true
-            if (File.Exists(downloadedFile))
+            if (serverFiles.Count == 0)
             {
-                if (downloadedFile.EndsWith(".zip"))
-                {
-                    if (reload && Directory.Exists(extractedFolder)) { Directory.Delete(extractedFolder, true); }
-                    System.IO.Compression.ZipFile.ExtractToDirectory(downloadedFile, localPath);
-                }
-                return true;
+                return false;
             }
+            
+            foreach (var serverFile in serverFiles)
+            {
+                // fileName is Unix path
+                var filePathUnix = serverFile.File;
+                var fileHash = serverFile.Hash;
 
-            // Return false if everything else fails.
-            return false;
+                if (!filePathUnix.StartsWith(downloadPath))
+                {
+                    continue;
+                }
+                var filePathWin = filePathUnix.Remove(0, downloadPath.Length + 1).Replace('/', '\\');
+                var localFilePath = Path.Combine(localPath, filePathWin);
+                var localFileDirectory =
+                    string.Join("\\", localFilePath.Split('\\').Take(localFilePath.Split('\\').Length - 1));
+                if (!Directory.Exists(localFileDirectory))
+                {
+                    Directory.CreateDirectory(localFileDirectory); 
+                }
+                if (!localFiles.Contains(filePathWin))
+                {
+                    var response = new GenericViewSet<string>(
+                        tokens,
+                        inputData.Url,
+                        $"/api/task/{parentTask.UID}/file/"
+                    ).Retrieve(filePathUnix, localFileDirectory, new Dictionary<string, object> {{"download", true}});
+                    StringCache.setCache(filePathUnix, GetMD5(localFilePath));
+                }
+                else if (fileHash != StringCache.getCache(filePathUnix.Remove(0, downloadPath.Length + 1)))
+                {
+                    var response = new GenericViewSet<string>(
+                        tokens,
+                        inputData.Url,
+                        $"/api/task/{parentTask.UID}/file/"
+                    ).Retrieve(filePathUnix, localFileDirectory, new Dictionary<string, object> {{"download", true}});
+                    StringCache.setCache(filePathUnix, GetMD5(localFilePath));
+                }
+            }
+            return true;
+        }
+
+        public static string GetMD5(string filename)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(filename))
+                {
+                    return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", string.Empty).ToLower();
+                }
+            }
         }
     }
 }

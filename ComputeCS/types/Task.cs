@@ -18,4 +18,11 @@ namespace ComputeCS.types
         public Task DependentOn;
         public List<string> ErrorMessages = null;
     }
+
+    public class TaskFile : SerializeBase<TaskFile>
+    {
+        public string File;
+        public string Hash;
+        public List<string> ErrorMessages = null;
+    }
 }

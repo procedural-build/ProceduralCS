@@ -20,7 +20,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public Download()
           : base("Download", "Download",
-              "Download files or folders from Compute",
+              "Download files or folders from Compute. This component will keep polling the Compute server until the files are available. If you reload this component it will check if the files on the server matches the local files and download them if needed.",
               "Compute", "Utils")
         {
         }
@@ -33,9 +33,11 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.item);
             pManager.AddTextParameter("Local Path", "Local Path", "The local path where to you want the download content to be stored.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Exclude", "Exclude", "Files to exclude. Provide a (regex) pattern and the component will exclude them from being downloaded. If you want to exclude all files that ends with '.txt', then you can do that with: '*txt'", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Reload", "Reload", "Redownload the content from Compute", GH_ParamAccess.item);
             
             pManager[3].Optional = true;
+            pManager[4].Optional = true;
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Path", "Path", "If the download succeded then this will give you the path it was downloaded to.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Path", "Path", "If the download succeeded then this will give you the path it was downloaded to.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -55,12 +57,14 @@ namespace ComputeCS.Grasshopper
             string input = null;
             string downloadPath = null;
             string localPath = null;
-            bool reload = false;
+            var exclude = new List<string>();
+            var reload = false;
 
             if (!DA.GetData(0, ref input)) return;
             if (!DA.GetData(1, ref downloadPath)) return;
             if (!DA.GetData(2, ref localPath)) return;
-            DA.GetData(3, ref reload);
+            DA.GetDataList(3, exclude);
+            DA.GetData(4, ref reload);
 
             // Get Cache to see if we already did this
             var cacheKey = input + downloadPath;
@@ -69,7 +73,7 @@ namespace ComputeCS.Grasshopper
 
             if (cachedValues == null || reload == true)
             {
-                PollDownloadContent(input, downloadPath, localPath, reload, cacheKey);
+                PollDownloadContent(input, downloadPath, localPath, exclude, reload, cacheKey);
             }
 
             if (!Directory.Exists(localPath))
@@ -100,6 +104,7 @@ namespace ComputeCS.Grasshopper
             string inputJson,
             string downloadPath,
             string localPath,
+            List<string> exclude,
             bool reload,
             string cacheKey
             )
@@ -121,7 +126,7 @@ namespace ComputeCS.Grasshopper
                     {
                         while (!downloaded)
                         {
-                            downloaded = Components.DownloadContent.Download(inputJson, downloadPath, localPath, reload);
+                            downloaded = Components.DownloadContent.Download(inputJson, downloadPath, localPath, exclude);
                             StringCache.setCache(cacheKey, downloaded.ToString());
                             if (!downloaded)
                             {
