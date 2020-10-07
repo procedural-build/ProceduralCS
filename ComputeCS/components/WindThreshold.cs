@@ -26,7 +26,7 @@ namespace ComputeCS.Components
             var postProcessTask = GetPostProcessTask(subTasks, dependentOn);
             var project = inputData.Project;
 
-            if (parentTask == null)
+            if (parentTask == null || parentTask.UID == null)
             {
                 return null;
             }

@@ -22,9 +22,14 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
 
 
-            if (parentTask == null)
+            if (parentTask == null || parentTask.UID == null)
             {
                 throw new Exception("Cannot download content without a parent task.");
+            }
+
+            if (!Directory.Exists(localPath))
+            {
+                Directory.CreateDirectory(localPath);
             }
 
             var localFiles = Directory.EnumerateFiles(localPath, "*", SearchOption.AllDirectories)

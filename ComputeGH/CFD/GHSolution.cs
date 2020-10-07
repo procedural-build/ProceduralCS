@@ -27,8 +27,8 @@ namespace ComputeCS.Grasshopper
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddIntegerParameter("CPUs", "CPUs",
-                "Number of CPUs to run the simulation acros. Expects a list of 3 numbers. The sum of the numbers is the amount of CPUs you want to run acros. Visit https://compute.procedural.build/pricing to see how many CPUs the different EC2 instances have. EC2 instances is the virtural machines in the cloud, on which the simulation runs.",
-                GH_ParamAccess.list);
+                "Number of CPUs to run the simulation across. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96",
+                GH_ParamAccess.item, 4);
             pManager.AddIntegerParameter("Solver", "Solver", "Select which OpenFOAM solver to use.",
                 GH_ParamAccess.item, 0);
             pManager.AddIntegerParameter("Case Type", "Case Type", "Available Options: SimpleCase, VirtualWindTunnel",
@@ -83,7 +83,7 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            var cpus = new List<int>();
+            var cpus = 4;
 
             var solver = 0;
             var caseType = 0;
@@ -97,7 +97,7 @@ namespace ComputeCS.Grasshopper
 
 
             if (!DA.GetData(0, ref inputJson)) return;
-            if (!DA.GetDataList(1, cpus)) return;
+            if (!DA.GetData(1, ref cpus)) return;
             DA.GetData(2, ref solver);
             DA.GetData(3, ref caseType);
             if (!DA.GetDataList(4, boundaryConditions)) return;
@@ -109,7 +109,7 @@ namespace ComputeCS.Grasshopper
 
             var outputs = CFDSolution.Setup(
                 inputJson,
-                cpus,
+                _validateCPUs(cpus),
                 _solvers[solver],
                 _caseTypes[caseType],
                 boundaryConditions,
@@ -157,6 +157,59 @@ namespace ComputeCS.Grasshopper
             "SimpleCase", "VirtualWindTunnel"
         };
 
+        private static List<int> _validateCPUs(int cpus)
+        {
+            if (cpus == 1)
+            {
+                return new List<int> {1, 1, 1};
+            }
+            if (cpus == 2)
+            {
+                return new List<int> {2, 1, 1};
+            }
+            if (cpus == 4)
+            {
+                return new List<int> {2, 2, 1};
+            }
+            if (cpus == 8)
+            {
+                return new List<int> {4, 2, 1};
+            }
+            if (cpus == 16)
+            {
+                return new List<int> {4, 4, 1};
+            }
+            if (cpus == 18)
+            {
+                return new List<int> {6, 3, 1};
+            }
+            if (cpus == 24)
+            {
+                return new List<int> {6, 4, 1};
+            }
+            if (cpus == 36)
+            {
+                return new List<int> {6, 6, 1};
+            }
+            if (cpus == 48)
+            {
+                return new List<int> {12, 4, 1};
+            }
+            if (cpus == 64)
+            {
+                return new List<int> {8, 8, 1};
+            }
+            if (cpus == 72)
+            {
+                return new List<int> {12, 6, 1};
+            }
+            if (cpus == 96)
+            {
+                return new List<int> {12, 8, 1};
+            }
+
+            throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
+        } 
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

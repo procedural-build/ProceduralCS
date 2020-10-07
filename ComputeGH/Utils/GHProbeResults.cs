@@ -107,6 +107,8 @@ namespace ComputeCS.Grasshopper
                 var patchPoints = points[patches[j]];
                 var GHPoints = patchPoints.Select(point => new Point3d(point[0], point[1], point[2])).ToList();
                 var mesh = new Mesh();
+                
+                // Check mesh normal. If the normal direction is fx Z, check that the points and mesh have the same value. If not throw an error. 
                 GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
                 var faceCenters = Enumerable.Range(0, mesh.Faces.Count()).Select(index => mesh.Faces.GetFaceCenter(index)).ToList();
                 var faceIndices = RTree.Point3dClosestPoints(faceCenters, GHPoints, 0.1);

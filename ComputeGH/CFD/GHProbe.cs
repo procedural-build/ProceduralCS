@@ -38,7 +38,7 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list);
             pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
                 GH_ParamAccess.list);
-            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]. In most cases it is not adviced to use more CPUs as the time it takes to decompose and reconstruct the case will exceede the speed-up gained by multiprocssing the probing.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96. \nIn most cases it is not advised to use more CPUs than 1, as the time it takes to decompose and reconstruct the case will exceed the speed-up gained by multiprocessing the probing.", GH_ParamAccess.item, 1);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
@@ -72,7 +72,7 @@ namespace ComputeCS.Grasshopper
             var points = new GH_Structure<GH_Point>();
             var names = new List<string>();
             var fields = new List<string>();
-            var cpus = new List<int>();
+            var cpus = 1;
             string dependentOn = null;
             var caseDir = "VWT";
             var create = false;
@@ -89,11 +89,7 @@ namespace ComputeCS.Grasshopper
                 fields.Add("U");
             }
 
-            if (!DA.GetDataList(4, cpus))
-            {
-                cpus = new List<int> {1, 1, 1};
-            }
-
+            DA.GetData(4, ref cpus);
             DA.GetData(5, ref dependentOn);
             DA.GetData(6, ref caseDir);
             DA.GetData(7, ref create);
@@ -124,7 +120,7 @@ namespace ComputeCS.Grasshopper
                                 convertedPoints,
                                 fields,
                                 names,
-                                cpus,
+                                _validateCPUs(cpus),
                                 dependentOn,
                                 caseDir,
                                 create
@@ -224,5 +220,59 @@ namespace ComputeCS.Grasshopper
         {
             get { return new Guid("2f0bdda2-f7eb-4fc7-8bf0-a2fd5a787493"); }
         }
+        
+        private static List<int> _validateCPUs(int cpus)
+        {
+            if (cpus == 1)
+            {
+                return new List<int> {1, 1, 1};
+            }
+            if (cpus == 2)
+            {
+                return new List<int> {2, 1, 1};
+            }
+            if (cpus == 4)
+            {
+                return new List<int> {2, 2, 1};
+            }
+            if (cpus == 8)
+            {
+                return new List<int> {4, 2, 1};
+            }
+            if (cpus == 16)
+            {
+                return new List<int> {4, 4, 1};
+            }
+            if (cpus == 18)
+            {
+                return new List<int> {6, 3, 1};
+            }
+            if (cpus == 24)
+            {
+                return new List<int> {6, 4, 1};
+            }
+            if (cpus == 36)
+            {
+                return new List<int> {6, 6, 1};
+            }
+            if (cpus == 48)
+            {
+                return new List<int> {12, 4, 1};
+            }
+            if (cpus == 64)
+            {
+                return new List<int> {8, 8, 1};
+            }
+            if (cpus == 72)
+            {
+                return new List<int> {12, 6, 1};
+            }
+            if (cpus == 96)
+            {
+                return new List<int> {12, 8, 1};
+            }
+
+            throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
+        } 
     }
 }

@@ -33,7 +33,7 @@ namespace ComputeGH.CFD
             pManager.AddTextParameter("Patch Names", "Patch Names",
                 "Give names to each branch of in the points tree. The names can later be used to identify the points.",
                 GH_ParamAccess.list);
-            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Default is [1, 1, 1]", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96", GH_ParamAccess.item, 4);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
@@ -63,7 +63,7 @@ namespace ComputeGH.CFD
             string inputJson = null;
             var epwFile = "";
             var patches = new List<string>();
-            var cpus = new List<int>();
+            var cpus = 4;
             string dependentOn = null;
             var create = false;
 
@@ -74,10 +74,7 @@ namespace ComputeGH.CFD
                 patches.Add("set1");
             }
 
-            if (!DA.GetDataList(3, cpus))
-            {
-                cpus = new List<int> {1, 1, 1};
-            }
+            DA.GetData(3, ref cpus);
 
             DA.GetData(4, ref dependentOn);
             DA.GetData(5, ref create);
@@ -105,7 +102,7 @@ namespace ComputeGH.CFD
                                 inputJson,
                                 epwFile,
                                 patches,
-                                cpus,
+                                _validateCPUs(cpus),
                                 dependentOn,
                                 create
                             );
@@ -157,7 +154,8 @@ namespace ComputeGH.CFD
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+            get {              
+                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
@@ -177,5 +175,59 @@ namespace ComputeGH.CFD
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
             Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
+        
+        private static List<int> _validateCPUs(int cpus)
+        {
+            if (cpus == 1)
+            {
+                return new List<int> {1, 1, 1};
+            }
+            if (cpus == 2)
+            {
+                return new List<int> {2, 1, 1};
+            }
+            if (cpus == 4)
+            {
+                return new List<int> {2, 2, 1};
+            }
+            if (cpus == 8)
+            {
+                return new List<int> {4, 2, 1};
+            }
+            if (cpus == 16)
+            {
+                return new List<int> {4, 4, 1};
+            }
+            if (cpus == 18)
+            {
+                return new List<int> {6, 3, 1};
+            }
+            if (cpus == 24)
+            {
+                return new List<int> {6, 4, 1};
+            }
+            if (cpus == 36)
+            {
+                return new List<int> {6, 6, 1};
+            }
+            if (cpus == 48)
+            {
+                return new List<int> {12, 4, 1};
+            }
+            if (cpus == 64)
+            {
+                return new List<int> {8, 8, 1};
+            }
+            if (cpus == 72)
+            {
+                return new List<int> {12, 6, 1};
+            }
+            if (cpus == 96)
+            {
+                return new List<int> {12, 8, 1};
+            }
+
+            throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
+        } 
     }
 }

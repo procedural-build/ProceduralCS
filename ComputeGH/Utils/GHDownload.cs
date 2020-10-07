@@ -33,7 +33,7 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.item);
             pManager.AddTextParameter("Local Path", "Local Path", "The local path where to you want the download content to be stored.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Exclude", "Exclude", "Files to exclude. Provide a (regex) pattern and the component will exclude them from being downloaded. If you want to exclude all files that ends with '.txt', then you can do that with: '*txt'", GH_ParamAccess.list);
+            pManager.AddTextParameter("Exclude", "Exclude", "Files to exclude. Provide a pattern and the component will exclude them from being downloaded. If you want to exclude all files that ends with '.txt', then you can do that with: 'txt'", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Reload", "Reload", "Redownload the content from Compute", GH_ParamAccess.item);
             
             pManager[3].Optional = true;
@@ -81,10 +81,9 @@ namespace ComputeCS.Grasshopper
                 Directory.CreateDirectory(localPath);
             }
             
-            var newPath = Path.Combine(localPath, downloadPath.Split('/').Last());
-            if (cachedValues == "True" || Directory.Exists(newPath))
+            if (cachedValues == "True" && Directory.Exists(localPath))
             {
-                DA.SetData(0, newPath);
+                DA.SetData(0, localPath);
             }
             else
             {
