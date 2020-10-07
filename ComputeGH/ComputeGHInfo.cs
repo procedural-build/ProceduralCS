@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using ComputeGH.Properties;
 using Grasshopper.Kernel;
 
 namespace ComputeGH
@@ -18,7 +20,7 @@ namespace ComputeGH
         public override string Version
         {
             //get { return NextVersion(); }
-            get { return "2020.9.3"; }
+            get { return Resources.Version; }
         }
 
         public override Bitmap Icon
@@ -64,6 +66,12 @@ namespace ComputeGH
 
         private static string GetCurrentVersion()
         {
+            var YakExe = "C:\\Program Files\\Rhino 7 WIP\\System\\yak.exe";
+            if (!File.Exists(YakExe))
+            {
+                throw new Exception("We rely on YAK from Rhino7 for this distribution. ");
+            }
+
             return "0.0.0";
         }
         private static string GetNextBuildVersion()

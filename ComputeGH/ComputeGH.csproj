@@ -144,6 +144,7 @@
     <Content Include="Resources\IconRun.png" />
     <Content Include="Resources\IconSetName.png" />
     <Content Include="Resources\IconSolver.png" />
+    <Content Include="Resources\Version.txt" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
