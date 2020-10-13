@@ -106,7 +106,7 @@ namespace ComputeCS.Components
             string dependentName = ""
         )
         {
-            foreach (Task subTask in subTasks)
+            foreach (var subTask in subTasks)
             {
                 if (string.IsNullOrEmpty(subTask.UID))
                 {
@@ -186,7 +186,7 @@ namespace ComputeCS.Components
         {
             var resultTypes = new List<string>
             {
-                "dining", "sitting", "walkthru"
+                "dining", "sitting", "standing", "walkthru"
             };
 
             var newData = new Dictionary<string, Dictionary<string, object>>();

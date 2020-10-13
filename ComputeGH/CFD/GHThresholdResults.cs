@@ -20,10 +20,11 @@ namespace ComputeCS.Grasshopper
             : base("Wind Threshold Results", "Wind Threshold Results",
                 @"Loads wind threshold results from a file(s)." +
                 "\nLAWSON CRITERIA" +
-                "\n0: Comfortable for dining" +
-                "\n1: Comfortable for sitting" +
-                "\n2: Comfortable for walking" +
-                "\n3: Exceeds all criteria",
+                "\n0: Comfortable for dining. < 2.5m/s, 5% of the time" +
+                "\n1: Comfortable for sitting. < 4m/s, 5% of the time" +
+                "\n2: Comfortable for standing. < 6m/s, 5% of the time" +
+                "\n3: Comfortable for walking. < 8m/s, 5% of the time" +
+                "\n4: Exceeds all criteria. > 8m/s, 5% of the time",
                 "Compute", "Utils")
         {
         }
