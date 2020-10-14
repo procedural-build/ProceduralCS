@@ -144,7 +144,7 @@ namespace ComputeCS.Components
             var data = new Dictionary<string, Dictionary<string, object>>();
             var resultFileType = new List<string>
             {
-                "dining", "sitting", "Uav", "Uav_std", "walkthru"
+                "dining", "sitting", "standing", "Uav", "Uav_std", "walkthru"
             };
 
             foreach (var file in Directory.GetFiles(folder))
