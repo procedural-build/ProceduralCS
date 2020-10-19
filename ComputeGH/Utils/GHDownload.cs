@@ -114,7 +114,10 @@ namespace ComputeCS.Grasshopper
             var queueLock = StringCache.getCache(queueName);
             var downloaded = false;
             var inputData = new Inputs().FromJson(inputJson);
-
+            if (reload == true)
+            {
+                StringCache.setCache(this.InstanceGuid.ToString(), "");
+            }
 
             if (queueLock != "true" && inputData.Task != null)
             {

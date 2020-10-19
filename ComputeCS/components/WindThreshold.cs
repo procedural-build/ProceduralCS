@@ -106,7 +106,7 @@ namespace ComputeCS.Components
             string dependentName = ""
         )
         {
-            foreach (Task subTask in subTasks)
+            foreach (var subTask in subTasks)
             {
                 if (string.IsNullOrEmpty(subTask.UID))
                 {
@@ -144,7 +144,7 @@ namespace ComputeCS.Components
             var data = new Dictionary<string, Dictionary<string, object>>();
             var resultFileType = new List<string>
             {
-                "dining", "sitting", "Uav", "Uav_std", "walkthru"
+                "dining", "sitting", "standing", "Uav", "Uav_std", "walkthru"
             };
 
             foreach (var file in Directory.GetFiles(folder))
@@ -186,7 +186,7 @@ namespace ComputeCS.Components
         {
             var resultTypes = new List<string>
             {
-                "dining", "sitting", "walkthru"
+                "dining", "sitting", "standing", "walkthru"
             };
 
             var newData = new Dictionary<string, Dictionary<string, object>>();
