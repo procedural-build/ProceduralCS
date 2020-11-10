@@ -59,6 +59,7 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
+            pManager.AddTextParameter("Info", "Info", "Info\nCell estimation is based on an equation developed by Alexander Jacobson", GH_ParamAccess.item);
             pManager.AddBoxParameter("Bounding Box", "Bounding Box", "Bounding boxes representing the domain",
                 GH_ParamAccess.item);
             pManager.AddGenericParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
@@ -186,14 +187,21 @@ namespace ComputeCS.Grasshopper
             };
 
             DA.SetData(0, outputs.ToJson());
-            DA.SetData(1, bb);
-            DA.SetDataList(2, geometry);
+            DA.SetData(1, Info(geometry, cellSize, xyScale, zScale));
+            DA.SetData(2, bb);
+            DA.SetDataList(3, geometry);
         }
 
         private static readonly List<string> DomainTypes = new List<string>
         {
             "3D", "2D"
         };
+
+        private static string Info(List<IGH_GeometricGoo> geometry, double cellSize, double xyScale, double zScale)
+        {
+            var cellEstimation = Convert.ToInt32(Domain.EstimateCellCount(geometry, cellSize, xyScale, zScale));
+            return $"Estimated number of cells: {cellEstimation}\nThis is only an estimation and will probably be correct within a +/-10% margin.";
+        }
 
         private static List<RefinementRegion> GetRefinementRegions(List<IGH_GeometricGoo> meshes)
         {
