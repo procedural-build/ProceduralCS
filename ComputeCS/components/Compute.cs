@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ComputeCS.types;
 using System.IO;
@@ -274,5 +275,99 @@ namespace ComputeCS.Components
                 }
             }
         }
+
+        public static string CreateEnergyPlus(string inputJson, string folder, bool compute)
+        {
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var parentTask = inputData.Task;
+            var project = inputData.Project;
+
+            if (parentTask == null)
+            {
+                return null;
+                //throw new System.Exception("Cannot upload a case without a parent task.");
+            }
+
+            if (project == null)
+            {
+                return null;
+                //throw new System.Exception("Cannot upload a case without a project.");
+            }
+
+            if (compute)
+            {
+                var files = Directory.GetFiles(folder);
+                if (!files.Any(file => file.ToLower().EndsWith(".idf")))
+                {
+                    throw new Exception($"Case folder should contain an idf");
+                }
+                
+                if (!files.Any(file => file.ToLower().EndsWith(".epw")))
+                {
+                    throw new Exception($"Case folder should contain an epw");
+                }
+
+                foreach (var file in files)
+                {
+                    var fileInfo = new FileInfo(file);
+                    var text = File.ReadAllBytes(file);
+                    var response = new GenericViewSet<Dictionary<string, object>>(
+                        tokens,
+                        inputData.Url,
+                        $"/api/task/{parentTask.UID}/file/foam/${fileInfo.Name}"
+                    ).Update(
+                        null,
+                        new Dictionary<string, object>
+                        {
+                            {"file", text}
+                        }
+                    );
+                }
+
+                
+            }
+            
+            var createParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, object>
+                    {
+                        {"task_type", "energyplus"},
+                        {"cmd", "run_honeybee_energyplus"},
+                        {"cpus", new List<int>{1, 1, 1}}
+                    }
+                },
+                {"status", "pending"}
+            };
+            
+            var energyTask = new GenericViewSet<Task>(
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
+            ).GetOrCreate(
+                new Dictionary<string, object>
+                {
+                    {"name", "EnergyPlus"},
+                    {"parent", parentTask.UID},
+                },
+                createParams,
+                compute
+            );
+
+            var tasks = new List<Task>
+            {
+                energyTask
+            };
+            inputData.SubTasks = tasks;
+
+            return inputData.ToJson();
+        }
+
+        public static string CreateRadiance(string inputJson, string folder, bool compute)
+        {
+            return null;
+        }
     }
+    
 }
