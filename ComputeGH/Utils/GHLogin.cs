@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
@@ -131,7 +133,6 @@ namespace ComputeCS.Grasshopper
                     Auth = tokens,
                     Url = url
                 };
-
                 DA.SetData(0, output.ToJson());
             }
         }
@@ -147,11 +148,15 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override Bitmap Icon
         {
-            get {                 if (Environment.GetEnvironmentVariable("RIDER") == "true")
+            get
+            {
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
-                return Resources.IconLicense; }
+
+                return Resources.IconLicense;
+            }
         }
 
         /// <summary>

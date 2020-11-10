@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -11,18 +12,12 @@ namespace ComputeGH
     {
         public override string Name
         {
-            get
-            {
-                return "ProceduralCS";
-            }
+            get { return "ProceduralCS"; }
         }
 
-        public override string Version
-        {
-            //get { return NextVersion(); }
-            get { return Resources.Version; }
-        }
+        public override string Version => NextVersion();
 
+        //get { return Resources.Version; }
         public override Bitmap Icon
         {
             get
@@ -31,6 +26,7 @@ namespace ComputeGH
                 return null;
             }
         }
+
         public override string Description
         {
             get
@@ -39,12 +35,10 @@ namespace ComputeGH
                 return "Grasshopper Client for Procedural Compute";
             }
         }
+
         public override Guid Id
         {
-            get
-            {
-                return new Guid("7b46d4ec-a9f3-428a-a838-6c5de9bb8d96");
-            }
+            get { return new Guid("7b46d4ec-a9f3-428a-a838-6c5de9bb8d96"); }
         }
 
         public override string AuthorName
@@ -55,6 +49,7 @@ namespace ComputeGH
                 return "Procedural Build";
             }
         }
+
         public override string AuthorContact
         {
             get
@@ -69,27 +64,49 @@ namespace ComputeGH
             var YakExe = "C:\\Program Files\\Rhino 7 WIP\\System\\yak.exe";
             if (!File.Exists(YakExe))
             {
-                throw new Exception("We rely on YAK from Rhino7 for this distribution. ");
+                Console.WriteLine("We rely on YAK from Rhino7 for this distribution.");
+                return "0.0.0";
             }
 
-            return "0.0.0";
+            var process = new Process();
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.FileName = YakExe;
+            process.StartInfo.Arguments = "search proceduralcs";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            var err = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (!string.IsNullOrEmpty(err))
+            {
+                Console.WriteLine($"Caught the following error while searching for proceduralcs with YAK: {err}");
+                return "0.0.0";
+            }
+
+            return output.Split('(')[1].Split(')')[0];
         }
+
         private static string GetNextBuildVersion()
         {
             var currentVersion = GetCurrentVersion().Split('.').Select(x => Convert.ToInt32(x)).ToList();
-            var date = new DateTime().ToString("yyyy.m").Split('.').Select(x => Convert.ToInt32(x)).ToList();
-            if (date[0] > currentVersion[0] || date[1] > currentVersion[1])
+            var date = DateTime.Now;
+            if (date.Year > currentVersion[0] || date.Month > currentVersion[1])
             {
                 return "0";
             }
+
             return (currentVersion[2] + 1).ToString();
         }
 
         private static string NextVersion()
         {
             var buildNumber = GetNextBuildVersion();
-            var date = new DateTime().ToString("yyyy.m");
-            return $"{date}.${buildNumber}";
+            var date = DateTime.Now.ToString("yyyy.M");
+            return $"{date}.{buildNumber}";
         }
     }
 }
