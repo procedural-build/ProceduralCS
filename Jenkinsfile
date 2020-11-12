@@ -1,5 +1,5 @@
 ﻿pipeline {
-  agent any
+  agent jenkins-windows
   stages {
 
     stage('YAK Build') {
@@ -7,6 +7,8 @@
         branch 'master'
       }
       steps {
+        sh 'dir'
+        echo '$HOME'
         sh '$HOME\yak.exe version'
         sh '$HOME\yak.exe build'
       }
