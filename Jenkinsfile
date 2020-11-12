@@ -1,5 +1,5 @@
 ﻿pipeline {
-  agent jenkins-windows
+  agent { node {label 'jenkins-windows'} }
   stages {
 
     stage('YAK Build') {
@@ -9,8 +9,8 @@
       steps {
         sh 'dir'
         echo '$HOME'
-        sh '$HOME\yak.exe version'
-        sh '$HOME\yak.exe build'
+        sh '$HOME\\yak.exe version'
+        sh '$HOME\\yak.exe build'
       }
     }
 
@@ -19,7 +19,7 @@
         branch 'master'
       }
       steps {
-        sh '$HOME\yak.exe push proceduralcs*'
+        sh '$HOME\\yak.exe push proceduralcs*'
       }
     }    
   }
