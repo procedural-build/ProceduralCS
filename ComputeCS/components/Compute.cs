@@ -188,13 +188,14 @@ namespace ComputeCS.Components
         )
         {
             var nCPUs = 1;
-            cpus.ForEach(cpu => nCPUs = nCPUs*cpu);
+            cpus.ForEach(cpu => nCPUs = nCPUs * cpu);
             var commands = new List<string>
             {
                 "blockMesh",
                 "snappyHexMesh -overwrite"
             };
-            if (nCPUs > 1) {
+            if (nCPUs > 1)
+            {
                 commands.Add("reconstructParMesh -constant -mergeTol 1e-6");
             }
 
@@ -235,12 +236,12 @@ namespace ComputeCS.Components
         }
 
         public static void UploadGeometry(
-            AuthTokens tokens, 
-            string url, 
-            string taskId, 
-            byte[] geometryFile, 
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            byte[] geometryFile,
             List<Dictionary<string, byte[]>> refinementRegions
-            )
+        )
         {
             // Upload File to parent task
             new GenericViewSet<Dictionary<string, object>>(
@@ -302,7 +303,7 @@ namespace ComputeCS.Components
                 {
                     throw new Exception($"Case folder should contain an idf");
                 }
-                
+
                 if (!files.Any(file => file.ToLower().EndsWith(".epw")))
                 {
                     throw new Exception($"Case folder should contain an epw");
@@ -324,10 +325,8 @@ namespace ComputeCS.Components
                         }
                     );
                 }
-
-                
             }
-            
+
             var createParams = new Dictionary<string, object>
             {
                 {
@@ -335,12 +334,12 @@ namespace ComputeCS.Components
                     {
                         {"task_type", "energyplus"},
                         {"cmd", "run_honeybee_energyplus"},
-                        {"cpus", new List<int>{1, 1, 1}}
+                        {"cpus", new List<int> {1, 1, 1}}
                     }
                 },
                 {"status", "pending"}
             };
-            
+
             var energyTask = new GenericViewSet<Task>(
                 tokens,
                 inputData.Url,
@@ -366,8 +365,103 @@ namespace ComputeCS.Components
 
         public static string CreateRadiance(string inputJson, string folder, bool compute)
         {
-            return null;
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var parentTask = inputData.Task;
+            var project = inputData.Project;
+
+            if (parentTask == null)
+            {
+                return null;
+                //throw new System.Exception("Cannot upload a case without a parent task.");
+            }
+
+            if (project == null)
+            {
+                return null;
+                //throw new System.Exception("Cannot upload a case without a project.");
+            }
+
+            if (compute)
+            {
+                var files = Directory.GetFiles(folder);
+                if (!files.Any(file => file.ToLower().EndsWith(".rad")))
+                {
+                    throw new Exception("Case folder should contain an .rad file");
+                }
+
+                foreach (var file in files)
+                {
+                    var fileInfo = new FileInfo(file);
+                    var text = File.ReadAllBytes(file);
+                    var response = new GenericViewSet<Dictionary<string, object>>(
+                        tokens,
+                        inputData.Url,
+                        $"/api/task/{parentTask.UID}/file/foam/{fileInfo.Name}"
+                    ).Update(
+                        null,
+                        new Dictionary<string, object>
+                        {
+                            {"file", text}
+                        }
+                    );
+                    if (response.ContainsKey("error_messages"))
+                    {
+                        throw new Exception(
+                            $"Got the following error, while trying to upload: {file}: {response["error_messages"]}");
+                    }
+                }
+            }
+
+            var cpus = GetRadianceCPUs(folder);
+            var createParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, object>
+                    {
+                        {"task_type", "radiance"},
+                        {"cmd", "run_honeybee_radiance"},
+                        {"cpus", cpus}
+                    }
+                },
+                {"status", "pending"}
+            };
+
+            var radianceTask = new GenericViewSet<Task>(
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
+            ).GetOrCreate(
+                new Dictionary<string, object>
+                {
+                    {"name", "Radiance"},
+                    {"parent", parentTask.UID},
+                },
+                createParams,
+                compute
+            );
+
+            var tasks = new List<Task>
+            {
+                radianceTask
+            };
+            inputData.SubTasks = tasks;
+
+            return inputData.ToJson();
+        }
+
+        public static List<int> GetRadianceCPUs(string folder)
+        {
+            var files = Directory.GetFiles(folder);
+            var batFiles = 0;
+            foreach (var file in files)
+            {
+                if (file.ToLower().EndsWith("_rad.bat"))
+                {
+                    batFiles++;
+                }
+            }
+            return new List<int>{batFiles, 1, 1};
         }
     }
-    
 }

@@ -10,7 +10,7 @@ namespace ComputeCS.types
     {
         public string UID;
         public string Name;
-        public int Number;
+        public int? Number;
         public string Cluster;
         public string Path;
         public string PathType;
