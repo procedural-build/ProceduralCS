@@ -92,7 +92,7 @@ namespace ComputeCS.Grasshopper
 
             // Handle Errors
             var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
+            if (!string.IsNullOrEmpty(errors))
             {
                 throw new Exception(errors);
             }
@@ -114,7 +114,7 @@ namespace ComputeCS.Grasshopper
             var queueLock = StringCache.getCache(queueName);
             var downloaded = false;
             var inputData = new Inputs().FromJson(inputJson);
-            if (reload == true)
+            if (reload)
             {
                 StringCache.setCache(this.InstanceGuid.ToString(), "");
             }

@@ -10,7 +10,7 @@ namespace ComputeCS.Components
         public static string GetOrCreate(
             string inputJson,
             string projectName,
-            int projectNumber,
+            int? projectNumber,
             string taskName,
             bool create
         )
@@ -19,21 +19,25 @@ namespace ComputeCS.Components
             // Unpack to an AuthToken instances
             var tokens = inputData.Auth;
 
+            var queryParams = new Dictionary<string, object>
+            {
+                {"name", projectName},
+            };
+            if (projectNumber != null)
+            {
+                queryParams.Add("number", projectNumber);
+            }
+
             // Get a list of Projects for this user
             var project = new GenericViewSet<Project>(
                 tokens,
                 inputData.Url,
                 "/api/project/"
             ).GetOrCreate(
-                new Dictionary<string, object>
-                {
-                    {"name", projectName},
-                    {"number", projectNumber}
-                },
+                queryParams,
                 null,
                 create
             );
-
             // We won't get here unless the last getting of Project succeeded
             // Create the task if the Project succeeded
             if (project.ErrorMessages != null)

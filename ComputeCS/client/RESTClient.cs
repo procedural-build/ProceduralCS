@@ -121,7 +121,7 @@ namespace ComputeCS
                 using (var filePayload = new StreamWriter(request.GetRequestStream()))
                 {
                     //var data = (byte[])payload["file"];
-                    string data = JsonConvert.SerializeObject(payload, JsonSettings);
+                    var data = JsonConvert.SerializeObject(payload, JsonSettings);
                     filePayload.Write(data);
                     filePayload.Close();
                 }
