@@ -79,6 +79,7 @@ namespace ComputeCS.Grasshopper
             if (cachedValues == null || compute)
             {
                 const string queueName = "compute";
+                StringCache.setCache(this.InstanceGuid.ToString(), "");
 
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
@@ -92,7 +93,7 @@ namespace ComputeCS.Grasshopper
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message);
+                            StringCache.setCache(this.InstanceGuid.ToString(), e.Message);
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }

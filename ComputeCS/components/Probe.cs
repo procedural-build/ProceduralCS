@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using ComputeCS.types;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace ComputeCS.Components
@@ -31,7 +33,7 @@ namespace ComputeCS.Components
                 return null;
             }
 
-            var sampleSets = GenerateSampleSet(points, names);
+            var sampleSets = GenerateSampleSet(names);
 
             var taskQueryParams = new Dictionary<string, object>
             {
@@ -43,7 +45,12 @@ namespace ComputeCS.Components
                 taskQueryParams.Add("dependent_on", simulationTask.UID);
             }
 
-            var task = CreateThresholdTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
+            if (create)
+            {
+                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
+            }
+            
+            var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
                 sampleSets, fields, create);
             inputData.SubTasks.Add(task);
 
@@ -71,11 +78,13 @@ namespace ComputeCS.Components
                 {
                     return subTask;
                 }
-                else if (subTask.Config.ContainsKey("cmd") && (string) subTask.Config["cmd"] == "wind_tunnel")
+
+                if (subTask.Config.ContainsKey("cmd") && (string) subTask.Config["cmd"] == "wind_tunnel")
                 {
                     return subTask;
                 }
-                else if (subTask.Config.ContainsKey("commands"))
+
+                if (subTask.Config.ContainsKey("commands"))
                 {
                     // Have to do this conversion to be able to compare the strings
                     if (((JArray) subTask.Config["commands"]).ToObject<List<string>>()[0] == "simpleFoam")
@@ -89,11 +98,9 @@ namespace ComputeCS.Components
         }
 
         public static List<Dictionary<string, object>> GenerateSampleSet(
-            List<List<List<double>>> points,
             List<string> names
         )
         {
-            var index = 0;
             var sampleSets = new List<Dictionary<string, object>>();
             foreach (var name in names)
             {
@@ -101,16 +108,42 @@ namespace ComputeCS.Components
                     new Dictionary<string, object>()
                     {
                         {"name", name},
-                        {"points", points[index]}
+                        {"file", $"{name}.pts"}
                     }
                 );
-                index++;
             }
 
             return sampleSets;
         }
 
-        public static Task CreateThresholdTask(
+        public static void UploadPointsFiles(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            List<string> names,
+            List<List<List<double>>> points,
+            string caseDir
+        )
+        {
+            var index = 0;
+            foreach (var name in names)
+            {
+                new GenericViewSet<Dictionary<string, object>>(
+                    tokens,
+                    url,
+                    $"/api/task/{taskId}/file/{caseDir}/{name}.pts"
+                ).Update(
+                    null,
+                    new Dictionary<string, object>
+                    {
+                        {"file", points[index]}
+                    }
+                );
+                index++;
+            }
+        }
+
+        public static Task CreateProbeTask(
             AuthTokens tokens,
             string url,
             string projectId,
@@ -127,39 +160,108 @@ namespace ComputeCS.Components
             cpus.ForEach(cpu => nCPUs *= cpu);
             if (nCPUs > 1)
             {
-                commands.Add("decomposePar -time :10000");
-                commands.Add("postProcess -func internalCloud");
-                commands.Add("reconstructPar");
+                //commands.Add("decomposePar -time :10000");
+                commands.Add("!postProcess -func internalCloud");
+                //commands.Add("reconstructPar");
             }
-            else {
+            else
+            {
                 commands.Add("postProcess -func internalCloud");
             }
 
-            var task = new GenericViewSet<Task>(
+            var createParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, object>
+                    {
+                        {"task_type", "cfd"},
+                        {"cmd", "pipeline"},
+                        {"commands", commands},
+                        {"case_dir", caseDir},
+                        {"cpus", cpus},
+                        {"sets", sampleSets},
+                        {"fields", fields},
+                    }
+                }
+            };
+
+            taskQueryParams.Add("project", projectId);
+            
+            var task = GetCreateOrUpdateTask(
                 tokens,
                 url,
-                $"/api/project/{projectId}/task/"
-            ).GetOrCreate(
+                $"/api/task/",
                 taskQueryParams,
-                new Dictionary<string, object>
-                {
-                    {
-                        "config", new Dictionary<string, object>
-                        {
-                            {"task_type", "cfd"},
-                            {"cmd", "pipeline"},
-                            {"commands", commands},
-                            {"case_dir", caseDir},
-                            {"cpus", cpus},
-                            {"sets", sampleSets},
-                            {"fields", fields},
-                        }
-                    }
-                },
+                createParams,
                 create
             );
 
             return task;
+        }
+
+        public static Task GetCreateOrUpdateTask(
+            AuthTokens tokens,
+            string url,
+            string path,
+            Dictionary<string, object> queryParams,
+            Dictionary<string, object> createParams,
+            bool create
+        )
+        {
+            try
+            {
+                var task = new GenericViewSet<Task>(
+                    tokens,
+                    url,
+                    path
+                ).GetByQueryParams(
+                    queryParams
+                );
+                if (task != null && create)
+                {
+                    if (task.Status == "failed" || task.Status == "failed")
+                    {
+                        createParams.Add("status", "pending");
+                    }
+                    task = new GenericViewSet<Task>(
+                        tokens,
+                        url,
+                        path
+                    ).PartialUpdate(
+                        task.UID,
+                        createParams,
+                        new Dictionary<string, object>{{"runAs", "last"}}
+                    );
+                }
+
+                return task;
+            }
+            catch (ArgumentException err)
+            {
+                if (create)
+                {
+                    // Merge the query_params with create_params
+                    if (createParams == null)
+                    {
+                        createParams = queryParams;
+                    }
+                    else
+                    {
+                        createParams = queryParams
+                            .Union(createParams)
+                            .ToDictionary(s => s.Key, s => s.Value);
+                    }
+
+                    // Create the object
+                    return new GenericViewSet<Task>(
+                        tokens,
+                        url,
+                        path
+                    ).Create(createParams);
+                }
+
+                return new Task {ErrorMessages = new List<string> {err.Message}};
+            }
         }
     }
 }

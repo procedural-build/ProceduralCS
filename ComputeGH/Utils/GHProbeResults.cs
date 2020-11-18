@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using Rhino;
 using Rhino.Geometry;
 using Mesh = Rhino.Geometry.Mesh;
 
@@ -33,8 +37,10 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
             pManager.AddMeshParameter("Mesh", "Mesh", "Original mesh from where the probe points is generated",
                 GH_ParamAccess.tree);
+            pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
 
             pManager[1].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -57,42 +63,117 @@ namespace ComputeCS.Grasshopper
         {
             string folder = null;
             var meshes = new GH_Structure<GH_Mesh>();
+            var refresh = false;
 
             if (!DA.GetData(0, ref folder)) return;
             DA.GetDataTree(1, out meshes);
+            DA.GetData(2, ref refresh);
 
-            var results = ProbeResult.ReadProbeResults(folder);
+            // Get Cache to see if we already did this
+            var cacheKey = folder;
+            var cachedValues = StringCache.getCache(cacheKey);
+            DA.DisableGapLogic();
 
-            foreach (var key in results.Keys)
+            if (cachedValues == null || refresh)
             {
-                var data = ConvertToDataTree(results[key]);
-                AddToOutput(DA, key, data);
+                const string queueName = "probeResults";
+                StringCache.setCache(InstanceGuid.ToString(), "");
+
+                // Get queue lock
+                var queueLock = StringCache.getCache(queueName);
+                if (queueLock != "true")
+                {
+                    StringCache.setCache(queueName, "true");
+                    StringCache.setCache(cacheKey + "progress", "Loading...");
+                    
+                    QueueManager.addToQueue(queueName, () => {
+                        try
+                        {
+                            var results = ProbeResult.ReadProbeResults(folder);
+                            var points = ProbeResult.ReadPointsFromResults(folder);
+                            probePoints = ConvertPointsToDataTree(points);
+                            
+                            if (meshes.Any() && points.Any())
+                            {
+                                correctedMesh = CorrectMesh(meshes, points);    
+                            }
+                            
+                            probeResults = new Dictionary<string, DataTree<object>>();
+                            foreach (var key in results.Keys)
+                            {
+                                probeResults.Add(key, ConvertToDataTree(results[key]));
+                            }
+                            
+                            info = UpdateInfo(results);
+                            resultKeys = results.Keys.ToList();
+                            StringCache.setCache(cacheKey + "progress", "Done");
+
+                        }
+                        catch (Exception e)
+                        {
+                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
+                            StringCache.setCache(cacheKey, "error");
+                            StringCache.setCache(cacheKey + "progress", "");
+                        }
+
+                        ExpireSolutionThreadSafe(true);
+                        Thread.Sleep(2000);
+                        StringCache.setCache(queueName, "");
+                    });
+                    ExpireSolutionThreadSafe(true);
+                    
+                }
+
             }
 
-            var points = ProbeResult.ReadPointsFromResults(folder);
-            var GHPoints = ConvertPointsToDataTree(points);
-            DA.SetDataTree(1, GHPoints);
-
-            if (meshes.Any())
+            // Handle Errors
+            var errors = StringCache.getCache(InstanceGuid.ToString());
+            if (!string.IsNullOrEmpty(errors))
             {
-                var newMesh = CorrectMesh(meshes, points);    
-                DA.SetDataTree(2, newMesh);
+                throw new Exception(errors);
             }
 
-            var info = UpdateInfo(results);
-            DA.SetDataTree(0, info);
-
-            if (results != null)
+            if (probePoints != null)
             {
-                var keys = results.Keys.ToList();
-                keys.Add("Info");
-                keys.Add("Points");
-                keys.Add("Mesh");
-                RemoveUnusedOutputs(keys);
+                DA.SetDataTree(1, probePoints);    
+            }
+            
+            if (correctedMesh != null)
+            {
+                DA.SetDataTree(2, correctedMesh);
             }
 
+            if (info != null)
+            {
+                DA.SetDataTree(0, info);
+            }
+
+            if (probeResults != null)
+            {
+                foreach (var key in probeResults.Keys)
+                {
+                    AddToOutput(DA, key, probeResults[key]);
+                }
+            }
+            
+            if (resultKeys != null)
+            {
+                resultKeys.Add("Info");
+                resultKeys.Add("Points");
+                resultKeys.Add("Mesh");
+                RemoveUnusedOutputs(resultKeys);
+            }
+            
+            Message = StringCache.getCache(cacheKey + "progress");
+            
         }
 
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
+            var delegated = new ExpireSolutionDelegate(ExpireSolution);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
+        }
+        
         private static DataTree<object> CorrectMesh(
             GH_Structure<GH_Mesh> meshes,
             Dictionary<string, List<List<double>>> points
@@ -307,5 +388,12 @@ namespace ComputeCS.Grasshopper
         {
             get { return new Guid("74163c8b-25fd-466f-a56a-d2beeebcaccb"); }
         }
+
+        private DataTree<object> probePoints;
+        private Dictionary<string, DataTree<object>> probeResults;
+        private DataTree<object> correctedMesh;
+        private DataTree<object> info;
+        private List<string> resultKeys;
+        
     }
 }
