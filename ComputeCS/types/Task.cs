@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace ComputeCS.types
 {
@@ -23,6 +24,19 @@ namespace ComputeCS.types
     {
         public string File;
         public string Hash;
+        public List<string> ErrorMessages = null;
+    }
+
+    public class TaskEstimate : SerializeBase<TaskEstimate>
+    {
+        public double Time;
+        public double Cost;
+        public double Nodes;
+        public double Cells;
+        
+        [JsonProperty("cpus")]
+        public double CPUs;
+        public string TaskType;
         public List<string> ErrorMessages = null;
     }
 }

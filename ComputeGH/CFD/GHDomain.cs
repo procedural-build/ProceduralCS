@@ -136,7 +136,7 @@ namespace ComputeCS.Grasshopper
             var refinementRegions = GetRefinementRegions(geometry);
 
             var locationInMesh = Domain.GetLocationInMesh(new Box(bb));
-
+            var cellEstimation = Convert.ToInt32(Domain.EstimateCellCount(geometry, cellSize, xyScale, zScale));
             var outputs = new Inputs
             {
                 Mesh = new CFDMesh
@@ -182,12 +182,13 @@ namespace ComputeCS.Grasshopper
                             }
                         },
                         RefinementRegions = refinementRegions
-                    }
+                    },
+                    CellEstimate = cellEstimation
                 }
             };
 
             DA.SetData(0, outputs.ToJson());
-            DA.SetData(1, Info(geometry, cellSize, xyScale, zScale));
+            DA.SetData(1, $"Estimated number of cells: {cellEstimation}\nThis is only an estimation and will probably be correct within a +/-10% margin.");
             DA.SetData(2, bb);
             DA.SetDataList(3, geometry);
         }
@@ -196,12 +197,6 @@ namespace ComputeCS.Grasshopper
         {
             "3D", "2D"
         };
-
-        private static string Info(List<IGH_GeometricGoo> geometry, double cellSize, double xyScale, double zScale)
-        {
-            var cellEstimation = Convert.ToInt32(Domain.EstimateCellCount(geometry, cellSize, xyScale, zScale));
-            return $"Estimated number of cells: {cellEstimation}\nThis is only an estimation and will probably be correct within a +/-10% margin.";
-        }
 
         private static List<RefinementRegion> GetRefinementRegions(List<IGH_GeometricGoo> meshes)
         {

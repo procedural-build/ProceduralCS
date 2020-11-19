@@ -450,7 +450,7 @@ namespace ComputeCS.Components
             return inputData.ToJson();
         }
 
-        public static List<int> GetRadianceCPUs(string folder)
+        private static List<int> GetRadianceCPUs(string folder)
         {
             var files = Directory.GetFiles(folder);
             var batFiles = 0;
@@ -462,6 +462,68 @@ namespace ComputeCS.Components
                 }
             }
             return new List<int>{batFiles, 1, 1};
+        }
+
+        public static Dictionary<string, double> GetTaskEstimates(string inputJson)
+        {
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var solution = inputData.CFDSolution;
+            var cells = inputData.Mesh.CellEstimate;
+            var iterations = solution.Iterations["init"];
+
+            var nCPUs = 1;
+            solution.CPUs.ForEach(cpu => nCPUs *= cpu);
+            
+            var meshEstimate = new GenericViewSet<TaskEstimate>(
+                tokens,
+                inputData.Url,
+                $"/api/task/estimation/"
+            ).Create(
+                new Dictionary<string, object>
+                {
+                    {"cells", cells},
+                    {"cpus", nCPUs},
+                    {"task_type", "mesh"}
+                }
+            );
+            
+            var angleEstimate = new GenericViewSet<TaskEstimate>(
+                tokens,
+                inputData.Url,
+                $"/api/task/estimation/"
+            ).Create(
+                new Dictionary<string, object>
+                {
+                    {"cells", cells},
+                    {"cpus", nCPUs},
+                    {"task_type", "vwt_angle"},
+                    {"iterations", iterations}
+                }
+            );
+            var prepareEstimate = new GenericViewSet<TaskEstimate>(
+                tokens,
+                inputData.Url,
+                $"/api/task/estimation/"
+            ).Create(
+                new Dictionary<string, object>
+                {
+                    {"cells", cells},
+                    {"cpus", nCPUs},
+                    {"task_type", "prepare"},
+                    {"iterations", iterations}
+                }
+            );
+
+            var totalTime = meshEstimate.Time + prepareEstimate.Time + angleEstimate.Time;
+            var totalCost = meshEstimate.Cost + prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;;
+            
+            return new Dictionary<string, double>
+            {
+                {"cost", totalCost},
+                {"time", totalTime},
+                {"cells", cells}
+            };
         }
     }
 }

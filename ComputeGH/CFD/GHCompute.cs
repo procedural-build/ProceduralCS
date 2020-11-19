@@ -50,6 +50,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
+            pManager.AddTextParameter("Info", "Info", "Info\nCell estimation is based on an equation developed by Alexander Jacobson", GH_ParamAccess.item);
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.list);
         }
 
@@ -79,7 +80,7 @@ namespace ComputeCS.Grasshopper
             if (cachedValues == null || compute)
             {
                 const string queueName = "compute";
-                StringCache.setCache(this.InstanceGuid.ToString(), "");
+                StringCache.setCache(InstanceGuid.ToString(), "");
 
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
@@ -89,6 +90,7 @@ namespace ComputeCS.Grasshopper
                     QueueManager.addToQueue(queueName, () => {
                         try
                         {
+                            TimeEstimate = Compute.GetTaskEstimates(inputJson);
                             RunOnCompute(inputJson, geometry, folder, cacheKey, compute);
                         }
                         catch (Exception e)
@@ -106,9 +108,8 @@ namespace ComputeCS.Grasshopper
                 }
 
             }
-
             // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
                 throw new Exception(errors);
@@ -117,13 +118,25 @@ namespace ComputeCS.Grasshopper
             // Read from Cache
             if (cachedValues != null)
             {
+                DA.SetData(0, Info(TimeEstimate));
                 var outputs = cachedValues;
-                DA.SetData(0, outputs);
+                DA.SetData(1, outputs);
                 Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true"){Message = "Tasks Created";}
             }
         }
 
+        private static string Info(Dictionary<string, double> estimations)
+        {
+            if (estimations == null)
+            {
+                return "Not enough information to calculate time and cost estimation";
+            }
+            var info = $"Estimated number of cells: {estimations["cells"]}\n" +
+                       $"Estimated time to run: {Math.Round(estimations["time"], 2)} minutes\n" +
+                       $"Estimated cost: {Math.Round(estimations["cost"], 2)} credits";
+            return info;
+        }
         private void RunCFD(string inputJson, List<GH_Mesh> geometry, string cacheKey, bool compute)
         {
             var geometryFile = Export.STLObject(geometry);
@@ -236,5 +249,7 @@ namespace ComputeCS.Grasshopper
         {
             get { return new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b"); }
         }
+
+        private Dictionary<string, double> TimeEstimate;
     }
 }
