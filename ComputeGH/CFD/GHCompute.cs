@@ -208,40 +208,6 @@ namespace ComputeCS.Grasshopper
             return files.Any(file => file.ToLower().EndsWith(".idf"));
         }
 
-        private string UpdateInputs(string inputJson)
-        {
-            var inputData = new Inputs().FromJson(inputJson);
-            if (inputData.CFDSolution == null)
-            {
-                foreach (var param in Params.Input)
-                {
-                    if (param.Name == "_")
-                    param.Name = "Folder";
-                    param.NickName = "Folder";
-                    param.Access = GH_ParamAccess.item;
-                    param.Description = "Path to case folder";
-                    Params.OnParametersChanged();
-                    ExpireSolution(true);
-                }
-
-                return "folder";
-            }
-            else
-            {
-                foreach (var param in Params.Input.Where(param => param.Name == "Folder"))
-                {
-                    param.Name = "Mesh";
-                    param.NickName = "Mesh";
-                    param.Access = GH_ParamAccess.list;
-                    param.Description = "Case Geometry as a list of meshes";
-                    Params.OnParametersChanged();
-                    ExpireSolution(true);
-                }
-
-                return "mesh";
-            }
-        }
-        
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);

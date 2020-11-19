@@ -35,9 +35,11 @@ namespace ComputeCS.Grasshopper
                 "Optional lower bound for the coloring. Default is 0.0", GH_ParamAccess.item);
             pManager.AddNumberParameter("Upper Boundary", "UpperBound",
                 "Optional upper bound for the coloring. Default is the max value of Result.", GH_ParamAccess.item);
-
+            pManager.AddIntegerParameter("Segments", "Segments", "Number of segments to divide the output colors in.",
+                GH_ParamAccess.item, 10);
             pManager[3].Optional = true;
             pManager[4].Optional = true;
+            pManager[5].Optional = true;
         }
 
         /// <summary>
@@ -67,7 +69,7 @@ namespace ComputeCS.Grasshopper
 
             double ming = 0.0;
             double maxg = 1.0;
-            var legendText = string.Empty;
+            var segments = 10;
 
             //1.1 Return conditions
             if ((!DA.GetData(0, ref mesh)))
@@ -86,6 +88,8 @@ namespace ComputeCS.Grasshopper
                 maxg = result.Max();
             }
 
+            DA.GetData(5, ref segments);
+
             //2.0 Setting up the run;
 
             if (mesh.Faces.Count() != result.Count())
@@ -94,10 +98,7 @@ namespace ComputeCS.Grasshopper
                 return;
             }
 
-            List<Mesh> meshall = new List<Mesh>();
             Mesh ms = new Mesh();
-
-
             var numbers = Enumerable.Range(0, mesh.Faces.Count());
             var _result = numbers.AsParallel().AsOrdered();
 
@@ -131,7 +132,7 @@ namespace ComputeCS.Grasshopper
             }
 
             DA.SetData(0, ms);
-            GenerateLegendValues(DA, gradients, maxg, ming);
+            GenerateLegendValues(DA, gradients, maxg, ming, segments);
         }
 
         // X. Extra additional useful functions
@@ -155,7 +156,8 @@ namespace ComputeCS.Grasshopper
             IGH_DataAccess DA,
             Grasshopper3D.GUI.Gradient.GH_Gradient gradient,
             double max,
-            double min
+            double min,
+            int segments
         )
         {
             if (max <= min)
@@ -165,9 +167,9 @@ namespace ComputeCS.Grasshopper
 
             var colors = new List<Color>();
             var values = new List<double>();
-            var stepSize = (max - min) / 10;
+            var stepSize = (max - min) / segments;
 
-            for (var i = min; i < max; i += stepSize)
+            for (var i = min; i <= max; i += stepSize)
             {
                 colors.Add(gradient.ColourAt(i));
                 values.Add(i);

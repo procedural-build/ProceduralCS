@@ -8,91 +8,72 @@ using Newtonsoft.Json;
 
 namespace ComputeCS
 {
-    public class Tasks
+    public static class Tasks
     {
-        public ComputeClient client = null;
-
-        public Project project = null;
-        
-        public Tasks(ComputeClient _client, Project _project) {
-            client = _client;
-            project = _project;
-            client.http.endPoint = $"/api/project/{project.UID}/task/";
-        }
-
-        public Task GetOrCreate(string name, bool create = false)
+        public static Task GetCreateOrUpdateTask(
+            AuthTokens tokens,
+            string url,
+            string path,
+            Dictionary<string, object> queryParams,
+            Dictionary<string, object> createParams,
+            bool create
+        )
         {
-            /* Try to get a project from its Name/Number. If it does not exist then 
-            (optionally) create it.
-            */
-
-            // Check that at least a name or number is provided
-            if (name == null)
+            try
             {
-                throw new ArgumentException("Please provide a task name at minimum");
-            }
-
-            // Do the Get or Create
-            try {
-                return GetByName(name);
-            } catch (ArgumentNullException) {
-                if (create) {
-                    return Create(name);
-                }
-            }
-
-            // Return null possible if no Project found and not created.
-            return null;
-        }
-
-        public Task GetByName(string name = null) 
-        {
-            var tasks = List(name);
-            if (tasks.Count > 1)
-            {
-                throw new ArgumentException(
-                    @"Found more than one task. Please provide a unique 
-                    task name to identify a particular task."
+                var task = new GenericViewSet<Task>(
+                    tokens,
+                    url,
+                    path
+                ).GetByQueryParams(
+                    queryParams
                 );
-            } else if (tasks.Count == 0) {
-                throw new ArgumentNullException(
-                    "No task found."
-                );
-            }
-            return tasks.First();
-        }
-
-        public List<Task> List(string name = null) 
-        {
-            /* 
-            Get a list of all Projects that this user can access 
-            Optional query parameters may be provided to filter against name or number
-            */
-            return client.Request<List<Task>>(
-                $"/api/project/{project.UID}/task/",
-                new Dictionary<string, object>() 
+                if (task != null && create)
                 {
-                    {"name", name}
-                }
-            );
-        }
-
-        public Task Create(string name = null) {
-            /* Create a new project with provided name and number 
-            */
-            return client.Request<Task>(
-                $"/api/project/{project.UID}/task/", null,
-                httpVerb.POST,
-                new Dictionary<string, object>()
-                {
-                    {"name", name},
-                    {"config", new Dictionary<string, string>()
+                    if (task.Status == "failed" || task.Status == "failed")
                     {
-                        {"case_dir", "foam"},
-                        {"task_type", "parent"}
-                    }}
+                        createParams.Add("status", "pending");
+                    }
+
+                    task = new GenericViewSet<Task>(
+                        tokens,
+                        url,
+                        path
+                    ).PartialUpdate(
+                        task.UID,
+                        createParams,
+                        new Dictionary<string, object> {{"runAs", "last"}}
+                    );
                 }
-            );
+
+                return task;
+            }
+            catch (ArgumentException err)
+            {
+                if (create)
+                {
+                    // Merge the query_params with create_params
+                    if (createParams == null)
+                    {
+                        createParams = queryParams;
+                    }
+                    else
+                    {
+                        createParams = queryParams
+                            .Union(createParams)
+                            .ToDictionary(s => s.Key, s => s.Value);
+                    }
+
+                    // Create the object
+                    return new GenericViewSet<Task>(
+                        tokens,
+                        url,
+                        path
+                    ).Create(createParams);
+                }
+
+                return new Task {ErrorMessages = new List<string> {err.Message}};
+            }
         }
     }
 }

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
+using ComputeCS.Components;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
+using Rhino;
 
 namespace ComputeGH.CFD
 {
@@ -24,16 +27,32 @@ namespace ComputeGH.CFD
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from the previous Compute Component",
                 GH_ParamAccess.item);
-            pManager.AddTextParameter("EPW File", "EPW Files", "Path to where the EPW file is located.",
+            pManager.AddTextParameter("EPW File", "EPW File", "Path to where the EPW file is located.",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Patch Names", "Patch Names",
                 "Give names to each branch of in the points tree. The names can later be used to identify the points.",
                 GH_ParamAccess.list);
-            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96", GH_ParamAccess.item, 4);
+            pManager.AddTextParameter("Thresholds", "Thresholds",
+                "Thresholds for different wind comfort categories. Input should be a list JSON formatted strings, " +
+                "with the fields: \"field\" and \"value\", respectively describing the category name and threshold value." +
+                "\nThe default values corresponds to the Lawson 2001 Criteria",
+                GH_ParamAccess.list,
+                new List<string>
+                {
+                    "{\"field\": \"sitting\", \"value\": 4}",
+                    "{\"field\": \"standing\", \"value\": 6}",
+                    "{\"field\": \"strolling\", \"value\": 8}",
+                    "{\"field\": \"business_walking\", \"value\": 10}",
+                    "{\"field\": \"uncomfortable\", \"value\": 10}",
+                    "{\"field\": \"unsafe_frail\", \"value\": 15}",
+                    "{\"field\": \"unsafe_all\", \"value\": 20}"
+                });
+            pManager.AddIntegerParameter("CPUs", "CPUs",
+                "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96", GH_ParamAccess.item, 4);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
@@ -44,12 +63,13 @@ namespace ComputeGH.CFD
             pManager[3].Optional = true;
             pManager[4].Optional = true;
             pManager[5].Optional = true;
+            pManager[6].Optional = true;
         }
 
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
         }
@@ -63,6 +83,7 @@ namespace ComputeGH.CFD
             string inputJson = null;
             var epwFile = "";
             var patches = new List<string>();
+            var thresholds = new List<string>();
             var cpus = 4;
             string dependentOn = null;
             var create = false;
@@ -74,10 +95,11 @@ namespace ComputeGH.CFD
                 patches.Add("set1");
             }
 
-            DA.GetData(3, ref cpus);
+            DA.GetDataList(3, thresholds);
+            DA.GetData(4, ref cpus);
 
-            DA.GetData(4, ref dependentOn);
-            DA.GetData(5, ref create);
+            DA.GetData(5, ref dependentOn);
+            DA.GetData(6, ref create);
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", patches) + epwFile;
@@ -93,15 +115,17 @@ namespace ComputeGH.CFD
                 if (queueLock != "true")
                 {
                     StringCache.setCache(queueName, "true");
+                    StringCache.setCache(InstanceGuid.ToString(), "");
                     StringCache.setCache(cacheKey, null);
                     QueueManager.addToQueue(queueName, () =>
                     {
                         try
                         {
-                            var results = ComputeCS.Components.WindThreshold.ComputeWindThresholds(
+                            var results = WindThreshold.ComputeWindThresholds(
                                 inputJson,
                                 epwFile,
                                 patches,
+                                thresholds,
                                 _validateCPUs(cpus),
                                 dependentOn,
                                 create
@@ -129,8 +153,8 @@ namespace ComputeGH.CFD
             }
 
             // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
+            var errors = StringCache.getCache(InstanceGuid.ToString());
+            if (!string.IsNullOrEmpty(errors))
             {
                 throw new Exception(errors);
             }
@@ -152,14 +176,17 @@ namespace ComputeGH.CFD
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
+        protected override Bitmap Icon
         {
-            get {              
-                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
+            get
+            {
+                if (Environment.GetEnvironmentVariable("RIDER") == "true")
                 {
                     return null;
                 }
-                return Resources.IconSolver; }
+
+                return Resources.IconSolver;
+            }
         }
 
         /// <summary>
@@ -173,61 +200,73 @@ namespace ComputeGH.CFD
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
-        
+
         private static List<int> _validateCPUs(int cpus)
         {
             if (cpus == 1)
             {
                 return new List<int> {1, 1, 1};
             }
+
             if (cpus == 2)
             {
                 return new List<int> {2, 1, 1};
             }
+
             if (cpus == 4)
             {
                 return new List<int> {2, 2, 1};
             }
+
             if (cpus == 8)
             {
                 return new List<int> {4, 2, 1};
             }
+
             if (cpus == 16)
             {
                 return new List<int> {4, 4, 1};
             }
+
             if (cpus == 18)
             {
                 return new List<int> {6, 3, 1};
             }
+
             if (cpus == 24)
             {
                 return new List<int> {6, 4, 1};
             }
+
             if (cpus == 36)
             {
                 return new List<int> {6, 6, 1};
             }
+
             if (cpus == 48)
             {
                 return new List<int> {12, 4, 1};
             }
+
             if (cpus == 64)
             {
                 return new List<int> {8, 8, 1};
             }
+
             if (cpus == 72)
             {
                 return new List<int> {12, 6, 1};
             }
+
             if (cpus == 96)
             {
                 return new List<int> {12, 8, 1};
             }
 
-            throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
-        } 
+            throw new Exception(
+                $"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
+        }
     }
 }

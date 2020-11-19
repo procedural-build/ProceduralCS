@@ -158,11 +158,6 @@ namespace ComputeCS.Grasshopper
                 });
                 
             }
-            else
-            {
-                StringCache.setCache(cacheKey + "progress", "Waiting for task...");
-                ExpireSolutionThreadSafe(true);
-            }
         }
 
         private void ExpireSolutionThreadSafe(bool recompute = false)
