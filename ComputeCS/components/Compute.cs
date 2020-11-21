@@ -106,7 +106,7 @@ namespace ComputeCS.Components
                 includeSetSet, create);
 
             // Task to Handle CFD
-            Dictionary<string, object> createParams;
+            var createParams = new Dictionary<string, object>();
 
             if (solution.CaseType.ToLower() == "virtualwindtunnel")
             {
@@ -124,7 +124,7 @@ namespace ComputeCS.Components
                     }
                 };
             }
-            else
+            else if (solution.CaseType.ToLower() == "simplecase")
             {
                 createParams = new Dictionary<string, object>
                 {
@@ -147,27 +147,31 @@ namespace ComputeCS.Components
                 };
             }
 
-            var cfdTask = new GenericViewSet<Task>(
-                tokens,
-                inputData.Url,
-                $"/api/project/{project.UID}/task/"
-            ).GetOrCreate(
-                new Dictionary<string, object>
-                {
-                    {"name", solution.CaseType},
-                    {"parent", parentTask.UID},
-                    {"dependent_on", meshTask.UID}
-                },
-                createParams,
-                create
-            );
-
             var tasks = new List<Task>
             {
                 actionTask,
                 meshTask,
-                cfdTask
             };
+            
+            if (createParams.ContainsKey("config"))
+            {
+                var cfdTask = new GenericViewSet<Task>(
+                    tokens,
+                    inputData.Url,
+                    $"/api/project/{project.UID}/task/"
+                ).GetOrCreate(
+                    new Dictionary<string, object>
+                    {
+                        {"name", solution.CaseType},
+                        {"parent", parentTask.UID},
+                        {"dependent_on", meshTask.UID}
+                    },
+                    createParams,
+                    create
+                );
+                tasks.Add(cfdTask);
+            }
+            
             inputData.SubTasks = tasks;
 
             return inputData.ToJson();
@@ -244,7 +248,7 @@ namespace ComputeCS.Components
         )
         {
             // Upload File to parent task
-            new GenericViewSet<Dictionary<string, object>>(
+            var geometryUpload = new GenericViewSet<Dictionary<string, object>>(
                 tokens,
                 url,
                 $"/api/task/{taskId}/file/foam/constant/triSurface/cfdGeom.stl"
@@ -255,6 +259,10 @@ namespace ComputeCS.Components
                     {"file", geometryFile}
                 }
             );
+            if (geometryUpload.ContainsKey("error_messages"))
+            {
+                Console.Write(geometryUpload["error_messages"]);
+            }
 
             if (refinementRegions != null)
             {
@@ -262,7 +270,7 @@ namespace ComputeCS.Components
                 {
                     var fileName = refinementRegion.Keys.First();
                     var file = refinementRegion[fileName];
-                    new GenericViewSet<Dictionary<string, object>>(
+                    var refinementUpload = new GenericViewSet<Dictionary<string, object>>(
                         tokens,
                         url,
                         $"/api/task/{taskId}/file/foam/constant/triSurface/{fileName}.stl"
@@ -273,6 +281,10 @@ namespace ComputeCS.Components
                             {"file", file}
                         }
                     );
+                    if (refinementUpload.ContainsKey("error_messages"))
+                    {
+                        Console.Write(refinementUpload["error_messages"]);
+                    }
                 }
             }
         }
@@ -469,9 +481,13 @@ namespace ComputeCS.Components
             var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var solution = inputData.CFDSolution;
+            
+            if (solution == null){return new Dictionary<string, double>();}
+            
             var cells = inputData.Mesh.CellEstimate;
             var iterations = solution.Iterations["init"];
 
+            
             var nCPUs = 1;
             solution.CPUs.ForEach(cpu => nCPUs *= cpu);
             

@@ -17,6 +17,9 @@
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
   </PropertyGroup>
+  <PropertyGroup>
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -98,6 +101,7 @@
     <Compile Include="ComputeGHInfo.cs" />
     <Compile Include="CFD\GHCompute.cs" />
     <Compile Include="GrasshopperUtils\Async.cs" />
+    <Compile Include="GrasshopperUtils\ComponentUtils.cs" />
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />

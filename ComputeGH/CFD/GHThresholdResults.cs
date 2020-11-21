@@ -245,21 +245,11 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconMesh; }
-        }
+        protected override System.Drawing.Bitmap Icon => Resources.IconMesh;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("d2422b3c-e13a-46a4-9700-ec3d53544013"); }
-        }
+        public override Guid ComponentGuid => new Guid("d2422b3c-e13a-46a4-9700-ec3d53544013");
     }
 }

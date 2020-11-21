@@ -23,19 +23,9 @@ namespace ComputeGH.Grasshopper
             pManager.AddTextParameter("names", "names", "names", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon
-        {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconGetName; }
-        }
+        protected override System.Drawing.Bitmap Icon => Resources.IconGetName;
 
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("5199183e-aa10-41f7-ba63-df1bb96d141c"); }
-        }
+        public override Guid ComponentGuid => new Guid("5199183e-aa10-41f7-ba63-df1bb96d141c");
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {

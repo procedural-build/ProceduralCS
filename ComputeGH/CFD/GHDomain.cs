@@ -65,23 +65,9 @@ namespace ComputeCS.Grasshopper
             pManager.AddGenericParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
+        protected override System.Drawing.Bitmap Icon => Resources.IconRectDomain;
 
-                return Resources.IconRectDomain;
-            }
-        }
-
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("12aa93b6-fc8e-417c-9c8a-200d59e39a21"); }
-        }
+        public override Guid ComponentGuid => new Guid("12aa93b6-fc8e-417c-9c8a-200d59e39a21");
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.GrasshopperUtils;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
@@ -121,7 +122,7 @@ namespace ComputeCS.Grasshopper
                                 convertedPoints,
                                 fields,
                                 names,
-                                _validateCPUs(cpus),
+                                ComponentUtils.ValidateCPUs(cpus),
                                 dependentOn,
                                 caseDir,
                                 create
@@ -201,79 +202,11 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                if (Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconMesh;
-            }
-        }
+        protected override Bitmap Icon => Resources.IconMesh;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("2f0bdda2-f7eb-4fc7-8bf0-a2fd5a787493"); }
-        }
-        
-        private static List<int> _validateCPUs(int cpus)
-        {
-            if (cpus == 1)
-            {
-                return new List<int> {1, 1, 1};
-            }
-            if (cpus == 2)
-            {
-                return new List<int> {2, 1, 1};
-            }
-            if (cpus == 4)
-            {
-                return new List<int> {2, 2, 1};
-            }
-            if (cpus == 8)
-            {
-                return new List<int> {4, 2, 1};
-            }
-            if (cpus == 16)
-            {
-                return new List<int> {4, 4, 1};
-            }
-            if (cpus == 18)
-            {
-                return new List<int> {6, 3, 1};
-            }
-            if (cpus == 24)
-            {
-                return new List<int> {6, 4, 1};
-            }
-            if (cpus == 36)
-            {
-                return new List<int> {6, 6, 1};
-            }
-            if (cpus == 48)
-            {
-                return new List<int> {12, 4, 1};
-            }
-            if (cpus == 64)
-            {
-                return new List<int> {8, 8, 1};
-            }
-            if (cpus == 72)
-            {
-                return new List<int> {12, 6, 1};
-            }
-            if (cpus == 96)
-            {
-                return new List<int> {12, 8, 1};
-            }
-
-            throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
-        } 
+        public override Guid ComponentGuid => new Guid("2f0bdda2-f7eb-4fc7-8bf0-a2fd5a787493");
     }
 }

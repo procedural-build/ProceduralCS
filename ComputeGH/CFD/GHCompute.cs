@@ -128,7 +128,7 @@ namespace ComputeCS.Grasshopper
 
         private static string Info(Dictionary<string, double> estimations)
         {
-            if (estimations == null)
+            if (estimations == null || estimations.Count == 0)
             {
                 return "Not enough information to calculate time and cost estimation";
             }
@@ -230,25 +230,12 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override Bitmap Icon
-        {
-            get
-            {
-                if (Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconRun;
-            }
-        }
+        protected override Bitmap Icon => Resources.IconRun;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b"); }
-        }
+        public override Guid ComponentGuid => new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b");
 
         private Dictionary<string, double> TimeEstimate;
     }
