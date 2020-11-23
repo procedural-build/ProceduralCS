@@ -1,6 +1,13 @@
 ﻿# Procedural Grasshopper plugin.
 Please find a working example attached to this release or by going to our [demo](https://github.com/procedural-build/demos) repo.
 
+## Components Updated in this Release
+The following components have been updated since our last release and it is advised to replace them in any canvas you have.
+Just because the components have been updated, that doesn't mean that the only ones won't work any more, but there might be issues with added/removed/changed input, outputs, descriptions and tooltips.
+
+### Changed Components:
+* Example Component
+ 
 ## Installation
 
 We provide the option to install the Procedural Grasshopper plugin through the YAK package manager. To install with YAK, just download and open the [ComputeVWT-DEMO.gh]("https://github.com/procedural-build/demos/blob/master/VWT/ComputeVWT-DEMO.gh?raw=true") file and click install when the package manager opens.
