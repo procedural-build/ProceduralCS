@@ -298,11 +298,53 @@ namespace ComputeCS.Grasshopper.Utils
                 {
                     faceNormals.Add(normal, path);
                 }
+
                 for (var i = 0; i < mesh.Faces.Count(); i++)
                 {
                     faceCenters.Add(mesh.Faces.GetFaceCenter(i), path);
                 }
-                
+
+                index++;
+            }
+
+            return new Dictionary<string, DataTree<object>>
+            {
+                {"analysisMesh", analysisMesh},
+                {"faceCenters", faceCenters},
+                {"faceNormals", faceNormals},
+            };
+        }
+
+        public static Dictionary<string, DataTree<object>> CreateAnalysisMesh(
+            List<Brep> baseSurfaces,
+            double gridSize,
+            List<Brep> excludeGeometry,
+            double offset,
+            string offsetDirection)
+        {
+            var analysisMesh = new DataTree<object>();
+            var faceCenters = new DataTree<object>();
+            var faceNormals = new DataTree<object>();
+            var index = 0;
+            foreach (var surface in baseSurfaces)
+            {
+                var _surface = SubtractBrep(surface, excludeGeometry);
+                _surface = MoveSurface(_surface, offset, offsetDirection);
+                var mesh = CreateMeshFromSurface(_surface, gridSize);
+
+                var path = new GH_Path(index);
+                analysisMesh.Add(mesh, path);
+                mesh.RebuildNormals();
+                foreach (var normal in mesh.FaceNormals)
+                {
+                    faceNormals.Add(normal, path);
+                }
+
+                for (var i = 0; i < mesh.Faces.Count(); i++)
+                {
+                    faceCenters.Add(mesh.Faces.GetFaceCenter(i), path);
+                }
+
                 index++;
             }
 
@@ -333,15 +375,30 @@ namespace ComputeCS.Grasshopper.Utils
         private static Brep SubtractBrep(Surface surface, List<Brep> excludeGeometry)
         {
             var brepSurface = Brep.CreateFromSurface(surface);
+            return _SubtractBrep(brepSurface, excludeGeometry);
+        }
+
+        private static Brep SubtractBrep(Brep brepSurface, List<Brep> excludeGeometry)
+        {
+            return _SubtractBrep(brepSurface, excludeGeometry);
+        }
+
+        private static Brep _SubtractBrep(Brep brepSurface, List<Brep> excludeGeometry)
+        {
             const double tolerance = 0.1;
             foreach (var brep in excludeGeometry)
             {
-                var intersectionCurves = new Curve[]{};
-                var intersectionPoints = new Point3d[]{};
-                Intersection.BrepBrep(brep, brepSurface, tolerance, out intersectionCurves, out intersectionPoints);
-                var splitFaces = brepSurface.Split(intersectionCurves, tolerance);
+                var intersectionCurves = new Curve[] { };
+                var intersectionPoints = new Point3d[] { };
+                var isIntersecting = Intersection.BrepBrep(brep, brepSurface, tolerance, out intersectionCurves,
+                    out intersectionPoints);
+                if (isIntersecting && intersectionCurves.Length > 0)
+                {
+                    var splitFaces = brepSurface.Split(intersectionCurves, tolerance);
 
-                brepSurface = splitFaces.First(face => !brep.IsPointInside(AreaMassProperties.Compute((Brep) face).Centroid, tolerance, false));
+                    brepSurface = splitFaces.First(face =>
+                        !brep.IsPointInside(AreaMassProperties.Compute((Brep) face).Centroid, tolerance, false));
+                }
             }
 
             return brepSurface;
@@ -355,23 +412,65 @@ namespace ComputeCS.Grasshopper.Utils
                 vector.X = offset;
                 vector.Y = 0;
                 vector.Z = 0;
-            } else if (offsetDirection == "y")
+            }
+            else if (offsetDirection == "y")
             {
                 vector.Y = offset;
                 vector.X = 0;
                 vector.Z = 0;
-            } else if (offsetDirection == "z")
+            }
+            else if (offsetDirection == "z")
             {
                 vector.Z = offset;
                 vector.Y = 0;
                 vector.X = 0;
-            } else if (offsetDirection == "normal")
+            }
+            else if (offsetDirection == "normal")
             {
                 vector = surface.Faces.FirstOrDefault().NormalAt(0.5, 0.5);
             }
-             
+
             surface.Translate(vector);
             return surface;
+        }
+
+        public static Dictionary<string, DataTree<object>> CreatedMeshFromSlicedDomain(
+            Box domain,
+            double location,
+            double gridSize,
+            List<Brep> excludeGeometry,
+            string sliceDirection)
+        {
+            var normal = new Vector3d();
+            var origin = new Point3d();
+            var width = new Interval();
+            var height = new Interval();
+            if (sliceDirection == "x")
+            {
+                normal.X = 1;
+                origin.X = location;
+                width = domain.Y;
+                height = domain.Z;
+            }
+            else if (sliceDirection == "y")
+            {
+                normal.Y = 1;
+                origin.Y = location;
+                width = domain.Z;
+                height = domain.X;
+            }
+            else
+            {
+                normal.Z = 1;
+                origin.Z = location;
+                width = domain.X;
+                height = domain.Y;
+            }
+
+            var cutPlane = new Plane(origin, normal);
+            var rectangle = new Rectangle3d(cutPlane, width, height);
+            var surface = Brep.CreatePlanarBreps(rectangle.ToNurbsCurve(), 0.1).ToList();
+            return CreateAnalysisMesh(surface, gridSize, excludeGeometry, 0.0, "z");
         }
     }
 }
