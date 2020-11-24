@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using ComputeCS.types;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper.Utils
@@ -181,6 +183,61 @@ namespace ComputeCS.Grasshopper.Utils
 
             return box.BoundingBox;
 
+        }
+        
+        /// <summary>
+        /// This estimation is based on an equation provided by Alexander Jacobson
+        /// </summary>
+        public static double EstimateCellCount(List<IGH_GeometricGoo> geometry, double cellSize, double xyScale, double zScale)
+        {
+            var boundingBox = new BoundingBox();
+            var refinementRegionCount = 0.0;
+            var surfaceAreaCount = 0.0;
+            foreach (var geo in geometry)
+            {
+                boundingBox = BoundingBox.Union(boundingBox, geo.Boundingbox);
+                refinementRegionCount += EstimateRefinementCells(geo, cellSize);
+                surfaceAreaCount += EstimateSurfaceAreaCells(geo, cellSize);
+            }
+
+            var box = new Box(boundingBox);
+            var hexMeshCount = (box.X.Length * box.Y.Length * box.Z.Length * Math.Pow(xyScale, 2) * zScale) / Math.Pow(cellSize, 3);
+            return hexMeshCount + refinementRegionCount + surfaceAreaCount;
+        }
+
+        public static double EstimateRefinementCells(IGH_GeometricGoo geo, double baseCellSize)
+        {
+            var regionName = Geometry.getUserString(geo, "ComputeName");
+            var refinementDetails = Geometry.getUserString(geo, "ComputeRefinementRegion");
+            if (regionName == null || refinementDetails == null)
+            {
+                return 0.0;
+            }
+
+            var details = new RefinementDetails().FromJson(refinementDetails);
+            var cellSize = baseCellSize / Math.Pow(2, int.Parse(details.Levels.Split(' ')[1]));
+            var mesh = new Mesh();
+            geo.CastTo(out mesh);
+
+            return mesh.Volume() / Math.Pow(cellSize, 3);
+        }
+        
+        public static double EstimateSurfaceAreaCells(IGH_GeometricGoo geo, double baseCellSize)
+        {
+            var surfaceName = Geometry.getUserString(geo, "ComputeName");
+            var minLevel = Geometry.getUserString(geo, "ComputeMeshMinLevel");
+            var maxLevel = Geometry.getUserString(geo, "ComputeMeshMaxLevel");
+
+            if (surfaceName == null || minLevel == null)
+            {
+                return 0.0;;
+            }
+            var cellSize = baseCellSize / Math.Pow(2, double.Parse(minLevel));
+            var mesh = new Mesh();
+            geo.CastTo(out mesh);
+            var area = AreaMassProperties.Compute(mesh).Area;
+
+            return (area / Math.Pow(cellSize, 2)) * 4;
         }
     }
 }

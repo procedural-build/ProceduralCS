@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ComputeCS.Components;
+using ComputeCS.types;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
@@ -18,13 +19,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public GHThresholdResults()
             : base("Wind Threshold Results", "Wind Threshold Results",
-                @"Loads wind threshold results from a file(s)." +
-                "\nLAWSON CRITERIA" +
-                "\n0: Comfortable for dining. < 2.5m/s, 5% of the time" +
-                "\n1: Comfortable for sitting. < 4m/s, 5% of the time" +
-                "\n2: Comfortable for standing. < 6m/s, 5% of the time" +
-                "\n3: Comfortable for walking. < 8m/s, 5% of the time" +
-                "\n4: Exceeds all criteria. > 8m/s, 5% of the time",
+                "Loads wind threshold results from a file(s).",
                 "Compute", "Utils")
         {
         }
@@ -37,8 +32,25 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
             pManager.AddIntegerParameter("ThresholdType", "ThresholdType", "0: Wind Thresholds\n1: Lawsons Criteria",
                 GH_ParamAccess.item, 0);
-
+            pManager.AddTextParameter("ThresholdFrequency", "ThresholdFrequency",
+                "Thresholds frequencies for different wind comfort categories. This only applies if you have chosen 1 in the ThresholdType." +
+                "\nInput should be a list JSON formatted strings, " +
+                "with the fields: \"field\" and \"value\", respectively describing the category name and threshold frequency in % that the wind velocity should be less than." +
+                "\nThe category names should match the names from the Wind Threshold component. Only matching category names will be shown." +
+                "\nThe default values corresponds to the Lawson 2001 Criteria",
+                GH_ParamAccess.list,
+                new List<string>
+                {
+                    "{\"field\": \"sitting\", \"value\": 5}",
+                    "{\"field\": \"standing\", \"value\": 5}",
+                    "{\"field\": \"strolling\", \"value\": 5}",
+                    "{\"field\": \"business_walking\", \"value\": 5}",
+                    "{\"field\": \"uncomfortable\", \"value\": 95}",
+                    "{\"field\": \"unsafe_frail\", \"value\": 99.977}",
+                    "{\"field\": \"unsafe_all\", \"value\": 99.977}"
+                });
             pManager[1].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -57,22 +69,26 @@ namespace ComputeCS.Grasshopper
         {
             string folder = null;
             var criteria = 0;
+            var thresholdsFrequencies = new List<string>();
 
             if (!DA.GetData(0, ref folder)) return;
             DA.GetData(1, ref criteria);
+            DA.GetDataList(2, thresholdsFrequencies);
 
             var results = WindThreshold.ReadThresholdResults(folder);
-            var info = string.Empty;
+            var info = new DataTree<object>();
             if (criteria == 1)
             {
-                var lawsons = WindThreshold.LawsonsCriteria(results);
+                var _thresholdFrequencies = thresholdsFrequencies
+                    .Select(frequency => new WindThresholds.Threshold().FromJson(frequency)).ToList();
+                var lawsons = WindThreshold.LawsonsCriteria(results, _thresholdFrequencies);
                 foreach (var season in lawsons.Keys)
                 {
                     var data = ConvertLawsonToDataTree(lawsons[season]);
                     AddToOutput(DA, season, data);
                 }
 
-                info = UpdateInfo(lawsons.First().Value.Keys.ToList());
+                info = UpdateInfo(lawsons.First().Value.Keys.ToList(), _thresholdFrequencies);
                 RemoveUnusedOutputs(lawsons.Keys.ToList());
             }
             else
@@ -83,12 +99,12 @@ namespace ComputeCS.Grasshopper
                     AddToOutput(DA, key, data);
                 }
 
-                info = UpdateInfo(results.First().Value.Keys.ToList());
+                info = UpdateInfo(results.First().Value.Keys.ToList(), new List<WindThresholds.Threshold>());
                 RemoveUnusedOutputs(results.Keys.ToList());
             }
 
 
-            DA.SetData(0, info);
+            DA.SetDataTree(0, info);
         }
 
         private static DataTree<object> ConvertLawsonToDataTree(Dictionary<string, List<int>> data)
@@ -173,7 +189,7 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static string UpdateInfo(List<string> patchKeys)
+        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds)
         {
             var info = "Patch Names:\n";
             var i = 0;
@@ -182,8 +198,21 @@ namespace ComputeCS.Grasshopper
                 info += $"{{{i}}} is {key}\n";
                 i++;
             }
-
-            return info;
+            var output = new DataTree<object>();
+            output.Add(info, new GH_Path(0));
+            
+            if (thresholds != null)
+            {
+                info += "\nLawson Categories\n";
+                var j = 0;
+                foreach (var threshold in thresholds)
+                {
+                    info += $"{threshold.Field} is {j}\n";
+                    output.Add(threshold.Field, new GH_Path(1));
+                    j++;
+                }
+            }
+            return output;
         }
 
 
@@ -216,21 +245,11 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconMesh; }
-        }
+        protected override System.Drawing.Bitmap Icon => Resources.IconMesh;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("d2422b3c-e13a-46a4-9700-ec3d53544013"); }
-        }
+        public override Guid ComponentGuid => new Guid("d2422b3c-e13a-46a4-9700-ec3d53544013");
     }
 }

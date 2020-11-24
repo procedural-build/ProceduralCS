@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using Grasshopper;
-using Grasshopper.Kernel;
-using Grasshopper.Kernel.Data;
-using Rhino.Geometry;
-using ComputeCS;
+using System.Drawing;
+using System.Threading;
+using ComputeCS.Components;
+using ComputeCS.GrasshopperUtils;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using System.Threading;
+using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
@@ -20,7 +21,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public GHProbe()
             : base("Probe Points", "Probe Points",
-                "Probe Points to get result",
+                "Probe the CFD case to get the results in the desired points",
                 "Compute", "CFD")
         {
         }
@@ -28,7 +29,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.",
@@ -43,7 +44,7 @@ namespace ComputeCS.Grasshopper
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Case Directory", "Case Dir", "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist",
+            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
                 GH_ParamAccess.item, false);
 
             pManager[2].Optional = true;
@@ -57,7 +58,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
         }
@@ -95,6 +96,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(7, ref create);
 
             var convertedPoints = ConvertToPointList(points);
+            caseDir = caseDir.TrimEnd('/');
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", points) + string.Join("", fields);
@@ -115,12 +117,12 @@ namespace ComputeCS.Grasshopper
                     {
                         try
                         {
-                            var results = ComputeCS.Components.Probe.ProbePoints(
+                            var results = Probe.ProbePoints(
                                 inputJson,
                                 convertedPoints,
                                 fields,
                                 names,
-                                _validateCPUs(cpus),
+                                ComponentUtils.ValidateCPUs(cpus),
                                 dependentOn,
                                 caseDir,
                                 create
@@ -171,7 +173,7 @@ namespace ComputeCS.Grasshopper
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>
@@ -200,79 +202,11 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconMesh;
-            }
-        }
+        protected override Bitmap Icon => Resources.IconMesh;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("2f0bdda2-f7eb-4fc7-8bf0-a2fd5a787493"); }
-        }
-        
-        private static List<int> _validateCPUs(int cpus)
-        {
-            if (cpus == 1)
-            {
-                return new List<int> {1, 1, 1};
-            }
-            if (cpus == 2)
-            {
-                return new List<int> {2, 1, 1};
-            }
-            if (cpus == 4)
-            {
-                return new List<int> {2, 2, 1};
-            }
-            if (cpus == 8)
-            {
-                return new List<int> {4, 2, 1};
-            }
-            if (cpus == 16)
-            {
-                return new List<int> {4, 4, 1};
-            }
-            if (cpus == 18)
-            {
-                return new List<int> {6, 3, 1};
-            }
-            if (cpus == 24)
-            {
-                return new List<int> {6, 4, 1};
-            }
-            if (cpus == 36)
-            {
-                return new List<int> {6, 6, 1};
-            }
-            if (cpus == 48)
-            {
-                return new List<int> {12, 4, 1};
-            }
-            if (cpus == 64)
-            {
-                return new List<int> {8, 8, 1};
-            }
-            if (cpus == 72)
-            {
-                return new List<int> {12, 6, 1};
-            }
-            if (cpus == 96)
-            {
-                return new List<int> {12, 8, 1};
-            }
-
-            throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
-        } 
+        public override Guid ComponentGuid => new Guid("2f0bdda2-f7eb-4fc7-8bf0-a2fd5a787493");
     }
 }

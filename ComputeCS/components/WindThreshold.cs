@@ -14,6 +14,7 @@ namespace ComputeCS.Components
             string inputJson,
             string epwFile,
             List<string> patches,
+            List<string> thresholds,
             List<int> cpus,
             string dependentOn = "",
             bool create = false
@@ -26,16 +27,18 @@ namespace ComputeCS.Components
             var postProcessTask = GetPostProcessTask(subTasks, dependentOn);
             var project = inputData.Project;
 
-            if (parentTask == null || parentTask.UID == null)
+            if (parentTask?.UID == null)
             {
                 return null;
             }
-            
+
             var taskQueryParams = new Dictionary<string, object>
             {
                 {"name", "Wind Thresholds"},
                 {"parent", parentTask.UID},
+                {"project", project.UID}
             };
+
             if (postProcessTask != null)
             {
                 taskQueryParams.Add("dependent_on", postProcessTask.UID);
@@ -68,34 +71,34 @@ namespace ComputeCS.Components
             }
 
 
-            var task = new GenericViewSet<Task>(
-                tokens,
-                inputData.Url,
-                $"/api/project/{project.UID}/task/"
-            ).GetOrCreate(
-                taskQueryParams,
-                new Dictionary<string, object>
+            var _thresholds = thresholds.Select(threshold => new WindThresholds.Threshold().FromJson(threshold))
+                .ToList();
+
+            var taskCreateParams = new Dictionary<string, object>
+            {
                 {
+                    "config", new Dictionary<string, object>
                     {
-                        "config", new Dictionary<string, object>
-                        {
-                            {"task_type", "cfd"},
-                            {"cmd", "run_wind_thresholds"},
-                            {"case_dir", "VWT/"},
-                            {"epw_file", $"WeatherFiles/{epwName}"},
-                            {"patches", patches},
-                            {"set_foam_patch_fields", false},
-                            {"cpus", cpus},
-                        }
+                        {"task_type", "cfd"},
+                        {"cmd", "run_wind_thresholds"},
+                        {"case_dir", "VWT/"},
+                        {"epw_file", $"WeatherFiles/{epwName}"},
+                        {"patches", patches},
+                        {"thresholds", _thresholds},
+                        {"set_foam_patch_fields", false},
+                        {"cpus", cpus},
                     }
-                },
-                create
-            );
+                }
+            };
+
+            var task = Tasks.GetCreateOrUpdateTask(tokens, inputData.Url, "/api/task/", taskQueryParams,
+                taskCreateParams, create);
 
             if (task.ErrorMessages != null)
             {
                 throw new Exception(task.ErrorMessages[0]);
             }
+
             inputData.SubTasks.Add(task);
 
             return inputData.ToJson();
@@ -112,6 +115,7 @@ namespace ComputeCS.Components
                 {
                     continue;
                 }
+
                 if (dependentName == subTask.Name)
                 {
                     return subTask;
@@ -125,12 +129,17 @@ namespace ComputeCS.Components
                 if (subTask.Config.ContainsKey("commands"))
                 {
                     // Have to do this conversion to be able to compare the strings
-                    foreach (var cmd in ((JArray) subTask.Config["commands"]).ToObject<List<string>>())
+                    try
                     {
-                        if (cmd.StartsWith("postProcess"))
+                        if (((JArray) subTask.Config["commands"]).ToObject<List<string>>()
+                            .Any(cmd => cmd.StartsWith("postProcess")))
                         {
                             return subTask;
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Write(e.Message);
                     }
                 }
             }
@@ -142,14 +151,11 @@ namespace ComputeCS.Components
             string folder)
         {
             var data = new Dictionary<string, Dictionary<string, object>>();
-            var resultFileType = new List<string>
-            {
-                "dining", "sitting", "standing", "Uav", "Uav_std", "walkthru"
-            };
+            var resultFileTypes = ReadThresholdFileTypes(folder);
 
             foreach (var file in Directory.GetFiles(folder))
             {
-                if (resultFileType.Contains(Path.GetExtension(file).Replace(".", "")))
+                if (resultFileTypes.Contains(Path.GetExtension(file).Replace(".", "")))
                 {
                     var fileName = Path.GetFileName(file).Split('.');
                     var extension = fileName[1];
@@ -181,32 +187,29 @@ namespace ComputeCS.Components
         }
 
         public static Dictionary<string, Dictionary<string, List<int>>> LawsonsCriteria(
-            Dictionary<string, Dictionary<string, object>> data
-            )
+            Dictionary<string, Dictionary<string, object>> data,
+            List<WindThresholds.Threshold> thresholds
+        )
         {
-            var resultTypes = new List<string>
-            {
-                "dining", "sitting", "standing", "walkthru"
-            };
 
             var newData = new Dictionary<string, Dictionary<string, object>>();
-            foreach (var resultType in resultTypes)
+            foreach (var threshold in thresholds)
             {
-                foreach (var patchName in data[resultType].Keys)
+                foreach (var patchName in data[threshold.Field].Keys)
                 {
                     if (!newData.ContainsKey(patchName))
                     {
                         newData.Add(patchName, new Dictionary<string, object>());
                     }
 
-                    newData[patchName].Add(resultType, data[resultType][patchName]);
+                    newData[patchName].Add(threshold.Field, data[threshold.Field][patchName]);
                 }
             }
 
             var output = new Dictionary<string, Dictionary<string, List<int>>>();
             foreach (var patchKey in newData.Keys)
             {
-                output = ComputeLawson(newData[patchKey], patchKey, output);
+                output = ComputeLawson(newData[patchKey], patchKey, output, thresholds);
             }
 
             return output;
@@ -215,7 +218,8 @@ namespace ComputeCS.Components
         private static Dictionary<string, Dictionary<string, List<int>>> ComputeLawson(
             Dictionary<string, object> patchValues,
             string patchKey,
-            Dictionary<string, Dictionary<string, List<int>>> output
+            Dictionary<string, Dictionary<string, List<int>>> output,
+            List<WindThresholds.Threshold> thresholds
         )
         {
             var seasons = new List<string>
@@ -232,6 +236,7 @@ namespace ComputeCS.Components
             // {"winter": [point1, point2, ...], "spring": [point1, point2, ...], ...}
             foreach (var resultKey in patchValues.Keys)
             {
+                var thresholdFrequency = thresholds.First(threshold => threshold.Field == resultKey).Value/100;
                 var pointValues = (List<List<double>>) patchValues[resultKey];
                 var pointLenght = pointValues.Count();
                 var pointIndex = 0;
@@ -253,13 +258,13 @@ namespace ComputeCS.Components
 
                         if (output[seasonKey][patchKey].Count() < pointLenght)
                         {
-                            output[seasonKey][patchKey].Add(Convert.ToInt32(value > 0.05));
+                            output[seasonKey][patchKey].Add(Convert.ToInt32(value > thresholdFrequency));
                         }
                         else
                         {
-                            output[seasonKey][patchKey][pointIndex] += Convert.ToInt32(value > 0.05);
+                            output[seasonKey][patchKey][pointIndex] += Convert.ToInt32(value > thresholdFrequency);
                         }
-                        
+
                         seasonCounter++;
                     }
 
@@ -268,6 +273,12 @@ namespace ComputeCS.Components
             }
 
             return output;
+        }
+
+        private static List<string> ReadThresholdFileTypes(string folder)
+        {
+            var allFiles = Directory.GetFiles(Path.Combine(folder, "0")).ToList();
+            return allFiles.Select(file => Path.GetFileName(file)).Where(file => !file.StartsWith("Uav")).ToList();
         }
     }
 }

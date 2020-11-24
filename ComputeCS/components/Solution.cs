@@ -15,7 +15,7 @@ namespace ComputeCS.Components
             string caseType,
             List<string> boundaryConditions,
             string iterations,
-            int numberOfAngles,
+            List<double> numberOfAngles,
             string overrides = null,
             List<string> files = null
         )
@@ -65,10 +65,17 @@ namespace ComputeCS.Components
         }
 
         private static List<double> GetAngleListFromNumber(
-            int numberOfAngles
+            List<double> angles
         )
         {
-            return Enumerable.Range(0, numberOfAngles).Select(index => (double)index * 360 / numberOfAngles).ToList();
+            if (angles.Count == 1)
+            {
+                var numberOfAngles = (int)angles.First();
+                return Enumerable.Range(0, numberOfAngles).Select(index => (double)index * 360 / numberOfAngles).ToList();
+            }
+
+            return angles;
+
         }
     }
 }

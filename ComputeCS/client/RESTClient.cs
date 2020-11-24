@@ -121,7 +121,7 @@ namespace ComputeCS
                 using (var filePayload = new StreamWriter(request.GetRequestStream()))
                 {
                     //var data = (byte[])payload["file"];
-                    string data = JsonConvert.SerializeObject(payload, JsonSettings);
+                    var data = JsonConvert.SerializeObject(payload, JsonSettings);
                     filePayload.Write(data);
                     filePayload.Close();
                 }
@@ -228,7 +228,7 @@ namespace ComputeCS
                 request.Headers.Add("Authorization", $"JWT {token}");
             }
 
-            if ((request.Method == "POST" || request.Method == "PUT") && payload != null)
+            if ((request.Method == "POST" || request.Method == "PUT"  || request.Method == "PATCH") && payload != null)
             {
                 this.SetPayload();
             }

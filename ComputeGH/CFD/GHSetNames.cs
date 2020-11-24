@@ -28,19 +28,9 @@ namespace ComputeCS.Grasshopper
             pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon
-        {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconSetName; }
-        }
+        protected override System.Drawing.Bitmap Icon => Resources.IconSetName;
 
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("42064b04-7f26-4a93-b90e-e6111c075b51"); }
-        }
+        public override Guid ComponentGuid => new Guid("42064b04-7f26-4a93-b90e-e6111c075b51");
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {

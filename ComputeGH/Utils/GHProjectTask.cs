@@ -62,7 +62,8 @@ namespace ComputeCS.Grasshopper
             bool create = false;
 
             if (!DA.GetData(0, ref auth)) return;
-            if (!DA.GetData(1, ref projectName) || !DA.GetData(2, ref projectNumber)) return;
+            if (!DA.GetData(1, ref projectName)) return;
+            DA.GetData(2, ref projectNumber);
             if (!DA.GetData(3, ref taskName)) return;
             DA.GetData(4, ref create);
 
@@ -88,7 +89,7 @@ namespace ComputeCS.Grasshopper
                             var results = ProjectAndTask.GetOrCreate(
                                 auth,
                                 projectName,
-                                (int) projectNumber,
+                                projectNumber,
                                 taskName,
                                 create
                             );
@@ -102,7 +103,7 @@ namespace ComputeCS.Grasshopper
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message + "\n");
+                            StringCache.setCache(this.InstanceGuid.ToString(), e.Message + "\n");
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
@@ -148,25 +149,11 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override Bitmap Icon
-        {
-            get
-            {
-                if (Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-
-                return Resources.IconFolder;
-            }
-        }
+        protected override Bitmap Icon => Resources.IconFolder;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("74e6ee44-9879-4769-83bb-3f2cdeb8dd7a"); }
-        }
+        public override Guid ComponentGuid => new Guid("74e6ee44-9879-4769-83bb-3f2cdeb8dd7a");
     }
 }

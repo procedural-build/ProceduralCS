@@ -71,7 +71,7 @@ namespace ComputeCS.Grasshopper
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null || reload == true)
+            if (cachedValues == null || reload)
             {
                 PollDownloadContent(input, downloadPath, localPath, exclude, reload, cacheKey);
             }
@@ -91,11 +91,13 @@ namespace ComputeCS.Grasshopper
             }
 
             // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (errors != null)
+            var errors = StringCache.getCache(InstanceGuid.ToString());
+            if (!string.IsNullOrEmpty(errors))
             {
                 throw new Exception(errors);
             }
+            
+            Message = StringCache.getCache(cacheKey + "progress");
 
         }
 
@@ -108,15 +110,15 @@ namespace ComputeCS.Grasshopper
             string cacheKey
             )
         {
-            var queueName = "Download";
+            const string queueName = "Download";
 
             // Get queue lock
             var queueLock = StringCache.getCache(queueName);
             var downloaded = false;
             var inputData = new Inputs().FromJson(inputJson);
-            if (reload == true)
+            if (reload)
             {
-                StringCache.setCache(this.InstanceGuid.ToString(), "");
+                StringCache.setCache(InstanceGuid.ToString(), "");
             }
 
             if (queueLock != "true" && inputData.Task != null)
@@ -128,18 +130,26 @@ namespace ComputeCS.Grasshopper
                     {
                         while (!downloaded)
                         {
+                            StringCache.setCache(cacheKey + "progress", "Downloading...");
+                            ExpireSolutionThreadSafe(true);
+                            
                             downloaded = Components.DownloadContent.Download(inputJson, downloadPath, localPath, exclude);
                             StringCache.setCache(cacheKey, downloaded.ToString());
+                            
                             if (!downloaded)
                             {
+                                StringCache.setCache(cacheKey + "progress", "Waiting for results...");
+                                ExpireSolutionThreadSafe(true);
                                 Thread.Sleep(60000);
                             }
+                            else { StringCache.setCache(cacheKey + "progress", "Downloaded files");}
+                            ExpireSolutionThreadSafe(true);
                         }
 
                     }
                     catch (Exception e)
                     {
-                        StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                        StringCache.setCache(InstanceGuid.ToString(), e.Message);
                         StringCache.setCache(cacheKey, "error");
                     }
                     ExpireSolutionThreadSafe(true);
@@ -159,24 +169,11 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconFolder;
-            }
-        }
+        protected override System.Drawing.Bitmap Icon => Resources.IconFolder;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("64d78c45-6eda-41e3-a52f-97ff06ddff0a"); }
-        }
+        public override Guid ComponentGuid => new Guid("64d78c45-6eda-41e3-a52f-97ff06ddff0a");
     }
 }

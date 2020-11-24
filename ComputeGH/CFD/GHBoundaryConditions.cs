@@ -62,29 +62,14 @@ namespace ComputeCS.Grasshopper
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
         /// </summary>
-        protected override Bitmap Icon
-        {
-            get
-            {
-                // You can add image files to your project resources and access them like this:
-                if (Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-
-                return Resources.IconBoundaryCondition;
-            }
-        }
+        protected override Bitmap Icon => Resources.IconBoundaryCondition;
 
         /// <summary>
         /// Each component must have a unique Guid to identify it. 
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("9fee205d-133f-4fc7-8d46-367765308909"); }
-        }
+        public override Guid ComponentGuid => new Guid("9fee205d-133f-4fc7-8d46-367765308909");
 
         /// <summary>
         /// This is the method that actually does the work.

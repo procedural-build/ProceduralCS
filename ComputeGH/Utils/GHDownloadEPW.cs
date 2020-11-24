@@ -44,7 +44,7 @@ namespace ComputeGH.Utils
 
             if (!DA.GetData(0, ref launch)) return;
 
-            var url = "https://energyplus.net/weather";
+            const string url = "https://energyplus.net/weather";
             if (launch)
             {
                 System.Diagnostics.Process.Start(url);
@@ -54,21 +54,11 @@ namespace ComputeGH.Utils
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get {                 if (System.Environment.GetEnvironmentVariable("RIDER") == "true")
-                {
-                    return null;
-                }
-                return Resources.IconFolder; }
-        }
+        protected override System.Drawing.Bitmap Icon => Resources.IconFolder;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("fdb4b28d-727a-44b5-9676-2e3a447c4610"); }
-        }
+        public override Guid ComponentGuid => new Guid("fdb4b28d-727a-44b5-9676-2e3a447c4610");
     }
 }

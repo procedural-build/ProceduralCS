@@ -12,6 +12,8 @@ namespace ComputeCS.types
         public BaseMesh BaseMesh;
         [JsonProperty("snappyhex_mesh")]
         public SnappyHexMesh SnappyHexMesh;
+
+        public int CellEstimate;
     }
 
     public class BaseMesh
