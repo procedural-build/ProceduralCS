@@ -47,6 +47,9 @@
     <Reference Include="Grasshopper, Version=6.20.19322.20360, Culture=neutral, PublicKeyToken=dda4f5ec2cd80803, processorArchitecture=MSIL">
       <HintPath>..\packages\Grasshopper.6.20.19322.20361\lib\net45\Grasshopper.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Dynamic, Version=1.2.0.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1">
+      <HintPath>..\..\..\..\..\Program Files\Rhino 6\Plug-ins\IronPython\Microsoft.Dynamic.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -110,6 +113,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Utils\GHAnalysisMesh.cs" />
     <Compile Include="Utils\GHDownload.cs" />
     <Compile Include="Utils\GHDownloadEPW.cs" />
     <Compile Include="Utils\GHLogin.cs" />
