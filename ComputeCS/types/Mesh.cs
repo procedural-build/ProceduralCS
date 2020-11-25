@@ -53,6 +53,7 @@ namespace ComputeCS.types
         public string Name;
         public List<bool> Locations;
         public List<double> KeepPoint;
+        public bool CellZone;
     }
 
     public class CastellatedMeshControls : SerializeBase<CastellatedMeshControls>

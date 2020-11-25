@@ -137,6 +137,7 @@ namespace ComputeCS.Grasshopper
         {
             "simpleFoam",
             "potentialFoam",
+            "porousSimpleFoam",
             "pisoFoam",
             "buoyantSimpleFoam",
             "buoyantPimpleFoam",

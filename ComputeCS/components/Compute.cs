@@ -119,7 +119,8 @@ namespace ComputeCS.Components
                             {"cmd", "wind_tunnel"},
                             {"commands", solution.Angles},
                             {"cpus", cpus},
-                            {"iterations", solution.Iterations}
+                            {"iterations", solution.Iterations},
+                            {"solver", solution.Solver}
                         }
                     }
                 };
