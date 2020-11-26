@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ComputeCS.types;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace ComputeCS.Components
 {
@@ -423,6 +424,7 @@ namespace ComputeCS.Components
                         throw new Exception(
                             $"Got the following error, while trying to upload: {file}: {response["error_messages"]}");
                     }
+                    Thread.Sleep(100);
                 }
             }
 

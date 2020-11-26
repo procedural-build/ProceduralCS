@@ -110,7 +110,7 @@ namespace ComputeCS.Grasshopper
             string cacheKey
             )
         {
-            const string queueName = "Download";
+            var queueName = "Download" + cacheKey;
 
             // Get queue lock
             var queueLock = StringCache.getCache(queueName);

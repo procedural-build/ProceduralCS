@@ -79,7 +79,7 @@ namespace ComputeCS.Grasshopper
 
             if (cachedValues == null || compute)
             {
-                const string queueName = "compute";
+                var queueName = "compute" + cacheKey;
                 StringCache.setCache(InstanceGuid.ToString(), "");
 
                 // Get queue lock

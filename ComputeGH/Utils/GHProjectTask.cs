@@ -59,7 +59,7 @@ namespace ComputeCS.Grasshopper
             string projectName = null;
             int? projectNumber = null;
             string taskName = null;
-            bool create = false;
+            var create = false;
 
             if (!DA.GetData(0, ref auth)) return;
             if (!DA.GetData(1, ref projectName)) return;
@@ -74,7 +74,7 @@ namespace ComputeCS.Grasshopper
 
             if (cachedValues == null || create == true)
             {
-                var queueName = "ProjectAndTask";
+                var queueName = "ProjectAndTask" + cacheKey;
 
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
