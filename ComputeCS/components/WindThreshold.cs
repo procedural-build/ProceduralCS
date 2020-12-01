@@ -46,7 +46,7 @@ namespace ComputeCS.Components
 
             if (!File.Exists(epwFile))
             {
-                return null;
+                throw new Exception("A .epw file is needed to proceed!");
             }
 
             var epwName = Path.GetFileName(epwFile);
@@ -56,10 +56,10 @@ namespace ComputeCS.Components
                 var epwFileContent = File.ReadAllBytes(epwFile);
                 {
                     // Upload EPW File to parent task
-                    new GenericViewSet<Dictionary<string, object>>(
+                    var uploadTask = new GenericViewSet<Dictionary<string, object>>(
                         tokens,
                         inputData.Url,
-                        $"/api/task/{parentTask.UID}/file/WeatherFiles/{epwName}/"
+                        $"/api/task/{parentTask.UID}/file/WeatherFiles/{epwName}"
                     ).Update(
                         null,
                         new Dictionary<string, object>
@@ -67,6 +67,11 @@ namespace ComputeCS.Components
                             {"file", epwFileContent}
                         }
                     );
+                    if (uploadTask.ContainsKey("error_messages"))
+                    {
+                        throw new Exception(uploadTask["error_messages"].ToString());
+                    }
+
                 }
             }
 

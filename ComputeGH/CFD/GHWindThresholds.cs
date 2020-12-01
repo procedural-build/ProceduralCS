@@ -140,7 +140,7 @@ namespace ComputeGH.CFD
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.AppendCache(InstanceGuid.ToString(), e.Message + "\n");
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }

@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.IO;
 using ComputeCS.types;
 using System.Linq;
+using System.Threading;
 using ComputeCS.utils.Cache;
 
 namespace ComputeCS.Components
@@ -87,6 +88,7 @@ namespace ComputeCS.Components
                         $"/api/task/{parentTask.UID}/file/"
                     ).Retrieve(filePathUnix, localFileDirectory, new Dictionary<string, object> {{"download", true}});
                     StringCache.setCache(filePathUnix, GetMD5(localFilePath));
+                    Thread.Sleep(100);
                 }
                 else if (fileHash != StringCache.getCache(filePathUnix.Remove(0, downloadPath.Length + 1)))
                 {
@@ -96,6 +98,7 @@ namespace ComputeCS.Components
                         $"/api/task/{parentTask.UID}/file/"
                     ).Retrieve(filePathUnix, localFileDirectory, new Dictionary<string, object> {{"download", true}});
                     StringCache.setCache(filePathUnix, GetMD5(localFilePath));
+                    Thread.Sleep(100);
                 }
             }
             return true;
