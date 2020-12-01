@@ -70,7 +70,7 @@ namespace ComputeCS.Components
             // Then Action Task to create CFD files
             if (create)
             {
-                if (solution != null)
+                if (solution != null && geometryFile.Length > 0)
                 {
                     new GenericViewSet<Task>(
                         tokens,
@@ -506,37 +506,43 @@ namespace ComputeCS.Components
                     {"task_type", "mesh"}
                 }
             );
-            
-            var angleEstimate = new GenericViewSet<TaskEstimate>(
-                tokens,
-                inputData.Url,
-                $"/api/task/estimation/"
-            ).Create(
-                new Dictionary<string, object>
-                {
-                    {"cells", cells},
-                    {"cpus", nCPUs},
-                    {"task_type", "vwt_angle"},
-                    {"iterations", iterations}
-                }
-            );
-            var prepareEstimate = new GenericViewSet<TaskEstimate>(
-                tokens,
-                inputData.Url,
-                $"/api/task/estimation/"
-            ).Create(
-                new Dictionary<string, object>
-                {
-                    {"cells", cells},
-                    {"cpus", nCPUs},
-                    {"task_type", "prepare"},
-                    {"iterations", iterations}
-                }
-            );
 
-            var totalTime = meshEstimate.Time + prepareEstimate.Time + angleEstimate.Time;
-            var totalCost = meshEstimate.Cost + prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;;
+            var totalTime = meshEstimate.Time;
+            var totalCost = meshEstimate.Cost;
             
+            if (solution.CaseType == "VirtualWindTunnel")
+            {
+                var angleEstimate = new GenericViewSet<TaskEstimate>(
+                    tokens,
+                    inputData.Url,
+                    $"/api/task/estimation/"
+                ).Create(
+                    new Dictionary<string, object>
+                    {
+                        {"cells", cells},
+                        {"cpus", nCPUs},
+                        {"task_type", "vwt_angle"},
+                        {"iterations", iterations}
+                    }
+                );
+                var prepareEstimate = new GenericViewSet<TaskEstimate>(
+                    tokens,
+                    inputData.Url,
+                    $"/api/task/estimation/"
+                ).Create(
+                    new Dictionary<string, object>
+                    {
+                        {"cells", cells},
+                        {"cpus", nCPUs},
+                        {"task_type", "prepare"},
+                        {"iterations", iterations}
+                    }
+                );
+                
+                totalTime += prepareEstimate.Time + angleEstimate.Time;
+                totalCost += prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;;
+            }
+
             return new Dictionary<string, double>
             {
                 {"cost", totalCost},

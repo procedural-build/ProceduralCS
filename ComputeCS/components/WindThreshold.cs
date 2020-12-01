@@ -222,14 +222,7 @@ namespace ComputeCS.Components
             List<WindThresholds.Threshold> thresholds
         )
         {
-            var seasons = new List<string>
-            {
-                "winter_morning", "winter_noon", "winter_afternoon", "winter_evenings",
-                "spring_morning", "spring_noon", "spring_afternoon", "spring_evenings",
-                "summer_morning", "summer_noon", "summer_afternoon", "summer_evenings",
-                "fall_morning", "fall_noon", "fall_afternoon", "fall_evenings",
-                "yearly"
-            };
+            var seasons = ThresholdSeasons();
 
             // we get data in form {dinning: [point1: [winter, spring, summer, fall], point2: [...], ...], "sitting": [...], ...}
             // return should be:
@@ -238,7 +231,7 @@ namespace ComputeCS.Components
             {
                 var thresholdFrequency = thresholds.First(threshold => threshold.Field == resultKey).Value/100;
                 var pointValues = (List<List<double>>) patchValues[resultKey];
-                var pointLenght = pointValues.Count();
+                var pointLength = pointValues.Count();
                 var pointIndex = 0;
                 foreach (var pointValue in pointValues)
                 {
@@ -256,7 +249,7 @@ namespace ComputeCS.Components
                             output[seasonKey].Add(patchKey, new List<int>());
                         }
 
-                        if (output[seasonKey][patchKey].Count() < pointLenght)
+                        if (output[seasonKey][patchKey].Count() < pointLength)
                         {
                             output[seasonKey][patchKey].Add(Convert.ToInt32(value > thresholdFrequency));
                         }
@@ -278,7 +271,20 @@ namespace ComputeCS.Components
         private static List<string> ReadThresholdFileTypes(string folder)
         {
             var allFiles = Directory.GetFiles(Path.Combine(folder, "0")).ToList();
-            return allFiles.Select(file => Path.GetFileName(file)).Where(file => !file.StartsWith("Uav")).ToList();
+            return allFiles.Select(file => Path.GetFileName(file)).ToList();
         }
+
+        public static List<string> ThresholdSeasons()
+        {
+            return new List<string>
+            {
+                "winter_morning", "winter_noon", "winter_afternoon", "winter_evenings",
+                "spring_morning", "spring_noon", "spring_afternoon", "spring_evenings",
+                "summer_morning", "summer_noon", "summer_afternoon", "summer_evenings",
+                "fall_morning", "fall_noon", "fall_afternoon", "fall_evenings",
+                "yearly"
+            };
+        }
+        
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using ComputeCS.Components;
 using ComputeCS.types;
@@ -8,7 +9,6 @@ using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
-using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper
 {
@@ -27,7 +27,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
             pManager.AddIntegerParameter("ThresholdType", "ThresholdType", "0: Wind Thresholds\n1: Lawsons Criteria",
@@ -56,9 +56,60 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
+            pManager.AddNumberParameter(
+                "winter_morning", "winter_morning", 
+                "Included period: 12/01-03/01 07:00-10:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "winter_noon", "winter_noon", 
+                "Included period: 12/01-03/01 11:00-14:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "winter_afternoon", "winter_afternoon", 
+                "Included period: 12/01-03/01 15:00-18:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "winter_evenings", "winter_evenings", 
+                "Included period: 12/01-03/01 19:00-22:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "spring_morning", "spring_morning", 
+                "Included period: 03/01-06/01 07:00-10:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "spring_noon", "spring_noon", 
+                "Included period: 03/01-06/01 11:00-14:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "spring_afternoon", "spring_afternoon",
+                "Included period: 03/01-06/01 15:00-18:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "spring_evenings", "spring_evenings", 
+                "Included period: 03/01-06/01 19:00-22:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "summer_morning", "summer_morning", 
+                "Included period: 06/01-09/01 07:00-10:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "summer_noon", "summer_noon", 
+                "Included period: 06/01-09/01 11:00-14:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "summer_afternoon", "summer_afternoon", 
+                "Included period: 06/01-09/01 15:00-18:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "summer_evenings", "summer_evenings", 
+                "Included period: 06/01-09/01 19:00-22:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "fall_morning", "fall_morning", 
+                "Included period: 09/01-12/01 07:00-10:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "fall_noon", "fall_noon", 
+                "Included period: 09/01-12/01 11:00-14:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "fall_afternoon", "fall_afternoon", 
+                "Included period: 09/01-12/01 15:00-18:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "fall_evenings", "fall_evenings", 
+                "Included period: 09/01-12/01 19:00-22:00", GH_ParamAccess.tree);
+            pManager.AddNumberParameter(
+                "yearly", "yearly", 
+                "Included period: 1/1-12/31 00:00-24:00", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -88,19 +139,23 @@ namespace ComputeCS.Grasshopper
                     AddToOutput(DA, season, data);
                 }
 
-                info = UpdateInfo(lawsons.First().Value.Keys.ToList(), _thresholdFrequencies);
+                info = UpdateInfo(lawsons.First().Value.Keys.ToList(), _thresholdFrequencies, criteria);
                 RemoveUnusedOutputs(lawsons.Keys.ToList());
             }
             else
             {
-                foreach (var key in results.Keys)
+                var (outputs, outputLegend) = TransposeThresholdMatrix(results);
+                foreach (var key in outputs.Keys)
                 {
-                    var data = ConvertToDataTree(results[key]);
-                    AddToOutput(DA, key, data);
+                    AddToOutput(DA, key, outputs[key]);
                 }
 
-                info = UpdateInfo(results.First().Value.Keys.ToList(), new List<WindThresholds.Threshold>());
-                RemoveUnusedOutputs(results.Keys.ToList());
+                info = UpdateInfo(
+                    outputLegend["patch"], 
+                    outputLegend["threshold"].Select(threshold => new WindThresholds.Threshold{Field = threshold}).ToList(),
+                    criteria
+                    );
+                RemoveUnusedOutputs(outputs.Keys.ToList());
             }
 
 
@@ -128,31 +183,54 @@ namespace ComputeCS.Grasshopper
         }
 
 
-        private static DataTree<object> ConvertToDataTree(Dictionary<string, object> data)
+        public static (Dictionary<string, DataTree<object>>, Dictionary<string, List<string>>) TransposeThresholdMatrix(Dictionary<string, Dictionary<string, object>> resultsToTranspose)
         {
-            var patchCounter = 0;
-
-            var output = new DataTree<object>();
-            foreach (var patchKey in data.Keys)
+            var output = new Dictionary<string, DataTree<object>>();
+            var legend = new Dictionary<string, List<string>>
             {
-                var seasonValues = (List<List<double>>) data[patchKey];
-                var seasonCounter = 0;
-
-                foreach (var value in seasonValues)
+                {"season", new List<string>()},
+                {"patch", new List<string>()},
+                {"threshold", new List<string>()}
+            };
+            
+            var seasons = WindThreshold.ThresholdSeasons();
+            
+            // results[threshold][patch][pointIndex][season]
+            // results[season][patch][threshold][pointIndex]
+            
+            foreach (var thresholdKey in resultsToTranspose.Keys)
+            {
+                foreach (var patchKey in resultsToTranspose[thresholdKey].Keys)
                 {
-                    var path = new GH_Path(new[] {patchCounter, seasonCounter});
-                    foreach (var x in value)
+                    //var pointIndex = 0;
+                    var pointValues = (List<List<double>>) resultsToTranspose[thresholdKey][patchKey];
+                    foreach (var pointValue in pointValues)
                     {
-                        output.Add(x, path);
+                        var seasonCounter = 0;
+                        foreach (var seasonValue in pointValue)
+                        {
+                            var seasonKey = seasons[seasonCounter];
+
+                            if (!legend["season"].Contains(seasonKey)){legend["season"].Add(seasonKey);}
+                            if (!legend["patch"].Contains(patchKey)){legend["patch"].Add(patchKey);}
+                            if (!legend["threshold"].Contains(thresholdKey)){legend["threshold"].Add(thresholdKey);}
+                            if (!output.ContainsKey(seasonKey)){output.Add(seasonKey, new DataTree<object>());}
+                            
+                            var patchCounter = legend["patch"].IndexOf(patchKey);
+                            var thresholdCounter = legend["threshold"].IndexOf(thresholdKey);
+                            
+                            var path = new GH_Path(patchCounter, thresholdCounter);
+                            output[seasonKey].Add(seasonValue, path);
+                            seasonCounter++;
+                        }
+
+                        //pointIndex++;
                     }
-
-                    seasonCounter++;
                 }
-
-                patchCounter++;
+                
             }
 
-            return output;
+            return (output, legend);
         }
 
         private void AddToOutput(IGH_DataAccess DA, string name, DataTree<object> data)
@@ -189,21 +267,20 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds)
+        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds, int criteria)
         {
             var info = "Patch Names:\n";
-            var i = 0;
-            foreach (var key in patchKeys)
-            {
-                info += $"{{{i}}} is {key}\n";
-                i++;
-            }
             var output = new DataTree<object>();
-            output.Add(info, new GH_Path(0));
             
-            if (thresholds != null)
+            if (criteria == 1)
             {
-                info += "\nLawson Categories\n";
+                var i = 0;
+                foreach (var key in patchKeys)
+                {
+                    info += $"{{{i}}} is {key}\n";
+                    i++;
+                }
+                info += "\nComfort Categories\n";
                 var j = 0;
                 foreach (var threshold in thresholds)
                 {
@@ -212,6 +289,26 @@ namespace ComputeCS.Grasshopper
                     j++;
                 }
             }
+            else
+            {
+                var i = 0;
+                foreach (var key in patchKeys)
+                {
+                    info += $"{{{i};*}} is {key}\n";
+                    i++;
+                }
+                info += "\nThreshold Categories\n";
+                var j = 0;
+                foreach (var threshold in thresholds)
+                {
+                    info += $"{{*;{j}}} is {threshold.Field}\n";
+                    output.Add(threshold.Field, new GH_Path(1));
+                    j++;
+                }
+            }
+            
+            
+            output.Add(info, new GH_Path(0));
             return output;
         }
 
@@ -245,7 +342,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Resources.IconMesh;
+        protected override Bitmap Icon => Resources.IconMesh;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

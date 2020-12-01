@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Microsoft.Scripting.Utils;
+using Rhino.Display;
 using Rhino.Geometry;
 using Rhino.DocObjects;
 using Rhino.Geometry.Intersect;
@@ -287,8 +290,8 @@ namespace ComputeCS.Grasshopper.Utils
             var index = 0;
             foreach (var surface in baseSurfaces)
             {
-                var _surface = SubtractBrep(surface, excludeGeometry);
-                _surface = MoveSurface(_surface, offset, offsetDirection);
+                var _surface = MoveSurface(surface, offset, offsetDirection);
+                _surface = SubtractBrep(_surface, excludeGeometry);
                 var mesh = CreateMeshFromSurface(_surface, gridSize);
 
                 var path = new GH_Path(index);
@@ -314,6 +317,7 @@ namespace ComputeCS.Grasshopper.Utils
                 {"faceNormals", faceNormals},
             };
         }
+
 
         public static Dictionary<string, DataTree<object>> CreateAnalysisMesh(
             List<Brep> baseSurfaces,
@@ -396,8 +400,22 @@ namespace ComputeCS.Grasshopper.Utils
                 {
                     var splitFaces = brepSurface.Split(intersectionCurves, tolerance);
 
-                    brepSurface = splitFaces.First(face =>
-                        !brep.IsPointInside(AreaMassProperties.Compute((Brep) face).Centroid, tolerance, false));
+                    try
+                    {
+                        brepSurface = splitFaces.First(face =>
+                            !brep.IsPointInside(AreaMassProperties.Compute((Brep) face).Centroid, tolerance, false));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        foreach (var face in splitFaces)
+                        {
+                            if (face.Vertices.Select(v => v.Location)
+                                .Any(vertex => !brep.IsPointInside(vertex, tolerance, false)))
+                            {
+                                brepSurface = face;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -405,6 +423,17 @@ namespace ComputeCS.Grasshopper.Utils
         }
 
         private static Brep MoveSurface(Brep surface, double offset, string offsetDirection)
+        {
+            return _MoveSurface(surface, offset, offsetDirection);
+        }
+
+        private static Brep MoveSurface(Surface surface, double offset, string offsetDirection)
+        {
+            var _surface = Brep.CreateFromSurface(surface);
+            return _MoveSurface(_surface, offset, offsetDirection);
+        }
+
+        private static Brep _MoveSurface(Brep surface, double offset, string offsetDirection)
         {
             var vector = new Vector3d();
             if (offsetDirection == "x")
@@ -471,6 +500,52 @@ namespace ComputeCS.Grasshopper.Utils
             var rectangle = new Rectangle3d(cutPlane, width, height);
             var surface = Brep.CreatePlanarBreps(rectangle.ToNurbsCurve(), 0.1).ToList();
             return CreateAnalysisMesh(surface, gridSize, excludeGeometry, 0.0, "z");
+        }
+
+        public static Tuple<Mesh, List<Text3d>> CreateLegend(Point3d basePoint, List<Color> colors,
+            List<string> values, double scale, double textHeight)
+        {
+            if (values.Count != colors.Count)
+            {
+                throw new Exception(
+                    $"Length of values: {values.Count} has to be the same as length of colors: {colors.Count}");
+            }
+
+            var legend = new Mesh();
+            const int sideLength = 1;
+            var text = new List<Text3d>();
+
+            for (var i = 0; i < values.Count; i++)
+            {
+                var vertexCount = i * 4;
+                var color = colors[i];
+                var newBase = new Point3d
+                {
+                    X = basePoint.X,
+                    Y = basePoint.Y + sideLength * i * scale,
+                    Z = basePoint.Z,
+                };
+                legend.Vertices.Add(newBase.X, newBase.Y, newBase.Z);
+                legend.Vertices.Add(newBase.X + sideLength * scale, newBase.Y, newBase.Z);
+                legend.Vertices.Add(newBase.X + sideLength * scale, newBase.Y + sideLength * scale, newBase.Z);
+                legend.Vertices.Add(newBase.X, newBase.Y + sideLength * scale, newBase.Z);
+
+                legend.VertexColors.Add(color);
+                legend.VertexColors.Add(color);
+                legend.VertexColors.Add(color);
+                legend.VertexColors.Add(color);
+                legend.Faces.AddFace(vertexCount, vertexCount + 1, vertexCount + 2, vertexCount + 3);
+                text.Add(new Text3d
+                (
+                    values[i],
+                    new Plane(
+                        new Point3d(newBase.X + sideLength * scale * 1.1, newBase.Y + sideLength * 0.5,
+                            newBase.Z), new Vector3d(0.0, 0.0, 1.0)), 
+                    textHeight
+                ));
+            }
+
+            return new Tuple<Mesh, List<Text3d>>(legend, text);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
 
 
-            if (parentTask == null || parentTask.UID == null)
+            if (parentTask?.UID == null)
             {
                 throw new Exception("Cannot download content without a parent task.");
             }
@@ -69,7 +69,9 @@ namespace ComputeCS.Components
                 {
                     continue;
                 }
-                var filePathWin = filePathUnix.Remove(0, downloadPath.Length + 1).Replace('/', '\\');
+
+                var filePathWin = filePathUnix == downloadPath ? filePathUnix.Split('/').Last() : filePathUnix.Remove(0, downloadPath.Length + 1).Replace('/', '\\');
+                
                 var localFilePath = Path.Combine(localPath, filePathWin);
                 var localFileDirectory =
                     string.Join("\\", localFilePath.Split('\\').Take(localFilePath.Split('\\').Length - 1));

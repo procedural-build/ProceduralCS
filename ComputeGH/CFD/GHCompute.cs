@@ -188,12 +188,8 @@ namespace ComputeCS.Grasshopper
         private void RunOnCompute(string inputJson, List<GH_Mesh> geometry, string folder, string cacheKey,
             bool compute)
         {
-            if (geometry.Count != 0)
-            {
-                RunCFD(inputJson, geometry, cacheKey, compute);
-            }
 
-            else if (FolderContainsEnergyPlus(folder))
+            if (FolderContainsEnergyPlus(folder))
             {
                 RunEnergyPlus(inputJson, folder, cacheKey, compute);
             }
@@ -205,18 +201,24 @@ namespace ComputeCS.Grasshopper
 
             else
             {
-                throw new Exception("Unknown Case type!");
+                RunCFD(inputJson, geometry, cacheKey, compute);
             }
         }
 
         private static bool FolderContainsRadiance(string folder)
         {
+            if (string.IsNullOrEmpty(folder)){
+                return false;
+            }
             var files = Directory.GetFiles(folder);
             return files.Any(file => file.ToLower().EndsWith(".rad"));
         }
 
         private static bool FolderContainsEnergyPlus(string folder)
         {
+            if (string.IsNullOrEmpty(folder)){
+                return false;
+            }
             var files = Directory.GetFiles(folder);
             return files.Any(file => file.ToLower().EndsWith(".idf"));
         }

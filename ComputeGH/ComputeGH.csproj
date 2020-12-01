@@ -108,6 +108,7 @@
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />
+    <Compile Include="GrasshopperUtils\Types.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -116,6 +117,7 @@
     <Compile Include="Utils\GHAnalysisMesh.cs" />
     <Compile Include="Utils\GHDownload.cs" />
     <Compile Include="Utils\GHDownloadEPW.cs" />
+    <Compile Include="Utils\GHLegend.cs" />
     <Compile Include="Utils\GHLogin.cs" />
     <Compile Include="CFD\GHMesh.cs" />
     <Compile Include="Utils\GHProbeResults.cs" />
