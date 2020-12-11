@@ -35,8 +35,7 @@ jobs:
         run: curl -fSLo yak.exe https://files.mcneel.com/yak/tools/latest/yak.exe && .\yak.exe version
 
       - name: Build Package
-        working-directory: ${{env.GITHUB_WORKSPACE}}/${{env.DIST_PATH}}
-        run: ..\yak.exe build
+        run: cd dist\ && ..\yak.exe build
 
       - name: Push Package
         working-directory: ${{env.GITHUB_WORKSPACE}}
