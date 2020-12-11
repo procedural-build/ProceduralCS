@@ -38,7 +38,7 @@ jobs:
         run: cd ${{env.DIST_PATH}}\ && ..\${{env.YAK_EXE}} build
 
       - name: Push Package
-        run: Get-ChildItem ${{env.DIST_PATH}}\ -Filter *.yak | ForEach-Object -Process {.\${{env.YAK_EXE}} push  $_}
+        run: cd ${{env.DIST_PATH}}\ && Get-ChildItem . -Filter *.yak | ForEach-Object -Process {..\${{env.YAK_EXE}} push $_}
 
       - name: Create Release
         uses: actions/create-release@v1
