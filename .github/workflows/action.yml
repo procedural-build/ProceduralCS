@@ -8,7 +8,7 @@ env:
   SOLUTION_FILE_PATH: ComputeCS.sln
   DIST_PATH: dist
   BUILD_CONFIGURATION: Release
-  YAK_TOKEN: {{ secrets.YAK_TOKEN }}
+  YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
   YAK_EXE: yak.exe
   
 jobs:
