@@ -8,6 +8,8 @@ env:
   SOLUTION_FILE_PATH: ComputeCS.sln
   DIST_PATH: dist
   BUILD_CONFIGURATION: Release
+  YAK_TOKEN: {{ secrets.YAK_TOKEN }}
+  YAK_EXE: yak.exe
   
 jobs:
   build:
@@ -33,8 +35,8 @@ jobs:
         run: curl -fSLo yak.exe https://files.mcneel.com/yak/tools/latest/yak.exe && .\yak.exe version
         
       - name: Build Package
-        working-directory: ${{env.GITHUB_WORKSPACE}}\${{env.DIST_PATH}}
-        run: ls && ls ../ && ../yak.exe build
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: ls && ls dist
       
       - name: Push Package
         working-directory: ${{env.GITHUB_WORKSPACE}}
