@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.Grasshopper.Utils;
-using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;

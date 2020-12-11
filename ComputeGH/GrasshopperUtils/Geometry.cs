@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.Linq;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using Microsoft.Scripting.Utils;
+using Rhino;
 using Rhino.Display;
-using Rhino.Geometry;
 using Rhino.DocObjects;
+using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
 
 namespace ComputeCS.Grasshopper.Utils
@@ -84,7 +83,7 @@ namespace ComputeCS.Grasshopper.Utils
         public static List<ObjRef> getVisibleObjects()
         {
             List<ObjRef> objRefList = new List<ObjRef>();
-            Rhino.RhinoDoc doc = Rhino.RhinoDoc.ActiveDoc;
+            RhinoDoc doc = RhinoDoc.ActiveDoc;
             ObjectEnumeratorSettings settings = new ObjectEnumeratorSettings();
             settings.VisibleFilter = true;
             settings.HiddenObjects = false;

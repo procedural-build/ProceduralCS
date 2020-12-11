@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using ComputeGH.Properties;
-using Rhino.Geometry;
-using Grasshopper3D = Grasshopper;
-using Grasshopper.Kernel;
 using System.Drawing;
 using System.Linq;
-using Grasshopper.Kernel.Types;
+using ComputeGH.Properties;
+using Grasshopper.GUI.Gradient;
+using Grasshopper.Kernel;
+using Rhino.Geometry;
+using Grasshopper3D = Grasshopper;
 
 namespace ComputeCS.Grasshopper
 {
@@ -25,7 +25,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "Mesh", "Mesh to recolor", GH_ParamAccess.item);
             pManager.AddNumberParameter("Result", "Result", "Result with the same number of faces as mesh",
@@ -45,7 +45,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Colored Mesh", "Colored Mesh", "Recoloured mesh based on result and colors",
                 GH_ParamAccess.item);
@@ -137,9 +137,9 @@ namespace ComputeCS.Grasshopper
 
         // X. Extra additional useful functions
         // X.01 Gradient maker 
-        private Grasshopper3D.GUI.Gradient.GH_Gradient Gradients(Color[] colorarray, double t0, double t1)
+        private GH_Gradient Gradients(Color[] colorarray, double t0, double t1)
         {
-            Grasshopper3D.GUI.Gradient.GH_Gradient gradient2 = new Grasshopper3D.GUI.Gradient.GH_Gradient();
+            GH_Gradient gradient2 = new GH_Gradient();
             for (int i = 0; i < colorarray.Count(); i++)
             {
                 double grip =
@@ -154,7 +154,7 @@ namespace ComputeCS.Grasshopper
 
         private void GenerateLegendValues(
             IGH_DataAccess DA,
-            Grasshopper3D.GUI.Gradient.GH_Gradient gradient,
+            GH_Gradient gradient,
             double max,
             double min,
             int segments
@@ -185,7 +185,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Resources.IconMesh;
+        protected override Bitmap Icon => Resources.IconMesh;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

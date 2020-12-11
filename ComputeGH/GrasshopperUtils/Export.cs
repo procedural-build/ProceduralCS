@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
-using ComputeCS.Grasshopper.Utils;
 
 namespace ComputeCS.Grasshopper.Utils
 {

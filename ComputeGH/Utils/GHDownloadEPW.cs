@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
 
 namespace ComputeGH.Utils
 {
@@ -21,7 +21,7 @@ namespace ComputeGH.Utils
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("Open Browser", "Open Browser",
                 "Connect a button to lauch your webbrowser onto the EnergyPlus website", GH_ParamAccess.item);
@@ -30,7 +30,7 @@ namespace ComputeGH.Utils
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
         }
 
@@ -47,14 +47,14 @@ namespace ComputeGH.Utils
             const string url = "https://energyplus.net/weather";
             if (launch)
             {
-                System.Diagnostics.Process.Start(url);
+                Process.Start(url);
             }
         }
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Resources.IconFolder;
+        protected override Bitmap Icon => Resources.IconFolder;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

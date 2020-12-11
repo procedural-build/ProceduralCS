@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using Grasshopper.Kernel;
-using Rhino.Geometry;
-using ComputeCS.types;
+using System.Drawing;
 using System.IO;
-using ComputeGH.Properties;
+using System.Threading;
+using ComputeCS.Components;
+using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Properties;
+using Grasshopper.Kernel;
+using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
@@ -28,7 +28,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.item);
@@ -43,7 +43,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Path", "Path", "If the download succeeded then this will give you the path it was downloaded to.", GH_ParamAccess.item);
         }
@@ -133,7 +133,7 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey + "progress", "Downloading...");
                             ExpireSolutionThreadSafe(true);
                             
-                            downloaded = Components.DownloadContent.Download(inputJson, downloadPath, localPath, exclude);
+                            downloaded = DownloadContent.Download(inputJson, downloadPath, localPath, exclude);
                             StringCache.setCache(cacheKey, downloaded.ToString());
                             
                             if (!downloaded)
@@ -163,13 +163,13 @@ namespace ComputeCS.Grasshopper
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            Rhino.RhinoApp.InvokeOnUiThread(delegated, recompute);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Resources.IconFolder;
+        protected override Bitmap Icon => Resources.IconFolder;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
