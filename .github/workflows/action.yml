@@ -44,16 +44,16 @@ jobs:
         run: |
           Get-ChildItem dist -Filter *.yak | ForEach-Object -Process {$_[0] -match "[0-9.]+"}
           $version = $Matches[0]
-          echo $version | Out-File -FilePath $env:RELEASE_VERSION -Encoding utf8 -Append
+          echo RELEASE_VERSION=$version | Out-File -FilePath $GITHUB_ENV -Encoding utf8 -Append
           $text = Get-Content .github\releases\release.md
           $Body = $text.Replace("{{RELEASE_VERSION}}" , $version)
-          echo $Body | Out-File -FilePath $env:RELEASE_BODY -Encoding utf8 -Append
+          echo RELEASE_BODY=$Body | Out-File -FilePath $GITHUB_ENV -Encoding utf8 -Append
 
       - name: Create Release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
-          release_name: v${{ env.RELEASE_VERSOIN }}
+          release_name: v${{ env.RELEASE_VERSION }}
           body: ${{ env.RELEASE_TEXT }}
           draft: true
           prerelease: false
