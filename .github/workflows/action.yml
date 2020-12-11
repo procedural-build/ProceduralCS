@@ -44,10 +44,10 @@ jobs:
         run: |
           Get-ChildItem dist -Filter *.yak | ForEach-Object -Process {$_[0] -match "[0-9.]+"}
           $version = $Matches[0]
-          echo "RELEASE_VERSION=$version" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=$version" >> ${{ env.GITHUB_ENV }}
           $text = Get-Content .github\releases\release.md
           $Body = $text.Replace("{{RELEASE_VERSION}}" , $version)
-          echo "RELEASE_BODY=$Body" >> $GITHUB_ENV
+          echo "RELEASE_BODY=$Body" >> ${{ env.GITHUB_ENV }}
 
       - name: Create Release
         uses: actions/create-release@v1
