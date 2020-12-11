@@ -29,11 +29,13 @@ jobs:
         run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
       - name: Get Yak
+        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: curl -fSLo yak.exe https://files.mcneel.com/yak/tools/latest/yak.exe && .\yak.exe version
         
       - name: Build Package
         working-directory: ${{env.GITHUB_WORKSPACE}}\${{env.DIST_PATH}}
-        run: ..\yak.exe build
+        run: ls && ls ../ && ../yak.exe build
       
       - name: Push Package
-        run: Get-ChildItem ${{env.DIST_PATH}}\ -Filter *.yak | ForEach-Object -Process {.\yak.exe push  $_}
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: Get-ChildItem ${{env.DIST_PATH}}/ -Filter *.yak | ForEach-Object -Process {.\yak.exe push  $_}
