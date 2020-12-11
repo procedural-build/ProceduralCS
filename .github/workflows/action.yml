@@ -40,14 +40,19 @@ jobs:
       - name: Push Package
         run: cd ${{env.DIST_PATH}}\ && Get-ChildItem . -Filter *.yak | ForEach-Object -Process {..\${{env.YAK_EXE}} push $_}
 
+      - name: Prepare Release
+        run: |
+          Get-ChildItem dist -Filter *.yak | ForEach-Object -Process {$_[0] -match "[0-9.]+"}
+          echo "RELEASE_VERSION=$Matches[0]" >> $GITHUB_ENV
+          $text = Get-Content .github\releases\release.md
+          $Body = $text.Replace("{{RELEASE_VERSION}}" , $Matches[0])
+          echo "RELEASE_BODY=$Body" >> $GITHUB_ENV
+
       - name: Create Release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Changes in this Release
-            - First Change
-            - Second Change
+          tag_name: ${{ env.RELEASE_VERSION }}
+          release_name: v${{ env.RELEASE_VERSOIN }}
+          body: ${{ env.RELEASE_TEXT }}
           draft: true
           prerelease: false
