@@ -1,0 +1,40 @@
+﻿name: "ComputeGH"
+on: 
+  push:
+    branches:
+      - master
+
+jobs:
+  env:
+    SOLUTION_FILE_PATH: ${{env.GITHUB_WORKSPACE}}\ComputeCS.sln
+    DIST_PATH: ${{env.GITHUB_WORKSPACE}}\ComputeGH\dist
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Restore NuGet packages
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+      - name: Build
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: msbuild ${{env.SOLUTION_FILE_PATH}}
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Get Yak
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: curl -fSLo yak.exe https://files.mcneel.com/yak/tools/latest/yak.exe && .\yak.exe version
+        
+      - name: Build Package
+        working-directory: ${{env.DIST_PATH}}
+        run: ${{env.GITHUB_WORKSPACE}}\yak.exe build
+      
+      - name: Push Package
+        working-directory: ${{env.DIST_PATH}}
+        run: Get-ChildItem ${{env.DIST_PATH}} -Filter *.yak | ForEach-Object -Process {${{env.GITHUB_WORKSPACE}}\yak.exe push  $_}
