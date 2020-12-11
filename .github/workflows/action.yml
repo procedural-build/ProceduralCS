@@ -34,7 +34,6 @@ jobs:
         run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
       - name: Build Package
-        env:
         run: cd ${{env.DIST_PATH}}\ && ${{env.YAK_EXE}} build
 
       - name: Push Package
@@ -52,5 +51,5 @@ jobs:
             Changes in this Release
             - First Change
             - Second Change
-          draft: false
+          draft: true
           prerelease: false
