@@ -45,8 +45,8 @@ jobs:
           Get-ChildItem dist -Filter *.yak | ForEach-Object -Process {$_[0] -match "[0-9.]+"}
           $version = $Matches[0]
           echo RELEASE_VERSION=$version | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $text = Get-Content .github\releases\release.md
-          $Body = $text.Replace("{{RELEASE_VERSION}}" , $version)
+          $text = Get-Content .github\releases\release.md -Raw
+          $Body = $text.Replace("{{RELEASE_VERSION}}" , $version).Replace("`r", "").Replace("`n", "%0A")
           echo RELEASE_BODY=$Body | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Create Release
