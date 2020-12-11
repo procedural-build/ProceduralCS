@@ -6,7 +6,7 @@ on:
 
 env:
   SOLUTION_FILE_PATH: ComputeCS.sln
-  DIST_PATH: ComputeGH\dist
+  DIST_PATH: dist
   BUILD_CONFIGURATION: Release
   
 jobs:
@@ -19,16 +19,16 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1
 
+      - name: Setup NuGet
+        run: NuGet/setup-nuget@v1.0.2
+        
       - name: Restore NuGet packages
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
       - name: Build
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
       - name: Get Yak
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: curl -fSLo yak.exe https://files.mcneel.com/yak/tools/latest/yak.exe && .\yak.exe version
         
       - name: Build Package
@@ -36,5 +36,4 @@ jobs:
         run: ${{env.GITHUB_WORKSPACE}}\yak.exe build
       
       - name: Push Package
-        working-directory: ${{env.GITHUB_WORKSPACE}}\${{env.DIST_PATH}}
         run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}\${{env.DIST_PATH}} -Filter *.yak | ForEach-Object -Process {${{env.GITHUB_WORKSPACE}}\yak.exe push  $_}
