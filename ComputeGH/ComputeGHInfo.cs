@@ -64,7 +64,10 @@ namespace ComputeGH
             var YakExe = "C:\\Program Files\\Rhino 7 WIP\\System\\yak.exe";
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("YAK_EXE")))
             {
-                YakExe = Environment.GetEnvironmentVariable("YAK_EXE");
+                YakExe = Path.Combine(
+                    Environment.GetEnvironmentVariable("GITHUB_WORKSPACE"), 
+                    Environment.GetEnvironmentVariable("YAK_EXE")
+                    );
             }
             if (!File.Exists(YakExe))
             {

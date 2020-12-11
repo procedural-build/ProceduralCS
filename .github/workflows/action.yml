@@ -9,7 +9,8 @@ env:
   DIST_PATH: dist
   BUILD_CONFIGURATION: Release
   YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
-  YAK_EXE: mcneel\yak.exe
+  YAK_EXE: yak.exe
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -28,22 +29,19 @@ jobs:
         run: nuget restore ${{env.SOLUTION_FILE_PATH}}
         
       - name: Get Yak
-        run: curl -fSLo ${{env.YAK_EXE}} https://files.mcneel.com/yak/tools/latest/yak.exe && ${{env.YAK_EXE}} version
+        run: curl -fSLo ${{env.YAK_EXE}} https://files.mcneel.com/yak/tools/latest/yak.exe && .\${{env.YAK_EXE}} version
 
       - name: Build .dll & .gha
         run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
       - name: Build Package
-        run: cd ${{env.DIST_PATH}}\ && ${{env.YAK_EXE}} build
+        run: cd ${{env.DIST_PATH}}\ && ..\${{env.YAK_EXE}} build
 
       - name: Push Package
-        run: Get-ChildItem ${{env.DIST_PATH}}\ -Filter *.yak | ForEach-Object -Process {${{env.YAK_EXE}} push  $_}
+        run: Get-ChildItem ${{env.DIST_PATH}}\ -Filter *.yak | ForEach-Object -Process {.\${{env.YAK_EXE}} push  $_}
 
       - name: Create Release
-        id: create_release
         uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
