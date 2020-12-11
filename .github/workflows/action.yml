@@ -43,9 +43,10 @@ jobs:
       - name: Prepare Release
         run: |
           Get-ChildItem dist -Filter *.yak | ForEach-Object -Process {$_[0] -match "[0-9.]+"}
-          echo "RELEASE_VERSION=$Matches[0]" >> $GITHUB_ENV
+          $version = $Matches[0]
+          echo "RELEASE_VERSION=$version" >> $GITHUB_ENV
           $text = Get-Content .github\releases\release.md
-          $Body = $text.Replace("{{RELEASE_VERSION}}" , $Matches[0])
+          $Body = $text.Replace("{{RELEASE_VERSION}}" , $version)
           echo "RELEASE_BODY=$Body" >> $GITHUB_ENV
 
       - name: Create Release
