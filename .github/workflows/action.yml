@@ -1,5 +1,5 @@
 ﻿name: "ComputeGH"
-on: 
+on:
   push:
     branches:
       - master
@@ -10,7 +10,7 @@ env:
   BUILD_CONFIGURATION: Release
   YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
   YAK_EXE: yak.exe
-  
+
 jobs:
   build:
     runs-on: windows-latest
@@ -23,7 +23,7 @@ jobs:
 
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1.0.5
-        
+
       - name: Restore NuGet packages
         run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
@@ -33,11 +33,11 @@ jobs:
       - name: Get Yak
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: curl -fSLo yak.exe https://files.mcneel.com/yak/tools/latest/yak.exe && .\yak.exe version
-        
+
       - name: Build Package
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: ls && ls dist
-      
+        working-directory: ${{env.GITHUB_WORKSPACE}}/${{env.DIST_PATH}}
+        run: ..\yak.exe build
+
       - name: Push Package
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: Get-ChildItem ${{env.DIST_PATH}}/ -Filter *.yak | ForEach-Object -Process {.\yak.exe push  $_}
