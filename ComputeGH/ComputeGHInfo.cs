@@ -62,19 +62,28 @@ namespace ComputeGH
         private static string GetCurrentVersion()
         {
             var YakExe = "C:\\Program Files\\Rhino 7 WIP\\System\\yak.exe";
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("YAK_EXE")))
+            {
+                YakExe = Environment.GetEnvironmentVariable("YAK_EXE");
+            }
             if (!File.Exists(YakExe))
             {
                 Console.WriteLine("We rely on YAK from Rhino7 for this distribution.");
                 return "0.0.0";
             }
 
-            var process = new Process();
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.FileName = YakExe;
-            process.StartInfo.Arguments = "search proceduralcs";
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
+            var process = new Process
+            {
+                StartInfo =
+                {
+                    CreateNoWindow = true,
+                    FileName = YakExe,
+                    Arguments = "search proceduralcs",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
 
             process.Start();
             var output = process.StandardOutput.ReadToEnd();
