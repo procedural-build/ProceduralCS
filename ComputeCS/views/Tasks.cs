@@ -30,7 +30,7 @@ namespace ComputeCS
                 );
                 if (task != null && create)
                 {
-                    if (task.Status == "failed" || task.Status == "failed")
+                    if (new List<string>{"failed", "finished", "stopped"}.IndexOf(task.Status) != -1)
                     {
                         createParams.Add("status", "pending");
                     }
