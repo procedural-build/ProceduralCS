@@ -72,7 +72,7 @@ namespace ComputeCS.Grasshopper
 
             ValidateName(taskName);
             ValidateName(projectName);
-            
+
             // Get Cache to see if we already did this
             var cacheKey = projectName + taskName;
             var cachedValues = StringCache.getCache(cacheKey);
@@ -158,11 +158,13 @@ namespace ComputeCS.Grasshopper
             if (illegalCharacters.Any(name.Contains))
             {
                 throw new ValidationException(
-                    $"{name} contains illegal characters. A name cannot include any on the following characters: {string.Join(", ", illegalCharacters)}");
+                    $"{name} contains illegal characters. " +
+                    $"A name cannot include any on the following characters: {string.Join(", ", illegalCharacters)}"
+                    );
             }
         }
-            
-        
+
+
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>

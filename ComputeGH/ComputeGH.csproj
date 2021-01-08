@@ -119,6 +119,7 @@
     <Compile Include="Utils\GHDownload.cs" />
     <Compile Include="Utils\GHDownloadEPW.cs" />
     <Compile Include="Utils\GHLegend.cs" />
+    <Compile Include="Utils\GHListFiles.cs" />
     <Compile Include="Utils\GHLogin.cs" />
     <Compile Include="CFD\GHMesh.cs" />
     <Compile Include="Utils\GHProbeResults.cs" />
