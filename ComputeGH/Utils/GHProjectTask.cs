@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Activities;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.utils.Cache;
@@ -67,6 +70,9 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(3, ref taskName)) return;
             DA.GetData(4, ref create);
 
+            ValidateName(taskName);
+            ValidateName(projectName);
+            
             // Get Cache to see if we already did this
             var cacheKey = projectName + taskName;
             var cachedValues = StringCache.getCache(cacheKey);
@@ -103,7 +109,7 @@ namespace ComputeCS.Grasshopper
                         }
                         catch (Exception e)
                         {
-                            StringCache.setCache(this.InstanceGuid.ToString(), e.Message + "\n");
+                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
@@ -128,7 +134,7 @@ namespace ComputeCS.Grasshopper
             }
 
             // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
                 if (errors.Contains("No object found"))
@@ -146,6 +152,17 @@ namespace ComputeCS.Grasshopper
             RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
+        private void ValidateName(string name)
+        {
+            var illegalCharacters = new List<string> {"?", "&", "/", "%", "#", "!", "+"};
+            if (illegalCharacters.Any(name.Contains))
+            {
+                throw new ValidationException(
+                    $"{name} contains illegal characters. A name cannot include any on the following characters: {string.Join(", ", illegalCharacters)}");
+            }
+        }
+            
+        
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>

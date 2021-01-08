@@ -99,7 +99,7 @@ namespace ComputeCS.Grasshopper
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.Message + "\n");
+                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
                         }
 
                         ExpireSolutionThreadSafe(true);
@@ -111,7 +111,7 @@ namespace ComputeCS.Grasshopper
 
 
             // Read from Cache
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
+            var errors = StringCache.getCache(InstanceGuid.ToString());
             if (errors != null)
             {
                 if (errors.Contains("(401) Unauthorized"))
