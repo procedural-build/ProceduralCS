@@ -133,6 +133,7 @@ namespace ComputeCS.Grasshopper
                 };
                 DA.SetData(0, output.ToJson());
             }
+            
         }
 
         private void ExpireSolutionThreadSafe(bool recompute = false)

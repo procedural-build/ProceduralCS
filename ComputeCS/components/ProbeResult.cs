@@ -24,7 +24,7 @@ namespace ComputeCS.Components
 
         public static Dictionary<string, string> FileNameToNames(string filePath)
         {
-            var names = Path.GetFileName(filePath).Split('.')[0].Split('_');
+            var names = Path.GetFileName(filePath).Replace(".xy", "").Split('_');
             var fieldName = names[names.Length-1];
             var patchName = names[0];
             if (names.Length > 2)

@@ -10,10 +10,7 @@ namespace ComputeGH
 {
     public class ComputeGHInfo : GH_AssemblyInfo
     {
-        public override string Name
-        {
-            get { return "ProceduralCS"; }
-        }
+        public override string Name => "ProceduralCS";
 
         public override string Version => NextVersion();
 
@@ -27,37 +24,13 @@ namespace ComputeGH
             }
         }
 
-        public override string Description
-        {
-            get
-            {
-                //Return a short string describing the purpose of this GHA library.
-                return "Grasshopper Client for Procedural Compute";
-            }
-        }
+        public override string Description => "Grasshopper Client for Procedural Compute";
 
-        public override Guid Id
-        {
-            get { return new Guid("7b46d4ec-a9f3-428a-a838-6c5de9bb8d96"); }
-        }
+        public override Guid Id => new Guid("7b46d4ec-a9f3-428a-a838-6c5de9bb8d96");
 
-        public override string AuthorName
-        {
-            get
-            {
-                //Return a string identifying you or your company.
-                return "Procedural Build";
-            }
-        }
+        public override string AuthorName => "Procedural";
 
-        public override string AuthorContact
-        {
-            get
-            {
-                //Return a string representing your preferred contact details.
-                return "info@procedural.build";
-            }
-        }
+        public override string AuthorContact => "info@procedural.build";
 
         private static string GetCurrentVersion()
         {
