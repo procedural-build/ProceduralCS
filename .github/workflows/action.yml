@@ -44,9 +44,31 @@ jobs:
       - name: Prepare Release
         run: |
           $version = "2021.1.1"
-          
+          $tag =  git describe --abbrev=0 --tags
+          $changes = git diff --compact-summary $tag ComputeGH/CFD ComputeGH/Utils
+
+          $newComponents = ""
+          $changedComponents = ""
+          foreach ($line in $changes){
+              if ($line.Contains("new")){
+                  $line = $line -replace "ComputeGH\/(Utils|CFD)\/GH",""
+                  $newComponents += ' * ' + ($line -replace ".cs.*", "") + '\n'
+              }
+              if ($line.Contains("ComputeGH")) {
+                  $line = $line -replace "ComputeGH\/(Utils|CFD)\/GH",""
+                  $changedComponents += ' * ' + ($line -replace ".cs.*", "") + '\n'
+              }
+
+          }
+
+          echo "NEW COMPONENTS"
+          $newComponents
+          echo "UPDATED COMPONENTS"
+          $changedComponents
+
+          echo NEW_COMPONENTS=$newComponents | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo UPDATED_C
           echo RELEASE_VERSION=$version | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          & .\componentChanges.ps1
 
       - name: Create Release
         uses: actions/create-release@v1
