@@ -22,7 +22,7 @@ echo "UPDATED COMPONENTS"
 $changedComponents
 
 $version = "2021.1.1"
-$releaseFile = ".\.github\releases\release1.md"
+$releaseFile = ".\.github\releases\release.md"
 $release = Get-Content $releaseFile
 $release = $release.Replace("{{ NEW_COMPONENTS }}", $newComponents)
 $release = $release.Replace("{{ UPDATED_COMPONENTS }}", $changedComponents)
