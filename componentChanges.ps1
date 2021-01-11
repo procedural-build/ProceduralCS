@@ -1,4 +1,4 @@
-﻿#git fetch --prune --unshallow
+﻿git fetch --prune --unshallow
 $tag =  git describe --abbrev=0 --tags
 $changes = git diff --compact-summary $tag ComputeGH/CFD ComputeGH/Utils
 
