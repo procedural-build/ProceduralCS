@@ -40,7 +40,8 @@ jobs:
       - name: Push Package
         run: cd ${{env.DIST_PATH}}\ && Get-ChildItem . -Filter *.yak | ForEach-Object -Process {..\${{env.YAK_EXE}} push $_}
       - name: Prepare Release
-        run: & .\componentChanges.ps1
+        run: | 
+          & .\componentChanges.ps1
 
       - name: Create Release
         uses: actions/create-release@v1
