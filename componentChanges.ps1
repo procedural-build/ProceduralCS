@@ -7,11 +7,11 @@ $changedComponents = ""
 foreach ($line in $changes){
     if ($line.Contains("new")){
         $line = $line -replace "ComputeGH\/(Utils|CFD)\/GH",""
-        $newComponents += ' * ' + ($line -replace ".cs.*", "") + '`n'
+        $newComponents += ' * ' + ($line -replace ".cs.*", "") + '%0A'
     }
     if ($line.Contains("ComputeGH")) {
         $line = $line -replace "ComputeGH\/(Utils|CFD)\/GH",""
-        $changedComponents += ' * ' + ($line -replace ".cs.*", "") + '`n'
+        $changedComponents += ' * ' + ($line -replace ".cs.*", "") + '%0A'
     }
     
 }
