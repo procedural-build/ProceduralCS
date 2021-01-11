@@ -15,7 +15,9 @@ foreach ($line in $changes){
     
 }
 
+echo "NEW COMPONENTS"
 $newComponents
+echo "UPDATED COMPONENTS"
 $changedComponents
 
 echo NEW_COMPONENTS=$newComponents | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
