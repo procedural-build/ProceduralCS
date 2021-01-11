@@ -22,30 +22,25 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1
 
-      #- name: Setup NuGet
-      #  uses: NuGet/setup-nuget@v1.0.5
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
 
-      #- name: Restore NuGet packages
-      #  run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+      - name: Restore NuGet packages
+        run: nuget restore ${{env.SOLUTION_FILE_PATH}}
         
-      #- name: Get Yak
-      #  run: curl -fSLo ${{env.YAK_EXE}} https://files.mcneel.com/yak/tools/latest/yak.exe && .\${{env.YAK_EXE}} version
+      - name: Get Yak
+        run: curl -fSLo ${{env.YAK_EXE}} https://files.mcneel.com/yak/tools/latest/yak.exe && .\${{env.YAK_EXE}} version
 
-      #- name: Build .dll & .gha
-      #  run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+      - name: Build .dll & .gha
+        run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
-      #- name: Build Package
-      #  run: cd ${{env.DIST_PATH}}\ && ..\${{env.YAK_EXE}} build
+      - name: Build Package
+        run: cd ${{env.DIST_PATH}}\ && ..\${{env.YAK_EXE}} build
 
-      #- name: Push Package
-      #  run: cd ${{env.DIST_PATH}}\ && Get-ChildItem . -Filter *.yak | ForEach-Object -Process {..\${{env.YAK_EXE}} push $_}
-          #Get-ChildItem dist -Filter *.yak | ForEach-Object -Process {$_[0] -match "[0-9.]+"}
-        #$version = $Matches[0]
+      - name: Push Package
+        run: cd ${{env.DIST_PATH}}\ && Get-ChildItem . -Filter *.yak | ForEach-Object -Process {..\${{env.YAK_EXE}} push $_}
       - name: Prepare Release
-        run: |
-          $version = "2021.1.1"
-          echo RELEASE_VERSION=$version | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          & .\componentChanges.ps1
+        run: & .\componentChanges.ps1
 
       - name: Create Release
         uses: actions/create-release@v1
@@ -53,5 +48,5 @@ jobs:
           tag_name: ${{ env.RELEASE_VERSION }}
           release_name: v${{ env.RELEASE_VERSION }}
           body_path: .github\releases\release.md
-          draft: true
+          draft: false
           prerelease: false
