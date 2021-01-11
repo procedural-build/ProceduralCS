@@ -1,4 +1,5 @@
-﻿$tag =  git describe --abbrev=0 --tags
+﻿git fetch --prune --unshallow
+$tag =  git describe --abbrev=0 --tags
 $changes = git diff --compact-summary $tag ComputeGH/CFD ComputeGH/Utils
 
 $newComponents = ""
@@ -6,11 +7,11 @@ $changedComponents = ""
 foreach ($line in $changes){
     if ($line.Contains("new")){
         $line = $line -replace "ComputeGH\/(Utils|CFD)\/GH",""
-        $newComponents += ' * ' + ($line -replace ".cs.*", "") + '\n'
+        $newComponents += ' * ' + ($line -replace ".cs.*", "") + '`n'
     }
     if ($line.Contains("ComputeGH")) {
         $line = $line -replace "ComputeGH\/(Utils|CFD)\/GH",""
-        $changedComponents += ' * ' + ($line -replace ".cs.*", "") + '\n'
+        $changedComponents += ' * ' + ($line -replace ".cs.*", "") + '`n'
     }
     
 }
