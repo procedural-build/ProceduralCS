@@ -18,6 +18,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        run: git fetch --prune --unshallow
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1
