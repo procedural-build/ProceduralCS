@@ -18,6 +18,7 @@ namespace ComputeCS.Components
             List<int> cpus,
             string dependentOn = "",
             string caseDir = "VWT/",
+            string overrides = "",
             bool create = false
         )
         {
@@ -51,7 +52,7 @@ namespace ComputeCS.Components
             }
             
             var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
-                sampleSets, fields, create);
+                sampleSets, fields, overrides, create);
             inputData.SubTasks.Add(task);
 
             return inputData.ToJson();
@@ -152,6 +153,7 @@ namespace ComputeCS.Components
             List<int> cpus,
             List<Dictionary<string, object>> sampleSets,
             List<string> fields,
+            string overrides,
             bool create
         )
         {
@@ -169,19 +171,25 @@ namespace ComputeCS.Components
                 commands.Add("postProcess -func internalCloud");
             }
 
+
+            var config = new Dictionary<string, object>
+            {
+                {"task_type", "cfd"},
+                {"cmd", "pipeline"},
+                {"commands", commands},
+                {"case_dir", caseDir},
+                {"cpus", cpus},
+                {"sets", sampleSets},
+                {"fields", fields},
+            };
+            if (!string.IsNullOrEmpty(overrides))
+            {
+                config.Add("overrides", overrides);
+            }
             var createParams = new Dictionary<string, object>
             {
                 {
-                    "config", new Dictionary<string, object>
-                    {
-                        {"task_type", "cfd"},
-                        {"cmd", "pipeline"},
-                        {"commands", commands},
-                        {"case_dir", caseDir},
-                        {"cpus", cpus},
-                        {"sets", sampleSets},
-                        {"fields", fields},
-                    }
+                    "config", config 
                 }
             };
 

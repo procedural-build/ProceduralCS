@@ -44,6 +44,10 @@ namespace ComputeCS.Grasshopper
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Case Directory", "Case Dir", "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
+            pManager.AddTextParameter("Overrides", "Overrides",
+                "Takes overrides in JSON format: \n" +
+                "{\n\t\"setup\": [...],\n\t\"fields\": [...],\n\t\"presets\": [...],\n\t\"caseFiles\": [...]\n}",
+                GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
                 GH_ParamAccess.item, false);
 
@@ -53,6 +57,7 @@ namespace ComputeCS.Grasshopper
             pManager[5].Optional = true;
             pManager[6].Optional = true;
             pManager[7].Optional = true;
+            pManager[8].Optional = true;
         }
 
         /// <summary>
@@ -76,6 +81,7 @@ namespace ComputeCS.Grasshopper
             var cpus = 1;
             string dependentOn = null;
             var caseDir = "VWT";
+            var overrides = "";
             var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
@@ -93,7 +99,8 @@ namespace ComputeCS.Grasshopper
             DA.GetData(4, ref cpus);
             DA.GetData(5, ref dependentOn);
             DA.GetData(6, ref caseDir);
-            DA.GetData(7, ref create);
+            DA.GetData(7, ref overrides);
+            DA.GetData(8, ref create);
 
             var convertedPoints = ConvertToPointList(points);
             caseDir = caseDir.TrimEnd('/');
@@ -125,6 +132,7 @@ namespace ComputeCS.Grasshopper
                                 ComponentUtils.ValidateCPUs(cpus),
                                 dependentOn,
                                 caseDir,
+                                overrides,
                                 create
                             );
                             cachedValues = results;
