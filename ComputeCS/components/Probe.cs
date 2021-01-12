@@ -184,7 +184,8 @@ namespace ComputeCS.Components
             };
             if (!string.IsNullOrEmpty(overrides))
             {
-                config.Add("overrides", overrides);
+                var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
+                config.Add("overrides", json);
             }
             var createParams = new Dictionary<string, object>
             {

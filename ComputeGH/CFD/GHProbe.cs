@@ -46,7 +46,13 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Case Directory", "Case Dir", "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
-                "{\n\t\"setup\": [...],\n\t\"fields\": [...],\n\t\"presets\": [...],\n\t\"caseFiles\": [...]\n}",
+                "{\n\t\"FIELD\": \"VALUE\", ...\n}\n" +
+                "Fields you can overwrite:\n" +
+                "libs\n" +
+                "executeControl\n" +
+                "writeControl\n" +
+                "interpolationScheme\n" +
+                "setFormat",
                 GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
                 GH_ParamAccess.item, false);
