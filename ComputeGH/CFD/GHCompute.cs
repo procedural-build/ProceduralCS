@@ -90,7 +90,11 @@ namespace ComputeCS.Grasshopper
                     QueueManager.addToQueue(queueName, () => {
                         try
                         {
-                            TimeEstimate = Compute.GetTaskEstimates(inputJson);
+                            try
+                            {
+                                TimeEstimate = Compute.GetTaskEstimates(inputJson);    
+                            } catch (Exception e){}
+                            
                             RunOnCompute(inputJson, geometry, folder, cacheKey, compute);
                         }
                         catch (Exception e)
