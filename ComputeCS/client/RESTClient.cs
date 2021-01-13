@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using ComputeCS.utils.Cache;
 
 namespace ComputeCS
 {
@@ -184,12 +185,17 @@ namespace ComputeCS
         }
 
         public string RequestToFile(string path) {
-            string responseString = string.Empty;
+            var responseString = string.Empty;
 
             // Generate the request object
             request = (HttpWebRequest)WebRequest.Create(FullUrl);
             request.Method = httpMethod.ToString();
-
+            
+            if (HasFetched(FullUrl, httpMethod.ToString()))
+            {
+                return "";
+            }
+            
             if (token != null)
             {
                 request.Headers.Add("Authorization", $"JWT {token}");
@@ -206,10 +212,7 @@ namespace ComputeCS
             }
             finally
             {
-                if (response != null)
-                {
-                    ((IDisposable)response).Dispose();
-                }
+                ((IDisposable) response)?.Dispose();
             }
 
             return responseString;
@@ -217,12 +220,17 @@ namespace ComputeCS
 
         public string requestToString()
         {           
-            string responseString = string.Empty;
+            var responseString = string.Empty;
 
             // Generate the request object
             request = (HttpWebRequest)WebRequest.Create(FullUrl);
             request.Method = httpMethod.ToString();
 
+            if (HasFetched(FullUrl, httpMethod.ToString()))
+            {
+                return "";
+            }
+            
             if (token != null)
             {
                 request.Headers.Add("Authorization", $"JWT {token}");
@@ -240,17 +248,33 @@ namespace ComputeCS
             }
             catch (Exception ex)
             {
-                responseString = "{\"error_messages\":[\"" + ex.Message.ToString() + "\"],\"errors\":{}}";
+                responseString = "{\"error_messages\":[\"" + ex.Message + "\"],\"errors\":{}}";
             }
             finally
             {
-                if (response != null)
-                {
-                    ((IDisposable)response).Dispose();
-                }
+                ((IDisposable) response)?.Dispose();
             }
 
             return responseString;
+        }
+        
+        private static bool HasFetched(string url, string method, int timeLimit = 100)
+        {
+            var now = DateTime.Now;
+            var cacheKey = $"{method} {url}";
+            
+            var value = StringCache.getCache(cacheKey);
+            if (!string.IsNullOrEmpty(value))
+            {
+                var lastFetched = DateTime.Parse(value);
+                var timeDelta = now - lastFetched;
+                if (timeDelta < TimeSpan.FromMilliseconds(timeLimit))
+                {
+                    return true;
+                }
+            }
+            StringCache.setCache(cacheKey, now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'"));
+            return false;
         }
     }
 }

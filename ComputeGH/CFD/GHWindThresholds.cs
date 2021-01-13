@@ -103,7 +103,7 @@ namespace ComputeGH.CFD
             DA.GetData(6, ref create);
 
             // Get Cache to see if we already did this
-            var cacheKey = string.Join("", patches) + epwFile;
+            var cacheKey = (patches.GetHashCode() + epwFile.GetHashCode()).ToString();
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
