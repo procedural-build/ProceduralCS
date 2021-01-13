@@ -4,7 +4,7 @@ using ComputeCS.types;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
-namespace ComputeCS.Grasshopper.Utils
+namespace ComputeGH.Grasshopper.Utils
 {
     public static class Domain
     {

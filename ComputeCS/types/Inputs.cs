@@ -12,5 +12,6 @@ namespace ComputeCS.types
         public string Url;
         public CFDMesh Mesh;
         public CFDSolution CFDSolution;
+        public RadiationSolution RadiationSolution;
     }
 }

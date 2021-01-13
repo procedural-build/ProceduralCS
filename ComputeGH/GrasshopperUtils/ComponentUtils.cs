@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ComputeCS.GrasshopperUtils
+namespace ComputeGH.Grasshopper.Utils
 {
     public static class ComponentUtils
     {

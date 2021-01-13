@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using ComputeCS.Components;
-using ComputeCS.GrasshopperUtils;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
@@ -39,11 +39,14 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list);
             pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
                 GH_ParamAccess.list);
-            pManager.AddIntegerParameter("CPUs", "CPUs", "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96. \nIn most cases it is not advised to use more CPUs than 1, as the time it takes to decompose and reconstruct the case will exceed the speed-up gained by multiprocessing the probing.", GH_ParamAccess.item, 1);
+            pManager.AddIntegerParameter("CPUs", "CPUs",
+                "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96. \nIn most cases it is not advised to use more CPUs than 1, as the time it takes to decompose and reconstruct the case will exceed the speed-up gained by multiprocessing the probing.",
+                GH_ParamAccess.item, 1);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item);
-            pManager.AddTextParameter("Case Directory", "Case Dir", "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
+            pManager.AddTextParameter("Case Directory", "Case Dir",
+                "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
                 "{\n\t\"FIELD\": \"VALUE\", ...\n}\n" +
@@ -54,7 +57,8 @@ namespace ComputeCS.Grasshopper
                 "interpolationScheme\n" +
                 "setFormat",
                 GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Create", "Create", "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
+            pManager.AddBooleanParameter("Create", "Create",
+                "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
                 GH_ParamAccess.item, false);
 
             pManager[2].Optional = true;

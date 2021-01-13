@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using ComputeCS.Grasshopper.Utils;
+using System.Drawing;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
@@ -13,17 +14,17 @@ namespace ComputeGH.Grasshopper
         {
         }
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("names", "names", "names", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon => Resources.IconGetName;
+        protected override Bitmap Icon => Resources.IconGetName;
 
         public override Guid ComponentGuid => new Guid("5199183e-aa10-41f7-ba63-df1bb96d141c");
 

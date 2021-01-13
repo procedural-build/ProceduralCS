@@ -11,7 +11,7 @@ using Rhino.DocObjects;
 using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
 
-namespace ComputeCS.Grasshopper.Utils
+namespace ComputeGH.Grasshopper.Utils
 {
     public class Geometry
     {
@@ -545,6 +545,11 @@ namespace ComputeCS.Grasshopper.Utils
             }
 
             return new Tuple<Mesh, List<Text3d>>(legend, text);
+        }
+
+        public static List<string> GetMeshIds(List<IGH_GeometricGoo> meshes)
+        {
+            return meshes.Select(mesh => getObjRef(mesh).ToString()).ToList();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using ComputeCS.Grasshopper.Utils;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
