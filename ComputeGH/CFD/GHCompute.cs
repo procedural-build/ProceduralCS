@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.Grasshopper.Utils;
@@ -72,7 +73,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(3, ref compute);
 
             // Get Cache to see if we already did this
-            var cacheKey = inputJson;
+            var cacheKey = inputJson.GetHashCode().ToString();
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 

@@ -67,7 +67,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(4, ref reload);
 
             // Get Cache to see if we already did this
-            var cacheKey = input + downloadPath;
+            var cacheKey = ( input.GetHashCode() + downloadPath.GetHashCode()).ToString();
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
