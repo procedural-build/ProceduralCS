@@ -113,7 +113,7 @@ namespace ComputeCS.Components
                 };
                 if (withNormals)
                 {
-                    sample.Add("normal", $"{name}.nls");
+                    sample.Add("normals", $"{name}.nls");
                 }
                 sampleSets.Add(sample);
             }
@@ -231,7 +231,7 @@ namespace ComputeCS.Components
             {
                 return null;
             }
-            var sampleSets = GenerateSampleSet(names);
+            var sampleSets = GenerateSampleSet(names, true);
 
             var taskQueryParams = new Dictionary<string, object>
             {
@@ -248,7 +248,7 @@ namespace ComputeCS.Components
             var task = CreateRadiationProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
                 sampleSets, create);
  
-            inputData.SubTasks.Add(task);
+            inputData.SubTasks = new List<Task>{task};
 
             return inputData.ToJson();
         }
@@ -266,7 +266,7 @@ namespace ComputeCS.Components
             var config = new Dictionary<string, object>
             {
                 {"task_type", "magpy"},
-                {"cmd", "write_radiation_samples_set"},
+                {"cmd", "radiance.io.tasks.write_radiation_samples_set"},
                 {"case_dir", caseDir},
                 {"sets", sampleSets},
             };
