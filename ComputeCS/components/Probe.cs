@@ -99,19 +99,23 @@ namespace ComputeCS.Components
         }
 
         public static List<Dictionary<string, object>> GenerateSampleSet(
-            List<string> names
+            List<string> names,
+            bool withNormals = false
         )
         {
             var sampleSets = new List<Dictionary<string, object>>();
             foreach (var name in names)
             {
-                sampleSets.Add(
-                    new Dictionary<string, object>()
-                    {
-                        {"name", name},
-                        {"file", $"{name}.pts"}
-                    }
-                );
+                var sample = new Dictionary<string, object>()
+                {
+                    {"name", name},
+                    {"file", $"{name}.pts"}
+                };
+                if (withNormals)
+                {
+                    sample.Add("normal", $"{name}.nls");
+                }
+                sampleSets.Add(sample);
             }
 
             return sampleSets;
@@ -123,7 +127,8 @@ namespace ComputeCS.Components
             string taskId,
             List<string> names,
             List<List<List<double>>> points,
-            string caseDir
+            string caseDir,
+            string fileExtension = "pts"
         )
         {
             var index = 0;
@@ -132,7 +137,7 @@ namespace ComputeCS.Components
                 new GenericViewSet<Dictionary<string, object>>(
                     tokens,
                     url,
-                    $"/api/task/{taskId}/file/{caseDir}/{name}.pts"
+                    $"/api/task/{taskId}/file/{caseDir}/{name}.{fileExtension}"
                 ).Update(
                     null,
                     new Dictionary<string, object>
@@ -205,6 +210,90 @@ namespace ComputeCS.Components
                 create
             );
 
+            return task;
+        }
+
+        public static string RadiationProbes(
+            string inputJson,
+            List<List<List<double>>> points,
+            List<List<List<double>>> normals,
+            List<string> names,
+            bool create = false
+        )
+        {
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var parentTask = inputData.Task;
+            var project = inputData.Project;
+            var caseDir = "geometry";
+
+            if (parentTask == null)
+            {
+                return null;
+            }
+            var sampleSets = GenerateSampleSet(names);
+
+            var taskQueryParams = new Dictionary<string, object>
+            {
+                {"name", "Probe"},
+                {"parent", parentTask.UID},
+            };
+            
+            if (create)
+            {
+                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
+                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, normals, caseDir, "nls");
+            }
+            
+            var task = CreateRadiationProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
+                sampleSets, create);
+ 
+            inputData.SubTasks.Add(task);
+
+            return inputData.ToJson();
+        }
+        
+        public static Task CreateRadiationProbeTask(
+            AuthTokens tokens,
+            string url,
+            string projectId,
+            Dictionary<string, object> taskQueryParams,
+            string caseDir,
+            List<Dictionary<string, object>> sampleSets,
+            bool create
+        )
+        {
+            var config = new Dictionary<string, object>
+            {
+                {"task_type", "magpy"},
+                {"cmd", "write_radiation_samples_set"},
+                {"case_dir", caseDir},
+                {"sets", sampleSets},
+            };
+
+            var createParams = new Dictionary<string, object>
+            {
+                {
+                    "config", config 
+                }
+            };
+
+            taskQueryParams.Add("project", projectId);
+            
+            var task = Tasks.GetCreateOrUpdateTask(
+                tokens,
+                url,
+                $"/api/task/",
+                taskQueryParams,
+                createParams,
+                create
+            );
+
+            if (task.ErrorMessages != null)
+            {
+                throw new Exception(task.ErrorMessages.First());
+            }
+            
             return task;
         }
     }

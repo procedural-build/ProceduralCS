@@ -97,20 +97,19 @@ namespace ComputeGH.Grasshopper.Utils
         }
 
         // getObjRef Overloaded Methods (GH_Brep and GH_Mesh)
-        public static ObjRef getObjRef<T>(T ghObj) where T : IGH_GeometricGoo
+        public static ObjRef GetObjRef<T>(T ghObj) where T : IGH_GeometricGoo
         {
             return new ObjRef(ghObj.ReferenceID);
         }
 
-        public static List<ObjRef> getObjRef<T>(List<T> ghObjList) where T : IGH_GeometricGoo
+        public static List<ObjRef> GetObjRef<T>(List<T> ghObjList) where T : IGH_GeometricGoo
         {
-            List<ObjRef> objRefList = new List<ObjRef>();
-            for (int i = 0; i < ghObjList.Count; i++)
-            {
-                objRefList.Add(getObjRef(ghObjList[i]));
-            }
-
-            return objRefList;
+            return ghObjList.Select(GetObjRef).ToList();
+        }
+        
+        public static List<string> GetObjRefStrings<T>(List<T> ghObjList) where T : IGH_GeometricGoo
+        {
+            return ghObjList.Select(refId => GetObjRef(refId).ObjectId.ToString()).ToList();
         }
 
         // Set Overloaded Methods
@@ -126,7 +125,7 @@ namespace ComputeGH.Grasshopper.Utils
 
         public static void setDocObjectUserString<T>(T ghObj, string key, string value) where T : IGH_GeometricGoo
         {
-            setDocObjectUserString(getObjRef(ghObj), key, value);
+            setDocObjectUserString(GetObjRef(ghObj), key, value);
         }
 
         // Get Overloaded Methods
@@ -142,7 +141,7 @@ namespace ComputeGH.Grasshopper.Utils
 
         public static string getDocObjectUserString<T>(T ghObj, string key) where T : IGH_GeometricGoo
         {
-            return getDocObjectUserString(getObjRef(ghObj), key);
+            return getDocObjectUserString(GetObjRef(ghObj), key);
         }
 
         // Get or Set Overloaded Methods
@@ -166,7 +165,7 @@ namespace ComputeGH.Grasshopper.Utils
         public static string getOrSetDocObjectUserString<T>(T ghObj, string key, string value)
             where T : IGH_GeometricGoo
         {
-            return getOrSetDocObjectUserString(getObjRef(ghObj), key, value);
+            return getOrSetDocObjectUserString(GetObjRef(ghObj), key, value);
         }
 
         // Get Methods for Grasshopper Objects (GH_Brep & GH_Mesh)
@@ -546,10 +545,15 @@ namespace ComputeGH.Grasshopper.Utils
 
             return new Tuple<Mesh, List<Text3d>>(legend, text);
         }
-
-        public static List<string> GetMeshIds(List<IGH_GeometricGoo> meshes)
+        
+        public static List<List<List<double>>> ConvertPointsToList(GH_Structure<GH_Point> pointTree)
         {
-            return meshes.Select(mesh => getObjRef(mesh).ToString()).ToList();
+            return pointTree.Branches.Select(branch => branch.Select(point => new List<double> {point.Value.X, point.Value.Y, point.Value.Z}).ToList()).ToList();
+        }
+        
+        public static List<List<List<double>>> ConvertPointsToList(GH_Structure<GH_Vector> pointTree)
+        {
+            return pointTree.Branches.Select(branch => branch.Select(point => new List<double> {point.Value.X, point.Value.Y, point.Value.Z}).ToList()).ToList();
         }
     }
 }

@@ -27,8 +27,6 @@ namespace ComputeGH.Radiation
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", 
                 GH_ParamAccess.item);
-            pManager.AddMeshParameter("Objects", "Objects", "Mesh objects to include in simulation",
-                GH_ParamAccess.list);
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "Number of CPUs to run the simulation across. Valid choices are:\n" +
                 "1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96",
@@ -46,14 +44,15 @@ namespace ComputeGH.Radiation
                 "{\n\t\"setup\": [...],\n\t\"fields\": [...],\n\t\"presets\": [...],\n\t\"caseFiles\": [...]\n}",
                 GH_ParamAccess.item);
 
+            pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
             pManager[4].Optional = true;
             pManager[5].Optional = true;
-            pManager[6].Optional = true;
+            
 
-            AddNamedValues(pManager[3] as Param_Integer, Methods);
-            AddNamedValues(pManager[4] as Param_Integer, CaseTypes);
+            AddNamedValues(pManager[2] as Param_Integer, Methods);
+            AddNamedValues(pManager[3] as Param_Integer, CaseTypes);
         }
 
         private static void AddNamedValues(Param_Integer param, List<string> values)
@@ -81,7 +80,6 @@ namespace ComputeGH.Radiation
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
-            var meshes = new List<IGH_GeometricGoo>();
             var cpus = 4;
             var method = 0;
             var caseType = 0;
@@ -90,19 +88,17 @@ namespace ComputeGH.Radiation
 
 
             if (!DA.GetData(0, ref inputJson)) return;
-            if (!DA.GetDataList(1, meshes)) return;
-            DA.GetData(2, ref cpus);
-            DA.GetData(3, ref method);
-            DA.GetData(4, ref caseType);
-            if (!DA.GetDataList(5, materials)) return;
-            DA.GetData(6, ref overrides);
+            DA.GetData(1, ref cpus);
+            DA.GetData(2, ref method);
+            DA.GetData(3, ref caseType);
+            if (!DA.GetDataList(4, materials)) return;
+            DA.GetData(5, ref overrides);
 
             var outputs = RadiationSolution.Setup(
                 inputJson,
-                Geometry.GetMeshIds(meshes),
                 ComponentUtils.ValidateCPUs(cpus),
                 Methods[method],
-                CaseTypes[caseType],
+                CaseTypes[caseType].ToLower(),
                 materials,
                 overrides
             );
@@ -117,9 +113,9 @@ namespace ComputeGH.Radiation
 
         private static readonly List<string> Methods = new List<string>
         {
-            "DaylightFactor",
-            "3Phase",
-            "5Phase",
+            "daylight_factor",
+            "three_phase",
+            "five_phase",
         };
 
         private static readonly List<string> CaseTypes = new List<string>

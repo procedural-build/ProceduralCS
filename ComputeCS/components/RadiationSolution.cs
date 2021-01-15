@@ -9,7 +9,6 @@ namespace ComputeCS.Components
     {
         public static string Setup(
             string inputJson,
-            List<string> meshes,
             List<int> cpus,
             string method,
             string caseType,
@@ -30,7 +29,6 @@ namespace ComputeCS.Components
             var solution = new types.RadiationSolution
             {
                 CPUs = cpus,
-                MeshIds = meshes,
                 Method = method,
                 CaseType = caseType,
                 Materials = materials_,

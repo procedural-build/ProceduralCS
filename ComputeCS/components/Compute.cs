@@ -9,6 +9,9 @@ namespace ComputeCS.Components
 {
     public static class Compute
     {
+        /// <summary>
+        /// This method is used for creating CFD cases on Compute
+        /// </summary>
         public static string Create(
             string inputJson,
             byte[] geometryFile,
@@ -36,7 +39,8 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, refinementRegions);
+                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "foam/constant/triSurface",
+                    "cfdGeom", refinementRegions);
             }
 
 
@@ -154,7 +158,7 @@ namespace ComputeCS.Components
                 actionTask,
                 meshTask,
             };
-            
+
             if (createParams.ContainsKey("config"))
             {
                 var cfdTask = new GenericViewSet<Task>(
@@ -173,10 +177,103 @@ namespace ComputeCS.Components
                 );
                 tasks.Add(cfdTask);
             }
-            
+
             inputData.SubTasks = tasks;
 
             return inputData.ToJson();
+        }
+
+        /// <summary>
+        /// This method is used for creating Radiance cases on Compute
+        /// </summary>
+        public static string Create(
+            string inputJson,
+            byte[] geometryFile,
+            bool create
+        )
+        {
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var parentTask = inputData.Task;
+            var project = inputData.Project;
+            var solution = inputData.RadiationSolution;
+
+            if (parentTask == null)
+            {
+                return null;
+                //throw new System.Exception("Cannot upload a case without a parent task.");
+            }
+
+            if (project == null)
+            {
+                return null;
+                //throw new System.Exception("Cannot upload a case without a project.");
+            }
+
+            if (create)
+            {
+                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radiationGeom");
+            }
+
+            // Tasks to Handle MagPy Celery Actions
+            // First Action to create Mesh Files
+            var actionTask = new GenericViewSet<Task>(
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
+            ).GetOrCreate(
+                new Dictionary<string, object>
+                {
+                    {"name", "Actions"},
+                    {"parent", parentTask.UID}
+                },
+                new Dictionary<string, object>
+                {
+                    {
+                        "config", new Dictionary<string, object>
+                        {
+                            {"task_type", "magpy"},
+                            {"cmd", "radiance.io.tasks.write_rad"},
+                            {"materials", inputData.RadiationSolution.Materials},
+                        }
+                    }
+                },
+                create
+            );
+            
+            var createParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, object>
+                    {
+                        {"task_type", "radiance"},
+                        {"cmd", solution.Method},
+                        {"case_type", solution.CaseType},
+                        {"cpus", solution.CPUs},
+                    }
+                }
+            };
+            var radianceTask = new GenericViewSet<Task>(
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
+            ).GetOrCreate(
+                new Dictionary<string, object>
+                {
+                    {"name", solution.Method},
+                    {"parent", parentTask.UID},
+                    {"dependent_on", actionTask.UID}
+                },
+                createParams,
+                create
+            );
+            inputData.SubTasks = new List<Task>
+            {
+                actionTask,
+                radianceTask,
+            };;
+
+            return inputData.ToJson();;
         }
 
         /// <summary>
@@ -246,14 +343,16 @@ namespace ComputeCS.Components
             string url,
             string taskId,
             byte[] geometryFile,
-            List<Dictionary<string, byte[]>> refinementRegions
+            string caseFolder,
+            string fileName,
+            List<Dictionary<string, byte[]>> refinementRegions = null
         )
         {
             // Upload File to parent task
             var geometryUpload = new GenericViewSet<Dictionary<string, object>>(
                 tokens,
                 url,
-                $"/api/task/{taskId}/file/foam/constant/triSurface/cfdGeom.stl"
+                $"/api/task/{taskId}/file/{caseFolder}/{fileName}.stl"
             ).Update(
                 null,
                 new Dictionary<string, object>
@@ -270,12 +369,12 @@ namespace ComputeCS.Components
             {
                 foreach (var refinementRegion in refinementRegions)
                 {
-                    var fileName = refinementRegion.Keys.First();
-                    var file = refinementRegion[fileName];
+                    var refinementFileName = refinementRegion.Keys.First();
+                    var file = refinementRegion[refinementFileName];
                     var refinementUpload = new GenericViewSet<Dictionary<string, object>>(
                         tokens,
                         url,
-                        $"/api/task/{taskId}/file/foam/constant/triSurface/{fileName}.stl"
+                        $"/api/task/{taskId}/file/foam/constant/triSurface/{refinementFileName}.stl"
                     ).Update(
                         null,
                         new Dictionary<string, object>
@@ -424,6 +523,7 @@ namespace ComputeCS.Components
                         throw new Exception(
                             $"Got the following error, while trying to upload: {file}: {response["error_messages"]}");
                     }
+
                     Thread.Sleep(100);
                 }
             }
@@ -476,7 +576,8 @@ namespace ComputeCS.Components
                     batFiles++;
                 }
             }
-            return new List<int>{batFiles, 1, 1};
+
+            return new List<int> {batFiles, 1, 1};
         }
 
         public static Dictionary<string, double> GetTaskEstimates(string inputJson)
@@ -484,16 +585,19 @@ namespace ComputeCS.Components
             var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var solution = inputData.CFDSolution;
-            
-            if (solution == null){return new Dictionary<string, double>();}
-            
+
+            if (solution == null)
+            {
+                return new Dictionary<string, double>();
+            }
+
             var cells = inputData.Mesh.CellEstimate;
             var iterations = solution.Iterations["init"];
 
-            
+
             var nCPUs = 1;
             solution.CPUs.ForEach(cpu => nCPUs *= cpu);
-            
+
             var meshEstimate = new GenericViewSet<TaskEstimate>(
                 tokens,
                 inputData.Url,
@@ -509,7 +613,7 @@ namespace ComputeCS.Components
 
             var totalTime = meshEstimate.Time;
             var totalCost = meshEstimate.Cost;
-            
+
             if (solution.CaseType == "VirtualWindTunnel")
             {
                 var angleEstimate = new GenericViewSet<TaskEstimate>(
@@ -538,9 +642,10 @@ namespace ComputeCS.Components
                         {"iterations", iterations}
                     }
                 );
-                
+
                 totalTime += prepareEstimate.Time + angleEstimate.Time;
-                totalCost += prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;;
+                totalCost += prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;
+                ;
             }
 
             return new Dictionary<string, double>

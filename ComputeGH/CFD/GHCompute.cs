@@ -95,7 +95,8 @@ namespace ComputeCS.Grasshopper
                             try
                             {
                                 TimeEstimate = Compute.GetTaskEstimates(inputJson);    
-                            } catch (Exception e){}
+                            } 
+                            catch (Exception e){}
                             
                             RunOnCompute(inputJson, geometry, folder, cacheKey, compute);
                         }
@@ -158,7 +159,23 @@ namespace ComputeCS.Grasshopper
                 compute
             );
             StringCache.setCache(cacheKey, results);
-            StringCache.setCache(this.InstanceGuid.ToString(), "");
+            StringCache.setCache(InstanceGuid.ToString(), "");
+            if (compute)
+            {
+                StringCache.setCache(cacheKey + "create", "true");
+            }
+        }
+        
+        private void RunRadiance(string inputJson, List<GH_Mesh> geometry, string cacheKey, bool compute)
+        {
+            var geometryFile = Export.STLObject(geometry);
+            var results = Compute.Create(
+                inputJson,
+                geometryFile,
+                compute
+            );
+            StringCache.setCache(cacheKey, results);
+            StringCache.setCache(InstanceGuid.ToString(), "");
             if (compute)
             {
                 StringCache.setCache(cacheKey + "create", "true");
@@ -180,7 +197,7 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private void RunRadiance(string inputJson, string folder, string cacheKey, bool compute)
+        private void RunHoneybeeRadiance(string inputJson, string folder, string cacheKey, bool compute)
         {
             var results = Compute.CreateRadiance(
                 inputJson,
@@ -205,9 +222,12 @@ namespace ComputeCS.Grasshopper
 
             else if (FolderContainsRadiance(folder))
             {
-                RunRadiance(inputJson, folder, cacheKey, compute);
+                RunHoneybeeRadiance(inputJson, folder, cacheKey, compute);
             }
-
+            else if (inputJson.Contains("radiation_solution"))
+            {
+                RunRadiance(inputJson, geometry, cacheKey, compute);
+            }
             else
             {
                 RunCFD(inputJson, geometry, cacheKey, compute);

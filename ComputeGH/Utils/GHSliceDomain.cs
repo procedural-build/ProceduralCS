@@ -57,7 +57,7 @@ namespace ComputeGH.Utils
         {
             pManager.AddMeshParameter("AnalysisMesh", "AnalysisMesh", "Created analysis mesh", GH_ParamAccess.tree);
             pManager.AddPointParameter("FaceCenters", "FaceCenters", "Face centers of the created mesh", GH_ParamAccess.tree);
-            pManager.AddPointParameter("FaceNormals", "FaceNormals", "Face Normals of the created mesh", GH_ParamAccess.tree);
+            pManager.AddVectorParameter("FaceNormals", "FaceNormals", "Face Normals of the created mesh", GH_ParamAccess.tree);
             
         }
 

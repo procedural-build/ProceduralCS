@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace ComputeCS.types
@@ -23,7 +19,6 @@ namespace ComputeCS.types
     {
         [JsonProperty("cpus")] public List<int> CPUs;
 
-        public List<string> MeshIds;
         public string Method;
         public string CaseType;
         public List<RadianceMaterial> Materials;

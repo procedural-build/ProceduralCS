@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
+using ComputeCS.types;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
@@ -8,9 +10,9 @@ using Newtonsoft.Json;
 
 namespace ComputeGH.Radiation
 {
-    public class RadianceMaterial: GH_Component
+    public class GHRadianceMaterial: GH_Component
     {
-        public RadianceMaterial() : base("Radiance Material", "Radiance Material",
+        public GHRadianceMaterial() : base("Radiance Material", "Material",
             "Define and apply a Radiance material to the construction", "Compute", "Radiation")
         {
         }
@@ -47,7 +49,7 @@ namespace ComputeGH.Radiation
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Material", "Material", "Radiance Material",
-                GH_ParamAccess.item);
+                GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -87,48 +89,21 @@ namespace ComputeGH.Radiation
                 return;
             }
 
-            var boundaryConditions = new Dictionary<string, object>();
-            Dictionary<string, string> overrides_ = null;
-            try
-            {
-                overrides_ = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
-            }
-            catch (JsonReaderException)
-            {
-            }
+            var output = names.Select(name =>
+                new RadianceMaterial {Name = name, Preset = preset, Overrides = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides)}.ToJson()).ToList();
 
-            foreach (var name in names)
-            {
-                var boundaryCondition = new Dictionary<string, object>();
-
-                if (preset.Length > 0)
-                {
-                    boundaryCondition.Add("preset", preset);
-                }
-
-                if (overrides_ != null)
-                {
-                    boundaryCondition.Add("overrides", overrides_);
-                }
-                else if (overrides.Length > 0)
-                {
-                    boundaryCondition.Add("overrides", overrides);
-                }
-
-                boundaryConditions.Add(name, boundaryCondition);
-            }
-
-            DA.SetData(0, JsonConvert.SerializeObject(boundaryConditions, Formatting.Indented));
+            DA.SetDataList(0, output);
         }
 
         private static readonly List<string> Presets = new List<string>
         {
+            "context",
             "wall",
-            "wallSlip",
-            "fixedVelocity",
-            "fixedPressure",
-            "fixedPressureOutOnly",
-            "atmBoundaryLayer",
+            "window",
+            "ceiling",
+            "roof",
+            "floor",
+            "ground"
         };
     }
 }
