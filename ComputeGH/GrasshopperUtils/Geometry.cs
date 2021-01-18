@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
+using ComputeCS.utils.Queue;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -287,15 +289,33 @@ namespace ComputeCS.Grasshopper.Utils
             var faceCenters = new DataTree<object>();
             var faceNormals = new DataTree<object>();
             var index = 0;
+            var doneEvents = new ManualResetEvent[baseSurfaces.Count];
+            var callBacks = new List<ThreadedCreateAnalysisMesh>();
             foreach (var surface in baseSurfaces)
             {
-                var _surface = MoveSurface(surface, offset, offsetDirection);
-                _surface = SubtractBrep(_surface, excludeGeometry);
-                var mesh = CreateMeshFromSurface(_surface, gridSize);
+                doneEvents[index] = new ManualResetEvent(false);
+                var callBack = new ThreadedCreateAnalysisMesh
+                {
+                    gridSize = gridSize, 
+                    excludeGeometry = excludeGeometry, 
+                    offset = offset,
+                    offsetDirection = offsetDirection, 
+                    doneEvent = doneEvents[index]
+                };
+                ThreadPool.QueueUserWorkItem(callBack.ThreadPoolCallback);
+                callBacks.Add(callBack);
+                index++;
+            }
 
+            WaitHandle.WaitAll(doneEvents);
+
+            index = 0;
+            foreach (var callBack in callBacks)
+            {
+                var mesh = callBack.analysisMesh;
                 var path = new GH_Path(index);
                 analysisMesh.Add(mesh, path);
-                mesh.RebuildNormals();
+                
                 foreach (var normal in mesh.FaceNormals)
                 {
                     faceNormals.Add(normal, path);
@@ -308,7 +328,6 @@ namespace ComputeCS.Grasshopper.Utils
 
                 index++;
             }
-
             return new Dictionary<string, DataTree<object>>
             {
                 {"analysisMesh", analysisMesh},
@@ -316,7 +335,6 @@ namespace ComputeCS.Grasshopper.Utils
                 {"faceNormals", faceNormals},
             };
         }
-
 
         public static Dictionary<string, DataTree<object>> CreateAnalysisMesh(
             List<Brep> baseSurfaces,
@@ -329,15 +347,34 @@ namespace ComputeCS.Grasshopper.Utils
             var faceCenters = new DataTree<object>();
             var faceNormals = new DataTree<object>();
             var index = 0;
+            var doneEvents = new ManualResetEvent[baseSurfaces.Count];
+            var callBacks = new List<ThreadedCreateAnalysisMesh>();
             foreach (var surface in baseSurfaces)
             {
-                var _surface = SubtractBrep(surface, excludeGeometry);
-                _surface = MoveSurface(_surface, offset, offsetDirection);
-                var mesh = CreateMeshFromSurface(_surface, gridSize);
+                doneEvents[index] = new ManualResetEvent(false);
+                var callBack = new ThreadedCreateAnalysisMesh
+                {
+                    surface=surface, 
+                    gridSize = gridSize, 
+                    excludeGeometry = excludeGeometry, 
+                    offset = offset,
+                    offsetDirection = offsetDirection, 
+                    doneEvent = doneEvents[index]
+                };
+                ThreadPool.QueueUserWorkItem(callBack.ThreadPoolCallback);
+                callBacks.Add(callBack);
+                index++;
+            }
 
+            WaitHandle.WaitAll(doneEvents);
+
+            index = 0;
+            foreach (var callBack in callBacks)
+            {
+                var mesh = callBack.analysisMesh;
                 var path = new GH_Path(index);
                 analysisMesh.Add(mesh, path);
-                mesh.RebuildNormals();
+                
                 foreach (var normal in mesh.FaceNormals)
                 {
                     faceNormals.Add(normal, path);
@@ -539,12 +576,34 @@ namespace ComputeCS.Grasshopper.Utils
                     values[i],
                     new Plane(
                         new Point3d(newBase.X + sideLength * scale * 1.1, newBase.Y + sideLength * 0.5,
-                            newBase.Z), new Vector3d(0.0, 0.0, 1.0)), 
+                            newBase.Z), new Vector3d(0.0, 0.0, 1.0)),
                     textHeight
                 ));
             }
 
             return new Tuple<Mesh, List<Text3d>>(legend, text);
         }
+        
+        public class ThreadedCreateAnalysisMesh
+        {
+            public Brep surface;
+            public double gridSize;
+            public List<Brep> excludeGeometry;
+            public double offset;
+            public string offsetDirection;
+            public ManualResetEvent doneEvent;
+            public Mesh analysisMesh = new Mesh();
+            public void ThreadPoolCallback(Object threadContext)
+            {
+                var _surface = MoveSurface(surface, offset, offsetDirection);
+                _surface = SubtractBrep(_surface, excludeGeometry);
+                analysisMesh = CreateMeshFromSurface(_surface, gridSize);
+                analysisMesh.RebuildNormals();
+
+                doneEvent.Set();
+            }
+        }
     }
+
+
 }
