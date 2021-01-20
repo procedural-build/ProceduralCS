@@ -112,7 +112,7 @@ namespace ComputeCS.Grasshopper
             caseDir = caseDir.TrimEnd('/');
 
             // Get Cache to see if we already did this
-            var cacheKey = (points.GetHashCode() + fields.GetHashCode()).ToString();
+            var cacheKey = string.Join("", points) + string.Join("", fields) + string.Join("", names);
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 

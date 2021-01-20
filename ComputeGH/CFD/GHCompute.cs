@@ -73,7 +73,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(3, ref compute);
 
             // Get Cache to see if we already did this
-            var cacheKey = inputJson.GetHashCode().ToString();
+            var cacheKey = inputJson;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 

@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using ComputeCS.Grasshopper;
 using ComputeCS.Grasshopper.Utils;
+using ComputeCS.utils;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
+using Newtonsoft.Json;
 using Rhino;
 using Rhino.Geometry;
 
@@ -91,11 +94,11 @@ namespace ComputeGH.Utils
             DA.GetData(3, ref offset);
             DA.GetData(4, ref offsetDirection);
 
-            var cacheKey = (
-                baseSurfaces.Sum(surf => Convert.ToInt64(surf.GetHashCode())) + 
-                Convert.ToInt64(gridSize.GetHashCode()) + 
-                excludeGeometry.Sum(geom => Convert.ToInt64(geom.GetHashCode())) + 
-                Convert.ToInt64(offset.GetHashCode()) + Convert.ToInt64(offsetDirection.GetHashCode())).ToString();
+            var cacheKey =
+                JsonConvert.SerializeObject(baseSurfaces) +
+                gridSize.ToString() +
+                JsonConvert.SerializeObject(excludeGeometry) +
+                offset.ToString() + offsetDirection.ToString();
             var cachedValues = StringCache.getCache(cacheKey);
             const string queueName = "analysisMesh";
             DA.DisableGapLogic();
@@ -119,7 +122,7 @@ namespace ComputeGH.Utils
                             meshResult = Geometry.CreateAnalysisMesh(
                                 baseSurfaces, gridSize, excludeGeometry, offset, OffsetDirection[offsetDirection]
                             );
-                            
+
                             StringCache.setCache(queueName + "progress", "Done");
                             StringCache.setCache(cacheKey, meshResult.GetHashCode().ToString());
                         }
@@ -139,7 +142,7 @@ namespace ComputeGH.Utils
             }
 
             Message = StringCache.getCache(queueName + "progress");
-            
+
             // Handle Errors
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
@@ -178,6 +181,7 @@ namespace ComputeGH.Utils
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid => new Guid("be364a6b-0339-4afa-8c42-2d1a0d031028");
+
         private Dictionary<string, DataTree<object>> meshResult;
     }
 }
