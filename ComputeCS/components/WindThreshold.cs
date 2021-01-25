@@ -130,6 +130,8 @@ namespace ComputeCS.Components
                 {
                     return subTask;
                 }
+                
+                if (subTask.Config == null){continue;}
 
                 if (subTask.Config.ContainsKey("commands"))
                 {
