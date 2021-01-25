@@ -79,7 +79,8 @@ namespace ComputeCS.Components
                 {
                     return subTask;
                 }
-
+                if (subTask.Config == null){continue;}
+                
                 if (subTask.Config.ContainsKey("cmd") && (string) subTask.Config["cmd"] == "wind_tunnel")
                 {
                     return subTask;
