@@ -13,6 +13,7 @@ namespace ComputeCS.Components
             string method,
             string caseType,
             List<string> materials,
+            string epwFile,
             string overrides = null
         )
         {
@@ -32,6 +33,7 @@ namespace ComputeCS.Components
                 Method = method,
                 CaseType = caseType,
                 Materials = materials_,
+                EPWFile = epwFile,
                 Overrides = overrides_,
             };
 

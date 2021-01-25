@@ -7,6 +7,6 @@ namespace ComputeCS.types
     {
         public string Name;
         public string Preset;
-        public Dictionary<string, string> Overrides;
+        public Dictionary<string, object> Overrides;
     }
 }

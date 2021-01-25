@@ -39,6 +39,8 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("Materials", "Materials", 
                 "This should be a list of materials generated with the Radiance Material components.", 
                 GH_ParamAccess.list);
+            pManager.AddTextParameter("EPW File", "EPW File", "Path to where the EPW file is located.",
+                GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
                 "{\n\t\"setup\": [...],\n\t\"fields\": [...],\n\t\"presets\": [...],\n\t\"caseFiles\": [...]\n}",
@@ -48,7 +50,7 @@ namespace ComputeGH.Radiation
             pManager[2].Optional = true;
             pManager[3].Optional = true;
             pManager[4].Optional = true;
-            pManager[5].Optional = true;
+            pManager[6].Optional = true;
             
 
             AddNamedValues(pManager[2] as Param_Integer, Methods);
@@ -84,6 +86,7 @@ namespace ComputeGH.Radiation
             var method = 0;
             var caseType = 0;
             var materials = new List<string>();
+            var epwFile = "";
             string overrides = null;
 
 
@@ -92,7 +95,8 @@ namespace ComputeGH.Radiation
             DA.GetData(2, ref method);
             DA.GetData(3, ref caseType);
             if (!DA.GetDataList(4, materials)) return;
-            DA.GetData(5, ref overrides);
+            if (!DA.GetData(5, ref epwFile)) return;
+            DA.GetData(6, ref overrides);
 
             var outputs = RadiationSolution.Setup(
                 inputJson,
@@ -100,6 +104,7 @@ namespace ComputeGH.Radiation
                 Methods[method],
                 CaseTypes[caseType].ToLower(),
                 materials,
+                epwFile,
                 overrides
             );
             

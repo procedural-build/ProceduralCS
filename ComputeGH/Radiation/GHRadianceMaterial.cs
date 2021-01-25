@@ -90,7 +90,7 @@ namespace ComputeGH.Radiation
             }
 
             var output = names.Select(name =>
-                new RadianceMaterial {Name = name, Preset = preset, Overrides = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides)}.ToJson()).ToList();
+                new RadianceMaterial {Name = name, Preset = preset, Overrides = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides)}.ToJson()).ToList();
 
             DA.SetDataList(0, output);
         }

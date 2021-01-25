@@ -9,9 +9,6 @@ namespace ComputeCS.Components
 {
     public static class Compute
     {
-        /// <summary>
-        /// This method is used for creating CFD cases on Compute
-        /// </summary>
         public static string Create(
             string inputJson,
             byte[] geometryFile,
@@ -197,17 +194,16 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
             var project = inputData.Project;
             var solution = inputData.RadiationSolution;
+            var caseDir = "objects";
 
             if (parentTask == null)
             {
                 return null;
-                //throw new System.Exception("Cannot upload a case without a parent task.");
             }
 
             if (project == null)
             {
                 return null;
-                //throw new System.Exception("Cannot upload a case without a project.");
             }
 
             if (create)
@@ -235,6 +231,8 @@ namespace ComputeCS.Components
                             {"task_type", "magpy"},
                             {"cmd", "radiance.io.tasks.write_rad"},
                             {"materials", inputData.RadiationSolution.Materials},
+                            {"case_dir", caseDir},
+                            {"method", solution.Method},
                         }
                     }
                 },
@@ -250,6 +248,9 @@ namespace ComputeCS.Components
                         {"cmd", solution.Method},
                         {"case_type", solution.CaseType},
                         {"cpus", solution.CPUs},
+                        {"case_dir", caseDir},
+                        {"epw_file", solution.EPWFile},
+                        {"probes", solution.Probes},
                     }
                 }
             };

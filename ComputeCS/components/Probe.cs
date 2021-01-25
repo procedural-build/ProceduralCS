@@ -226,7 +226,8 @@ namespace ComputeCS.Components
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
             var project = inputData.Project;
-            var caseDir = "geometry";
+            var uploadDir = "geometry";
+            var caseDir = "probes";
 
             if (parentTask == null)
             {
@@ -242,14 +243,15 @@ namespace ComputeCS.Components
             
             if (create)
             {
-                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
-                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, normals, caseDir, "nls");
+                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, uploadDir);
+                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, normals, uploadDir, "nls");
             }
             
             var task = CreateRadiationProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
                 sampleSets, create);
  
             inputData.SubTasks = new List<Task>{task};
+            inputData.RadiationSolution.Probes = names;
 
             return inputData.ToJson();
         }
@@ -274,9 +276,8 @@ namespace ComputeCS.Components
 
             var createParams = new Dictionary<string, object>
             {
-                {
-                    "config", config 
-                }
+                {"config", config},
+                {"status", "pending"}
             };
 
             taskQueryParams.Add("project", projectId);
