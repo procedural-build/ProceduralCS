@@ -208,7 +208,8 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radiationGeom");
+                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radianceGeom");
+                UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
             }
 
             // Tasks to Handle MagPy Celery Actions
@@ -249,7 +250,7 @@ namespace ComputeCS.Components
                         {"case_type", solution.CaseType},
                         {"cpus", solution.CPUs},
                         {"case_dir", caseDir},
-                        {"epw_file", solution.EPWFile},
+                        {"epw_file", Path.GetFileName(solution.EPWFile)},
                         {"probes", solution.Probes},
                     }
                 }
@@ -655,6 +656,36 @@ namespace ComputeCS.Components
                 {"time", totalTime},
                 {"cells", cells}
             };
+        }
+
+        public static void UploadEPWFile(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            string epwFile
+            )
+        {
+            var epwFileContent = File.ReadAllBytes(epwFile);
+            var epwName = Path.GetFileName(epwFile);
+            {
+                // Upload EPW File to parent task
+                var uploadTask = new GenericViewSet<Dictionary<string, object>>(
+                    tokens,
+                    url,
+                    $"/api/task/{taskId}/file/weather/{epwName}"
+                ).Update(
+                    null,
+                    new Dictionary<string, object>
+                    {
+                        {"file", epwFileContent}
+                    }
+                );
+                if (uploadTask.ContainsKey("error_messages"))
+                {
+                    throw new Exception(uploadTask["error_messages"].ToString());
+                }
+
+            }
         }
     }
 }
