@@ -116,6 +116,7 @@
     <Compile Include="Radiation\GHRadianceMaterial.cs" />
     <Compile Include="Radiation\GHRadiationMesh.cs" />
     <Compile Include="Radiation\GHRadiationProbe.cs" />
+    <Compile Include="Radiation\GHRadiationProbeResults.cs" />
     <Compile Include="Radiation\GHRadiationSolution.cs" />
     <Compile Include="Utils\GHAnalysisMesh.cs" />
     <Compile Include="Utils\GHDownload.cs" />

@@ -85,7 +85,7 @@ namespace ComputeGH.Radiation
             var convertedNormals = Geometry.ConvertPointsToList(normals);
 
             // Get Cache to see if we already did this
-            var cacheKey = string.Join("", points) + string.Join("", names);
+            var cacheKey = string.Join("", points) + string.Join("", names) + inputJson;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 

@@ -186,6 +186,7 @@ namespace ComputeCS.Components
         public static string Create(
             string inputJson,
             byte[] geometryFile,
+            string dependentOn,
             bool create
         )
         {
@@ -194,7 +195,9 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
             var project = inputData.Project;
             var solution = inputData.RadiationSolution;
-            var caseDir = "objects";
+            var subTasks = inputData.SubTasks;
+            var probeTask = GetProbeTask(subTasks, dependentOn);
+            const string caseDir = "objects";
 
             if (parentTask == null)
             {
@@ -212,6 +215,17 @@ namespace ComputeCS.Components
                 UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
             }
 
+            var actionTaskQueryParams = new Dictionary<string, object>
+            {
+                {"name", "Actions"},
+                {"parent", parentTask.UID},
+                {"project", project.UID}
+            };
+            if (probeTask != null)
+            {
+                actionTaskQueryParams.Add("dependent_on", probeTask.UID);
+            }
+            
             // Tasks to Handle MagPy Celery Actions
             // First Action to create Mesh Files
             var actionTask = new GenericViewSet<Task>(
@@ -219,11 +233,7 @@ namespace ComputeCS.Components
                 inputData.Url,
                 $"/api/project/{project.UID}/task/"
             ).GetOrCreate(
-                new Dictionary<string, object>
-                {
-                    {"name", "Actions"},
-                    {"parent", parentTask.UID}
-                },
+                actionTaskQueryParams,
                 new Dictionary<string, object>
                 {
                     {
@@ -239,7 +249,7 @@ namespace ComputeCS.Components
                 },
                 create
             );
-            
+
             var createParams = new Dictionary<string, object>
             {
                 {
@@ -269,13 +279,10 @@ namespace ComputeCS.Components
                 createParams,
                 create
             );
-            inputData.SubTasks = new List<Task>
-            {
-                actionTask,
-                radianceTask,
-            };;
+            inputData.SubTasks.Add(actionTask);
+            inputData.SubTasks.Add(radianceTask);
 
-            return inputData.ToJson();;
+            return inputData.ToJson();
         }
 
         /// <summary>
@@ -663,7 +670,7 @@ namespace ComputeCS.Components
             string url,
             string taskId,
             string epwFile
-            )
+        )
         {
             var epwFileContent = File.ReadAllBytes(epwFile);
             var epwName = Path.GetFileName(epwFile);
@@ -684,8 +691,33 @@ namespace ComputeCS.Components
                 {
                     throw new Exception(uploadTask["error_messages"].ToString());
                 }
-
             }
+        }
+
+        public static Task GetProbeTask(
+            List<Task> subTasks,
+            string dependentName = ""
+            )
+        {
+            foreach (var subTask in subTasks)
+            {
+                if (string.IsNullOrEmpty(subTask.UID))
+                {
+                    continue;
+                }
+
+                if (dependentName == subTask.Name)
+                {
+                    return subTask;
+                }
+
+                if (subTask.Name == "Probe")
+                {
+                    return subTask;
+                }
+            }
+
+            return null;
         }
     }
 }

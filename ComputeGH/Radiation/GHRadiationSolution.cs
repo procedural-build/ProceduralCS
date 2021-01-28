@@ -33,9 +33,7 @@ namespace ComputeGH.Radiation
                 GH_ParamAccess.item, 4);
             pManager.AddIntegerParameter("Method", "Method", "Select which Radiance Method to use.",
                 GH_ParamAccess.item, 0);
-            pManager.AddIntegerParameter("Case Type", "Case Type",
-                "Available Options: Grid, Image",  
-                GH_ParamAccess.item, 0);
+            //pManager.AddIntegerParameter("Case Type", "Case Type", "Available Options: Grid, Image", GH_ParamAccess.item, 0);
             pManager.AddTextParameter("Materials", "Materials", 
                 "This should be a list of materials generated with the Radiance Material components.", 
                 GH_ParamAccess.list);
@@ -49,12 +47,11 @@ namespace ComputeGH.Radiation
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
-            pManager[4].Optional = true;
-            pManager[6].Optional = true;
+            pManager[5].Optional = true;
             
 
             AddNamedValues(pManager[2] as Param_Integer, Methods);
-            AddNamedValues(pManager[3] as Param_Integer, CaseTypes);
+            //AddNamedValues(pManager[3] as Param_Integer, CaseTypes);
         }
 
         private static void AddNamedValues(Param_Integer param, List<string> values)
@@ -93,10 +90,10 @@ namespace ComputeGH.Radiation
             if (!DA.GetData(0, ref inputJson)) return;
             DA.GetData(1, ref cpus);
             DA.GetData(2, ref method);
-            DA.GetData(3, ref caseType);
-            if (!DA.GetDataList(4, materials)) return;
-            if (!DA.GetData(5, ref epwFile)) return;
-            DA.GetData(6, ref overrides);
+            //DA.GetData(3, ref caseType);
+            if (!DA.GetDataList(3, materials)) return;
+            if (!DA.GetData(4, ref epwFile)) return;
+            DA.GetData(5, ref overrides);
 
             var outputs = RadiationSolution.Setup(
                 inputJson,
@@ -118,9 +115,9 @@ namespace ComputeGH.Radiation
 
         private static readonly List<string> Methods = new List<string>
         {
-            "daylight_factor",
+            //"daylight_factor",
             "three_phase",
-            "five_phase",
+            //"five_phase",
         };
 
         private static readonly List<string> CaseTypes = new List<string>

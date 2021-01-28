@@ -157,7 +157,7 @@ namespace ComputeCS.Grasshopper
                         }
                         catch (Exception e)
                         {
-                            StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
+                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }

@@ -126,7 +126,7 @@ namespace ComputeCS.Components
                     return subTask;
                 }
 
-                if (subTask.Name == "PostProcess")
+                if (subTask.Name == "Probe")
                 {
                     return subTask;
                 }

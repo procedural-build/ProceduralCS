@@ -102,7 +102,7 @@ namespace ComputeCS.Grasshopper
                         }
                         catch (Exception e)
                         {
-                            StringCache.setCache(this.InstanceGuid.ToString(), e.Message);
+                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
                             StringCache.setCache(cacheKey, "error");
                             StringCache.setCache(cacheKey + "create", "");
                         }
@@ -172,6 +172,7 @@ namespace ComputeCS.Grasshopper
             var results = Compute.Create(
                 inputJson,
                 geometryFile,
+                "Probe",
                 compute
             );
             StringCache.setCache(cacheKey, results);
