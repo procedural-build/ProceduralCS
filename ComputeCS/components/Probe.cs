@@ -251,7 +251,12 @@ namespace ComputeCS.Components
                 sampleSets, create);
  
             inputData.SubTasks = new List<Task>{task};
-            inputData.RadiationSolution.Probes = names;
+            var probes = new Dictionary<string, int>();
+            for (var i = 0; i < names.Count; i++)
+            {
+                probes.Add(names[i], points[i].Count);
+            }
+            inputData.RadiationSolution.Probes = probes;
 
             return inputData.ToJson();
         }

@@ -27,7 +27,7 @@ namespace ComputeCS.Components
         {
             var lines = File.ReadAllLines(file);
 
-            return (from line in lines where !line.StartsWith("#") select line);
+            return (from line in lines where !line.StartsWith("#") select double.Parse(line)*100).Cast<object>();
         }
     }
 }

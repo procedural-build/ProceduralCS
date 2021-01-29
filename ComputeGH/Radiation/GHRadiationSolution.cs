@@ -40,8 +40,9 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("EPW File", "EPW File", "Path to where the EPW file is located.",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
-                "Takes overrides in JSON format: \n" +
-                "{\n\t\"setup\": [...],\n\t\"fields\": [...],\n\t\"presets\": [...],\n\t\"caseFiles\": [...]\n}",
+                "Accepts the following overrides with defaults in JSON format: \n" +
+                "{\n\t\"ambient_bounces\": 4,\n\t\"ambient_divisions\": 5000,\n" +
+                "\t\"limit_ray_weight\": 0.0002,\n\t\"samples\": 1000\n\t\"reinhart_divisions\": 1\n}",
                 GH_ParamAccess.item);
 
             pManager[1].Optional = true;

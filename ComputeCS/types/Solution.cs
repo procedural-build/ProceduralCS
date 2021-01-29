@@ -24,6 +24,6 @@ namespace ComputeCS.types
         public List<RadianceMaterial> Materials;
         [JsonProperty("epw_file")] public string EPWFile;
         public Dictionary<string, object> Overrides;
-        public List<string> Probes;
+        public Dictionary<string, int> Probes;
     }
 }

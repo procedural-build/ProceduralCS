@@ -63,6 +63,7 @@ namespace ComputeCS.Components
                             {"overrides", _overrides},
                             {"cpus", cpus},
                             {"case_dir", caseDir},
+                            {"result_names", solution.Probes.Keys}
                         }
                     }
                 },
