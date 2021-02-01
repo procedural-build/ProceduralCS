@@ -28,7 +28,8 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Preset", "Preset", "Select a Daylight Metric", GH_ParamAccess.item,
                 0);
-            pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets",
+            pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets.\nThe overrides should be given in the following JSON format:\n" +
+                                                                "{\n\"threshold\": 500,\n\"work_hours\": [8, 16], \"work_days\": [0, 5]\n}\nHere shown with the defaults.",
                 GH_ParamAccess.item, "");
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96.",
@@ -166,9 +167,9 @@ namespace ComputeGH.Radiation
         private static readonly List<string> Presets = new List<string>
         {
             "daylight_autonomy",
-            "spatial_daylight_autonomy",
-            "continuous_daylight_autonomy",
-            "useful_daylight_illuminances"
+            //"spatial_daylight_autonomy",
+            //"continuous_daylight_autonomy",
+            //"useful_daylight_illuminances"
         };
         
         private void ExpireSolutionThreadSafe(bool recompute = false)

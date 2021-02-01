@@ -21,10 +21,24 @@ namespace ComputeGH.Radiation
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Names", "Names", "The names of the meshes to apply this material to.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Preset", "Preset", "Presets of the material", GH_ParamAccess.item,
+            pManager.AddTextParameter("Names", "Names", 
+                "The names of the meshes to apply this material to.\nIf the name ends with a * it applies to all the geometry that have a name that starts with the name given here.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Preset", "Preset", 
+                "Material preset.\n" +
+                "All presets can be changed by applying overrides.\n" +
+                "If you pick window as preset, you can only apply the bsdf override.\n" +
+                "If you want to see the preset values, visit https://compute.procedural.build/docs/daylight/materials", 
+                GH_ParamAccess.item,
                 0);
-            pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets",
+            pManager.AddTextParameter("Overrides", "Overrides", 
+                "Optional overrides to apply to the presets.\n" +
+                "If you have chosen window, you should add a override with {\"bsdf\": \"BSDF FILE\"}.\n" +
+                "The BSDF file can either be given as a path to a local file or \"clear.xml\", which is a default BSDF file Compute provides.\n" +
+                "If you want to override a material, which is not a window preset, the following overrides can be given:\n" +
+                "{\n" +
+                "\"type\": \"plastic\"\n," +
+                "\"reals\": [0.2, 0.2, 0.2, 0, 0]\n," +
+                "\n}",
                 GH_ParamAccess.item, "");
 
             pManager[1].Optional = true;

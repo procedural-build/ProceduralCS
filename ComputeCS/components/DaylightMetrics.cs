@@ -21,7 +21,7 @@ namespace ComputeCS.Components
             var project = inputData.Project;
             var solution = inputData.RadiationSolution;
             var subTasks = inputData.SubTasks;
-            var daylightTask = GetDaylightTask(subTasks, solution.Method);
+            var daylightTask = GetDaylightTask(subTasks, Utils.SnakeCaseToHumanCase(solution.Method));
             const string caseDir = "metrics";
             
             var _overrides = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);

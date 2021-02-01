@@ -213,6 +213,7 @@ namespace ComputeCS.Components
             {
                 UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radianceGeom");
                 UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
+                UploadBSDFFile(tokens, inputData.Url, parentTask.UID, solution.Materials);
             }
 
             var actionTaskQueryParams = new Dictionary<string, object>
@@ -272,7 +273,7 @@ namespace ComputeCS.Components
             ).GetOrCreate(
                 new Dictionary<string, object>
                 {
-                    {"name", solution.Method},
+                    {"name", Utils.SnakeCaseToHumanCase(solution.Method)},
                     {"parent", parentTask.UID},
                     {"dependent_on", actionTask.UID}
                 },
@@ -718,6 +719,42 @@ namespace ComputeCS.Components
             }
 
             return null;
+        }
+        
+        public static void UploadBSDFFile(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            List<RadianceMaterial> materials
+        )
+        {
+            foreach (var material in materials)
+            {
+                if (material.Overrides.ContainsKey("bsdf") && File.Exists((string)material.Overrides["bsdf"]))
+                {
+                    var path = (string) material.Overrides["bsdf"];
+                    var bsdfName = Path.GetFileName(path);
+                    var bsdfFileContent = File.ReadAllBytes(path);
+                    
+                    var uploadTask = new GenericViewSet<Dictionary<string, object>>(
+                        tokens,
+                        url,
+                        $"/api/task/{taskId}/file/bsdf/{bsdfName}"
+                    ).Update(
+                        null,
+                        new Dictionary<string, object>
+                        {
+                            {"file", bsdfFileContent}
+                        }
+                    );
+                    if (uploadTask.ContainsKey("error_messages"))
+                    {
+                        throw new Exception(uploadTask["error_messages"].ToString());
+                    }
+
+                    material.Overrides["bsdf"] = bsdfName;
+                }
+            }
         }
     }
 }
