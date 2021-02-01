@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using ComputeCS.Grasshopper.Utils;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
@@ -57,7 +57,7 @@ namespace ComputeGH.Utils
         {
             pManager.AddMeshParameter("AnalysisMesh", "AnalysisMesh", "Created analysis mesh", GH_ParamAccess.tree);
             pManager.AddPointParameter("FaceCenters", "FaceCenters", "Face centers of the created mesh", GH_ParamAccess.tree);
-            pManager.AddPointParameter("FaceNormals", "FaceNormals", "Face Normals of the created mesh", GH_ParamAccess.tree);
+            pManager.AddVectorParameter("FaceNormals", "FaceNormals", "Face Normals of the created mesh", GH_ParamAccess.tree);
             
         }
 

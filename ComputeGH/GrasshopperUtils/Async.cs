@@ -2,7 +2,7 @@
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 
-namespace ComputeCS.Grasshopper.Utils
+namespace ComputeGH.Grasshopper.Utils
 {
     public class Async
     {
@@ -10,35 +10,34 @@ namespace ComputeCS.Grasshopper.Utils
             string cacheKey,
             string queueName,
             string executeable
-            )
+        )
         {
             // Get Cache to see if we already did this
             var cachedValues = StringCache.getCache(cacheKey);
 
             if (cachedValues == null)
             {
-
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
                 if (queueLock != "true")
                 {
                     StringCache.setCache(queueName, "true");
-                    QueueManager.addToQueue(queueName, () => {
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
                             var results = executeable;
                             StringCache.setCache(cacheKey, results);
-
                         }
                         catch (Exception e)
                         {
                             //StringCache.AppendCache(this.InstanceGuid.ToString(), e.ToString() + "\n");
                         }
+
                         StringCache.setCache(queueName, "");
                     });
                     //ExpireSolution(true);
                 }
-
             }
         }
     }

@@ -1,41 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using ComputeCS.Grasshopper.Utils;
+using System.Drawing;
 using ComputeCS.types;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 
-
 namespace ComputeCS.Grasshopper
 {
-    public class cfdRefinementRegion : GH_Component
+    public class CFDRefinementRegion : GH_Component
     {
-        public cfdRefinementRegion() : base("Refinement Region", "Refinement Region", "Defines a CFD Refinement Region",
+        public CFDRefinementRegion() : base("Refinement Region", "Refinement Region", "Defines a CFD Refinement Region",
             "Compute", "Mesh")
         {
         }
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("meshes", "meshes", "meshes", GH_ParamAccess.list);
-            pManager.AddTextParameter("location", "location", "Location (inside|outside)", GH_ParamAccess.item,
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes", GH_ParamAccess.list);
+            pManager.AddTextParameter("Location", "Location", "Location (inside|outside)", GH_ParamAccess.item,
                 "inside");
-            pManager.AddIntegerParameter("minLevel", "minLevel", "Minimum Refinement Level", GH_ParamAccess.item, 1);
-            pManager.AddIntegerParameter("maxLevel", "maxLevel", "Maximum Refinement Level", GH_ParamAccess.item, 1);
+            pManager.AddIntegerParameter("Min Level", "Min Level", "Minimum Refinement Level", GH_ParamAccess.item, 1);
+            pManager.AddIntegerParameter("Max Level", "Max Level", "Maximum Refinement Level", GH_ParamAccess.item, 1);
 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("RefinementRegions", "RefinementRegions", "RefinementRegions",
                 GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon => Resources.IconRefinementRegion;
+        protected override Bitmap Icon => Resources.IconRefinementRegion;
 
         public override Guid ComponentGuid => new Guid("902b5e4a-9ca6-417c-9a38-d2e97b650d40");
 
@@ -61,8 +61,9 @@ namespace ComputeCS.Grasshopper
             // Get a list of object references in the Rhino model
             foreach (var mesh in meshes)
             {
-                var refinementRegion = new RefinementDetails {
-                    Mode =  location,
+                var refinementRegion = new RefinementDetails
+                {
+                    Mode = location,
                     Levels = refLevels
                 };
                 Geometry.setUserString(

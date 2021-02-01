@@ -36,7 +36,8 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, refinementRegions);
+                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "foam/constant/triSurface",
+                    "cfdGeom", refinementRegions);
             }
 
 
@@ -154,7 +155,7 @@ namespace ComputeCS.Components
                 actionTask,
                 meshTask,
             };
-            
+
             if (createParams.ContainsKey("config"))
             {
                 var cfdTask = new GenericViewSet<Task>(
@@ -173,8 +174,114 @@ namespace ComputeCS.Components
                 );
                 tasks.Add(cfdTask);
             }
-            
+
             inputData.SubTasks = tasks;
+
+            return inputData.ToJson();
+        }
+
+        /// <summary>
+        /// This method is used for creating Radiance cases on Compute
+        /// </summary>
+        public static string Create(
+            string inputJson,
+            byte[] geometryFile,
+            string dependentOn,
+            bool create
+        )
+        {
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var parentTask = inputData.Task;
+            var project = inputData.Project;
+            var solution = inputData.RadiationSolution;
+            var subTasks = inputData.SubTasks;
+            var probeTask = GetProbeTask(subTasks, dependentOn);
+            const string caseDir = "objects";
+
+            if (parentTask == null)
+            {
+                return null;
+            }
+
+            if (project == null)
+            {
+                return null;
+            }
+
+            if (create)
+            {
+                UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radianceGeom");
+                UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
+                UploadBSDFFile(tokens, inputData.Url, parentTask.UID, solution.Materials);
+            }
+
+            var actionTaskQueryParams = new Dictionary<string, object>
+            {
+                {"name", "Actions"},
+                {"parent", parentTask.UID},
+                {"project", project.UID}
+            };
+            if (probeTask != null)
+            {
+                actionTaskQueryParams.Add("dependent_on", probeTask.UID);
+            }
+            
+            // Tasks to Handle MagPy Celery Actions
+            // First Action to create Mesh Files
+            var actionTask = new GenericViewSet<Task>(
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
+            ).GetOrCreate(
+                actionTaskQueryParams,
+                new Dictionary<string, object>
+                {
+                    {
+                        "config", new Dictionary<string, object>
+                        {
+                            {"task_type", "magpy"},
+                            {"cmd", "radiance.io.tasks.write_rad"},
+                            {"materials", inputData.RadiationSolution.Materials},
+                            {"case_dir", caseDir},
+                            {"method", solution.Method},
+                        }
+                    }
+                },
+                create
+            );
+
+            var createParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, object>
+                    {
+                        {"task_type", "radiance"},
+                        {"cmd", solution.Method},
+                        {"case_type", solution.CaseType},
+                        {"cpus", solution.CPUs},
+                        {"case_dir", caseDir},
+                        {"epw_file", Path.GetFileName(solution.EPWFile)},
+                        {"probes", solution.Probes},
+                    }
+                }
+            };
+            var radianceTask = new GenericViewSet<Task>(
+                tokens,
+                inputData.Url,
+                $"/api/project/{project.UID}/task/"
+            ).GetOrCreate(
+                new Dictionary<string, object>
+                {
+                    {"name", Utils.SnakeCaseToHumanCase(solution.Method)},
+                    {"parent", parentTask.UID},
+                    {"dependent_on", actionTask.UID}
+                },
+                createParams,
+                create
+            );
+            inputData.SubTasks.Add(actionTask);
+            inputData.SubTasks.Add(radianceTask);
 
             return inputData.ToJson();
         }
@@ -246,14 +353,16 @@ namespace ComputeCS.Components
             string url,
             string taskId,
             byte[] geometryFile,
-            List<Dictionary<string, byte[]>> refinementRegions
+            string caseFolder,
+            string fileName,
+            List<Dictionary<string, byte[]>> refinementRegions = null
         )
         {
             // Upload File to parent task
             var geometryUpload = new GenericViewSet<Dictionary<string, object>>(
                 tokens,
                 url,
-                $"/api/task/{taskId}/file/foam/constant/triSurface/cfdGeom.stl"
+                $"/api/task/{taskId}/file/{caseFolder}/{fileName}.stl"
             ).Update(
                 null,
                 new Dictionary<string, object>
@@ -270,12 +379,12 @@ namespace ComputeCS.Components
             {
                 foreach (var refinementRegion in refinementRegions)
                 {
-                    var fileName = refinementRegion.Keys.First();
-                    var file = refinementRegion[fileName];
+                    var refinementFileName = refinementRegion.Keys.First();
+                    var file = refinementRegion[refinementFileName];
                     var refinementUpload = new GenericViewSet<Dictionary<string, object>>(
                         tokens,
                         url,
-                        $"/api/task/{taskId}/file/foam/constant/triSurface/{fileName}.stl"
+                        $"/api/task/{taskId}/file/foam/constant/triSurface/{refinementFileName}.stl"
                     ).Update(
                         null,
                         new Dictionary<string, object>
@@ -424,6 +533,7 @@ namespace ComputeCS.Components
                         throw new Exception(
                             $"Got the following error, while trying to upload: {file}: {response["error_messages"]}");
                     }
+
                     Thread.Sleep(100);
                 }
             }
@@ -476,7 +586,8 @@ namespace ComputeCS.Components
                     batFiles++;
                 }
             }
-            return new List<int>{batFiles, 1, 1};
+
+            return new List<int> {batFiles, 1, 1};
         }
 
         public static Dictionary<string, double> GetTaskEstimates(string inputJson)
@@ -484,16 +595,19 @@ namespace ComputeCS.Components
             var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var solution = inputData.CFDSolution;
-            
-            if (solution == null){return new Dictionary<string, double>();}
-            
+
+            if (solution == null)
+            {
+                return new Dictionary<string, double>();
+            }
+
             var cells = inputData.Mesh.CellEstimate;
             var iterations = solution.Iterations["init"];
 
-            
+
             var nCPUs = 1;
             solution.CPUs.ForEach(cpu => nCPUs *= cpu);
-            
+
             var meshEstimate = new GenericViewSet<TaskEstimate>(
                 tokens,
                 inputData.Url,
@@ -509,7 +623,7 @@ namespace ComputeCS.Components
 
             var totalTime = meshEstimate.Time;
             var totalCost = meshEstimate.Cost;
-            
+
             if (solution.CaseType == "VirtualWindTunnel")
             {
                 var angleEstimate = new GenericViewSet<TaskEstimate>(
@@ -538,9 +652,10 @@ namespace ComputeCS.Components
                         {"iterations", iterations}
                     }
                 );
-                
+
                 totalTime += prepareEstimate.Time + angleEstimate.Time;
-                totalCost += prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;;
+                totalCost += prepareEstimate.Cost + angleEstimate.Cost * solution.Angles.Count;
+                ;
             }
 
             return new Dictionary<string, double>
@@ -549,6 +664,97 @@ namespace ComputeCS.Components
                 {"time", totalTime},
                 {"cells", cells}
             };
+        }
+
+        public static void UploadEPWFile(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            string epwFile
+        )
+        {
+            var epwFileContent = File.ReadAllBytes(epwFile);
+            var epwName = Path.GetFileName(epwFile);
+            {
+                // Upload EPW File to parent task
+                var uploadTask = new GenericViewSet<Dictionary<string, object>>(
+                    tokens,
+                    url,
+                    $"/api/task/{taskId}/file/weather/{epwName}"
+                ).Update(
+                    null,
+                    new Dictionary<string, object>
+                    {
+                        {"file", epwFileContent}
+                    }
+                );
+                if (uploadTask.ContainsKey("error_messages"))
+                {
+                    throw new Exception(uploadTask["error_messages"].ToString());
+                }
+            }
+        }
+
+        public static Task GetProbeTask(
+            List<Task> subTasks,
+            string dependentName = ""
+            )
+        {
+            foreach (var subTask in subTasks)
+            {
+                if (string.IsNullOrEmpty(subTask.UID))
+                {
+                    continue;
+                }
+
+                if (dependentName == subTask.Name)
+                {
+                    return subTask;
+                }
+
+                if (subTask.Name == "Probe")
+                {
+                    return subTask;
+                }
+            }
+
+            return null;
+        }
+        
+        public static void UploadBSDFFile(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            List<RadianceMaterial> materials
+        )
+        {
+            foreach (var material in materials)
+            {
+                if (material.Overrides.ContainsKey("bsdf") && File.Exists((string)material.Overrides["bsdf"]))
+                {
+                    var path = (string) material.Overrides["bsdf"];
+                    var bsdfName = Path.GetFileName(path);
+                    var bsdfFileContent = File.ReadAllBytes(path);
+                    
+                    var uploadTask = new GenericViewSet<Dictionary<string, object>>(
+                        tokens,
+                        url,
+                        $"/api/task/{taskId}/file/bsdf/{bsdfName}"
+                    ).Update(
+                        null,
+                        new Dictionary<string, object>
+                        {
+                            {"file", bsdfFileContent}
+                        }
+                    );
+                    if (uploadTask.ContainsKey("error_messages"))
+                    {
+                        throw new Exception(uploadTask["error_messages"].ToString());
+                    }
+
+                    material.Overrides["bsdf"] = bsdfName;
+                }
+            }
         }
     }
 }

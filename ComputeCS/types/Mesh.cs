@@ -61,4 +61,11 @@ namespace ComputeCS.types
         [JsonProperty("locationInMesh")]
         public List<double> LocationInMesh;
     }
+
+    public class RadiationMesh : SerializeBase<RadiationMesh>
+    {
+        public List<string> MeshIds;
+        public List<List<double>> Points;
+        public List<List<double>> Normals;
+    }
 }

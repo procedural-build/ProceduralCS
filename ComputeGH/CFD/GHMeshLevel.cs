@@ -1,35 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
-using ComputeCS.Grasshopper.Utils;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 
-
 namespace ComputeCS.Grasshopper
 {
-    public class cfdMeshLevel : GH_Component
+    public class CFDMeshLevel : GH_Component
     {
-        public cfdMeshLevel() : base("CFD Mesh Level", "Mesh Level", "Defines a CFD Mesh Level", "Compute", "Mesh")
+        public CFDMeshLevel() : base("CFD Mesh Level", "Mesh Level", "Defines a CFD Mesh Level", "Compute", "Mesh")
         {
         }
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
-            pManager.AddNumberParameter("minLevel", "minLevel", "Minimum Level", GH_ParamAccess.item);
-            pManager.AddNumberParameter("maxLevel", "maxLevel", "Maximum Level", GH_ParamAccess.item, 0);
+            pManager.AddGenericParameter("Objects", "Objects", "Objects", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Min Level", "Min Level", "Minimum Level", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Max Level", "Max Level", "Maximum Level", GH_ParamAccess.item, 0);
 
             pManager[2].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("level", "level", "level", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Level", "Level", "Level", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon => Resources.IconMeshLevel;
+        protected override Bitmap Icon => Resources.IconMeshLevel;
 
         public override Guid ComponentGuid => new Guid("57bbca4d-9a11-4797-b90a-a5e735b9f803");
 

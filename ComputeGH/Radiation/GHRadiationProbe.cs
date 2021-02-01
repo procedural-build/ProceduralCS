@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
@@ -12,17 +13,17 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino;
 
-namespace ComputeCS.Grasshopper
+namespace ComputeGH.Radiation
 {
-    public class GHProbe : GH_Component
+    public class GHRadiationProbe : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbe class.
         /// </summary>
-        public GHProbe()
-            : base("Probe Points", "Probe Points",
-                "Probe the CFD case to get the results in the desired points",
-                "Compute", "CFD")
+        public GHRadiationProbe()
+            : base("Probe Radiation", "Probe Radiation",
+                "Probe radiation case to get the results in the desired points",
+                "Compute", "Radiation")
         {
         }
 
@@ -32,42 +33,19 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddPointParameter("Points", "Points", "Points to create the sample sets from.",
+            pManager.AddPointParameter("Points", "Points", "Probe points where you want to get radiation values.",
+                GH_ParamAccess.tree);
+            pManager.AddVectorParameter("Normals", "Normals", "Normals to the probe points given above.",
                 GH_ParamAccess.tree);
             pManager.AddTextParameter("Names", "Names",
                 "Give names to each branch of in the points tree. The names can later be used to identify the points.",
                 GH_ParamAccess.list);
-            pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
-                GH_ParamAccess.list);
-            pManager.AddIntegerParameter("CPUs", "CPUs",
-                "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96. \nIn most cases it is not advised to use more CPUs than 1, as the time it takes to decompose and reconstruct the case will exceed the speed-up gained by multiprocessing the probing.",
-                GH_ParamAccess.item, 1);
-            pManager.AddTextParameter("DependentOn", "DependentOn",
-                "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
-                GH_ParamAccess.item);
-            pManager.AddTextParameter("Case Directory", "Case Dir",
-                "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
-            pManager.AddTextParameter("Overrides", "Overrides",
-                "Takes overrides in JSON format: \n" +
-                "{\n\t\"FIELD\": \"VALUE\", ...\n}\n" +
-                "Fields you can overwrite:\n" +
-                "libs\n" +
-                "executeControl\n" +
-                "writeControl\n" +
-                "interpolationScheme\n" +
-                "setFormat",
-                GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
                 GH_ParamAccess.item, false);
 
-            pManager[2].Optional = true;
             pManager[3].Optional = true;
             pManager[4].Optional = true;
-            pManager[5].Optional = true;
-            pManager[6].Optional = true;
-            pManager[7].Optional = true;
-            pManager[8].Optional = true;
         }
 
         /// <summary>
@@ -86,17 +64,14 @@ namespace ComputeCS.Grasshopper
         {
             string inputJson = null;
             var points = new GH_Structure<GH_Point>();
+            var normals = new GH_Structure<GH_Vector>();
             var names = new List<string>();
-            var fields = new List<string>();
-            var cpus = 1;
-            string dependentOn = null;
-            var caseDir = "VWT";
-            var overrides = "";
             var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
             if (!DA.GetDataTree(1, out points)) return;
-            if (!DA.GetDataList(2, names))
+            if (!DA.GetDataTree(2, out normals)) return;
+            if (!DA.GetDataList(3, names))
             {
                 for (var i = 0; i < points.Branches.Count; i++)
                 {
@@ -104,28 +79,19 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
-            if (!DA.GetDataList(3, fields))
-            {
-                fields.Add("U");
-            }
-
-            DA.GetData(4, ref cpus);
-            DA.GetData(5, ref dependentOn);
-            DA.GetData(6, ref caseDir);
-            DA.GetData(7, ref overrides);
-            DA.GetData(8, ref create);
+            DA.GetData(4, ref create);
 
             var convertedPoints = Geometry.ConvertPointsToList(points);
-            caseDir = caseDir.TrimEnd('/');
+            var convertedNormals = Geometry.ConvertPointsToList(normals);
 
             // Get Cache to see if we already did this
-            var cacheKey = string.Join("", points) + string.Join("", fields) + string.Join("", names);
+            var cacheKey = string.Join("", points) + string.Join("", names) + inputJson;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
             if (cachedValues == null || create)
             {
-                var queueName = "probe";
+                var queueName = "radiationProbe";
 
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
@@ -137,15 +103,11 @@ namespace ComputeCS.Grasshopper
                     {
                         try
                         {
-                            var results = Probe.ProbePoints(
+                            var results = Probe.RadiationProbes(
                                 inputJson,
                                 convertedPoints,
-                                fields,
+                                convertedNormals,
                                 names,
-                                ComponentUtils.ValidateCPUs(cpus),
-                                dependentOn,
-                                caseDir,
-                                overrides,
                                 create
                             );
                             cachedValues = results;
@@ -174,14 +136,21 @@ namespace ComputeCS.Grasshopper
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (errors != null)
             {
-                throw new Exception(errors);
+                if (errors.Contains("No object found"))
+                {
+                    Message = "No Probe Task found.";
+                }
+                else
+                {
+                    throw new Exception(errors);
+                }
+                
             }
 
             // Read from Cache
-            string outputs = null;
             if (cachedValues != null)
             {
-                outputs = cachedValues;
+                var outputs = cachedValues;
                 DA.SetData(0, outputs);
                 Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true")
@@ -205,6 +174,6 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("2f0bdda2-f7eb-4fc7-8bf0-a2fd5a787493");
+        public override Guid ComponentGuid => new Guid("ca0e9bd3-46a9-4cc7-b379-07b43d27e46a");
     }
 }

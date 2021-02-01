@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using ComputeGH.Grasshopper.Utils;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading;
 using ComputeCS.Grasshopper;
-using ComputeCS.Grasshopper.Utils;
-using ComputeCS.utils;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
@@ -72,7 +70,7 @@ namespace ComputeGH.Utils
             pManager.AddMeshParameter("AnalysisMesh", "AnalysisMesh", "Created analysis mesh", GH_ParamAccess.tree);
             pManager.AddPointParameter("FaceCenters", "FaceCenters", "Face centers of the created mesh",
                 GH_ParamAccess.tree);
-            pManager.AddPointParameter("FaceNormals", "FaceNormals", "Face Normals of the created mesh",
+            pManager.AddVectorParameter("FaceNormals", "FaceNormals", "Face Normals of the created mesh",
                 GH_ParamAccess.tree);
         }
 

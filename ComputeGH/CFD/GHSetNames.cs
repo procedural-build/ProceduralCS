@@ -1,34 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
-using ComputeCS.Grasshopper.Utils;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-
 
 namespace ComputeCS.Grasshopper
 {
     public class SetNames : GH_Component
     {
-        public SetNames() : base("setNames", "setNames", "Set the Compute Name of Objects", "Compute", "Utils")
+        public SetNames() : base("Set Names", "Set Names", "Set the Compute Name of Objects", "Compute", "Utils")
         {
         }
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
-            pManager.AddTextParameter("names", "names", "names", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Objects", "Objects", "Objects", GH_ParamAccess.list);
+            pManager.AddTextParameter("Names", "Names", "Names", GH_ParamAccess.list);
 
             pManager[1].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Objects", "Objects", "Objects", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon => Resources.IconSetName;
+        protected override Bitmap Icon => Resources.IconSetName;
 
         public override Guid ComponentGuid => new Guid("42064b04-7f26-4a93-b90e-e6111c075b51");
 

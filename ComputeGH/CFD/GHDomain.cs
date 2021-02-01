@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using ComputeCS.Grasshopper.Utils;
+using System.Drawing;
+using ComputeCS.types;
+using ComputeGH.Grasshopper.Utils;
+using ComputeGH.Properties;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
-using ComputeCS.types;
-using ComputeGH.Properties;
-using Grasshopper.Kernel.Parameters;
 
 namespace ComputeCS.Grasshopper
 {
-    public class cfdDomain : GH_Component
+    public class CFDDomain : GH_Component
     {
-        public cfdDomain() : base("CFD Domain", "Domain", "Create a CFD Domain", "Compute", "Mesh")
+        public CFDDomain() : base("CFD Domain", "Domain", "Create a CFD Domain", "Compute", "Mesh")
         {
         }
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Objects", "Objects", "Objects to include in the CFD domain",
                 GH_ParamAccess.list);
@@ -56,16 +57,17 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
-            pManager.AddTextParameter("Info", "Info", "Info\nCell estimation is based on an equation developed by Alexander Jacobson", GH_ParamAccess.item);
+            pManager.AddTextParameter("Info", "Info",
+                "Info\nCell estimation is based on an equation developed by Alexander Jacobson", GH_ParamAccess.item);
             pManager.AddBoxParameter("Bounding Box", "Bounding Box", "Bounding boxes representing the domain",
                 GH_ParamAccess.item);
             pManager.AddGenericParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
         }
 
-        protected override System.Drawing.Bitmap Icon => Resources.IconRectDomain;
+        protected override Bitmap Icon => Resources.IconRectDomain;
 
         public override Guid ComponentGuid => new Guid("12aa93b6-fc8e-417c-9c8a-200d59e39a21");
 
@@ -174,7 +176,8 @@ namespace ComputeCS.Grasshopper
             };
 
             DA.SetData(0, outputs.ToJson());
-            DA.SetData(1, $"Estimated number of cells: {cellEstimation}\nThis is only an estimation and will probably be correct within a +/-10% margin.");
+            DA.SetData(1,
+                $"Estimated number of cells: {cellEstimation}\nThis is only an estimation and will probably be correct within a +/-10% margin.");
             DA.SetData(2, bb);
             DA.SetDataList(3, geometry);
         }

@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Drawing;
 using ComputeCS.Components;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
-using ComputeCS.GrasshopperUtils;
 
 namespace ComputeCS.Grasshopper
 {
@@ -15,7 +15,7 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the computeLogin class.
         /// </summary>
         public ComputeSolution()
-            : base("Compute Solution", "CFD Solution",
+            : base("CFD Solution", "CFD Solution",
                 "Create the Solution Parameters for a CFD Case",
                 "Compute", "CFD")
         {
@@ -26,7 +26,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", 
+            pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component",
                 GH_ParamAccess.item);
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "Number of CPUs to run the simulation across. Valid choices are:\n" +
@@ -40,8 +40,8 @@ namespace ComputeCS.Grasshopper
                 "VirtualWindTunnel rotates and runs the CFD the number of time you specifies it in the \"Number of Angles\" input. This is used for outdoor comfort studies.\n" +
                 "MeshOnly only runs the meshing part. You can run this first. Check the mesh and then pick either SimpleCase or VirtualWindTunnel depending on your needs.",
                 GH_ParamAccess.item, 0);
-            pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions", 
-                "This should be a list of boundary conditions generated with the Compute Boundary Conditions components.", 
+            pManager.AddTextParameter("Boundary Conditions", "Boundary Conditions",
+                "This should be a list of boundary conditions generated with the Compute Boundary Conditions components.",
                 GH_ParamAccess.list);
             pManager.AddIntegerParameter("Iterations", "Iterations",
                 "Number of iterations to run.",
@@ -149,7 +149,7 @@ namespace ComputeCS.Grasshopper
         {
             "SimpleCase", "VirtualWindTunnel", "MeshOnly"
         };
-        
+
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>

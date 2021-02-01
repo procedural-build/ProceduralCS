@@ -6,7 +6,7 @@ using Rhino.Display;
 using Rhino.DocObjects;
 using Rhino.Geometry;
 
-namespace ComputeCS.Grasshopper.Utils
+namespace ComputeGH.Grasshopper.Utils
 {
     public class Types
     {
