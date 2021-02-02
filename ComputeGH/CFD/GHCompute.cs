@@ -67,6 +67,7 @@ namespace ComputeCS.Grasshopper
             var folder = string.Empty;
 
             if (!DA.GetData(0, ref inputJson)) return;
+            if (inputJson == "error") return;
 
             DA.GetDataList(1, geometry);
             DA.GetData(2, ref folder);

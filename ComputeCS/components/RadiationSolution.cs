@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ComputeCS.types;
 using Newtonsoft.Json;
@@ -25,6 +26,11 @@ namespace ComputeCS.Components
             if (overrides != null)
             {
                 overrides_ = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
+            }
+
+            if (!File.Exists(epwFile))
+            {
+                throw new FileNotFoundException($"{epwFile} does not exist!");
             }
             
             var solution = new types.RadiationSolution

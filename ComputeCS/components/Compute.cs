@@ -730,7 +730,7 @@ namespace ComputeCS.Components
         {
             foreach (var material in materials)
             {
-                if (material.Overrides.ContainsKey("bsdf") && File.Exists((string)material.Overrides["bsdf"]))
+                if (material.Overrides != null && material.Overrides.ContainsKey("bsdf") && File.Exists((string)material.Overrides["bsdf"]))
                 {
                     var path = (string) material.Overrides["bsdf"];
                     var bsdfName = Path.GetFileName(path);
