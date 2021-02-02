@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Activities;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.utils.Cache;
@@ -103,6 +105,13 @@ namespace ComputeCS.Grasshopper
                     names.Add($"set{i.ToString()}");    
                 }
             }
+            else
+            {
+                foreach (var name in names)
+                {
+                    ValidateName(name);
+                }
+            }
 
             if (!DA.GetDataList(3, fields))
             {
@@ -191,6 +200,18 @@ namespace ComputeCS.Grasshopper
             }
         }
 
+        private static void ValidateName(string name)
+        {
+            var illegalCharacters = new List<string> {"?", "&", "/", "%", "#", "!", "+", " "};
+            if (illegalCharacters.Any(name.Contains))
+            {
+                throw new ValidationException(
+                    $"{name} contains illegal characters. " +
+                    $"A name cannot include any on the following characters: {string.Join(", ", illegalCharacters)}"
+                );
+            }
+        }
+        
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
