@@ -21,12 +21,6 @@ namespace ComputeCS.Components
             var inputData = new Inputs().FromJson(inputJson);
 
             var materials_ = materials.Select(material => new RadianceMaterial().FromJson(material)).ToList();
-            // Convert overrides to dict
-            Dictionary<string, object> overrides_ = null;
-            if (overrides != null)
-            {
-                overrides_ = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
-            }
 
             if (!File.Exists(epwFile))
             {
@@ -40,7 +34,7 @@ namespace ComputeCS.Components
                 CaseType = caseType,
                 Materials = materials_,
                 EPWFile = epwFile,
-                Overrides = overrides_,
+                Overrides = overrides!=null? new RadiationSolutionOverrides().FromJson(overrides): null,
             };
 
             inputData.RadiationSolution = solution;

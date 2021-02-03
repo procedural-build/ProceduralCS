@@ -23,7 +23,16 @@ namespace ComputeCS.types
         public string CaseType;
         public List<RadianceMaterial> Materials;
         [JsonProperty("epw_file")] public string EPWFile;
-        public Dictionary<string, object> Overrides;
+        public RadiationSolutionOverrides Overrides;
         public Dictionary<string, int> Probes;
+    }
+
+    public class RadiationSolutionOverrides : SerializeBase<RadiationSolutionOverrides>
+    {
+        public uint AmbientBounces;
+        public uint AmbientDivisions;
+        public double LimitRayWeight;
+        public uint Samples;
+        public uint ReinhartDivisions;
     }
 }

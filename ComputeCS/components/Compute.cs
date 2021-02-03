@@ -226,60 +226,79 @@ namespace ComputeCS.Components
             {
                 actionTaskQueryParams.Add("dependent_on", probeTask.UID);
             }
+
+            var actionTaskConfig = new Dictionary<string, object>
+            {
+                {"task_type", "magpy"},
+                {"cmd", "radiance.io.tasks.write_rad"},
+                {"materials", inputData.RadiationSolution.Materials},
+                {"case_dir", caseDir},
+                {"method", solution.Method},
+            };
+            if (solution.Overrides != null && solution.Overrides.ReinhartDivisions > 1)
+            {
+                actionTaskConfig.Add("reinhart_divisions", solution.Overrides.ReinhartDivisions);
+            }
             
             // Tasks to Handle MagPy Celery Actions
             // First Action to create Mesh Files
-            var actionTask = new GenericViewSet<Task>(
+            var actionTask = Tasks.GetCreateOrUpdateTask(
                 tokens,
                 inputData.Url,
-                $"/api/project/{project.UID}/task/"
-            ).GetOrCreate(
+                $"/api/task/",
                 actionTaskQueryParams,
                 new Dictionary<string, object>
                 {
                     {
-                        "config", new Dictionary<string, object>
-                        {
-                            {"task_type", "magpy"},
-                            {"cmd", "radiance.io.tasks.write_rad"},
-                            {"materials", inputData.RadiationSolution.Materials},
-                            {"case_dir", caseDir},
-                            {"method", solution.Method},
-                        }
+                        "config", actionTaskConfig
                     }
                 },
                 create
             );
+            if (actionTask.ErrorMessages != null && actionTask.ErrorMessages.Count > 0)
+            {
+                throw new Exception(actionTask.ErrorMessages.First());
+            }
 
+            var taskConfig = new Dictionary<string, object>
+            {
+                {"task_type", "radiance"},
+                {"cmd", solution.Method},
+                {"case_type", solution.CaseType},
+                {"cpus", solution.CPUs},
+                {"case_dir", caseDir},
+                {"epw_file", Path.GetFileName(solution.EPWFile)},
+                {"probes", solution.Probes},
+            };
+            if (solution.Overrides != null)
+            {
+                taskConfig.Add("overrides", solution.Overrides);
+            }
             var createParams = new Dictionary<string, object>
             {
                 {
-                    "config", new Dictionary<string, object>
-                    {
-                        {"task_type", "radiance"},
-                        {"cmd", solution.Method},
-                        {"case_type", solution.CaseType},
-                        {"cpus", solution.CPUs},
-                        {"case_dir", caseDir},
-                        {"epw_file", Path.GetFileName(solution.EPWFile)},
-                        {"probes", solution.Probes},
-                    }
+                    "config", taskConfig
                 }
             };
-            var radianceTask = new GenericViewSet<Task>(
+            var radianceTask = Tasks.GetCreateOrUpdateTask(
                 tokens,
                 inputData.Url,
-                $"/api/project/{project.UID}/task/"
-            ).GetOrCreate(
+                $"/api/task/",
                 new Dictionary<string, object>
                 {
                     {"name", Utils.SnakeCaseToHumanCase(solution.Method)},
                     {"parent", parentTask.UID},
-                    {"dependent_on", actionTask.UID}
+                    {"dependent_on", actionTask.UID},
+                    {"project", project.UID}
                 },
                 createParams,
                 create
             );
+            if (radianceTask.ErrorMessages != null && radianceTask.ErrorMessages.Count > 0)
+            {
+                throw new Exception(radianceTask.ErrorMessages.First());
+            }
+            
             inputData.SubTasks.Add(actionTask);
             inputData.SubTasks.Add(radianceTask);
 
