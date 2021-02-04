@@ -212,8 +212,16 @@ namespace ComputeCS.Components
             if (create)
             {
                 UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radianceGeom");
-                UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
-                UploadBSDFFile(tokens, inputData.Url, parentTask.UID, solution.Materials);
+                if (solution.Method == "three_phase")
+                {
+                    UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
+                    UploadBSDFFile(tokens, inputData.Url, parentTask.UID, solution.Materials);
+                }
+                if (solution.Method == "solar_radiation")
+                {
+                    UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
+                }
+                
             }
 
             var actionTaskQueryParams = new Dictionary<string, object>
@@ -257,6 +265,10 @@ namespace ComputeCS.Components
             );
             if (actionTask.ErrorMessages != null && actionTask.ErrorMessages.Count > 0)
             {
+                if (actionTask.ErrorMessages.First() == "No object found.")
+                {
+                    return null;
+                }
                 throw new Exception(actionTask.ErrorMessages.First());
             }
 
@@ -267,12 +279,16 @@ namespace ComputeCS.Components
                 {"case_type", solution.CaseType},
                 {"cpus", solution.CPUs},
                 {"case_dir", caseDir},
-                {"epw_file", Path.GetFileName(solution.EPWFile)},
                 {"probes", solution.Probes},
             };
             if (solution.Overrides != null)
             {
                 taskConfig.Add("overrides", solution.Overrides);
+            }
+
+            if (!string.IsNullOrEmpty(solution.EPWFile))
+            {
+                taskConfig.Add("epw_file", Path.GetFileName(solution.EPWFile));
             }
             var createParams = new Dictionary<string, object>
             {

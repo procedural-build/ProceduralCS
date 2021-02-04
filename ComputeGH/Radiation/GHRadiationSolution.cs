@@ -37,7 +37,7 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("Materials", "Materials", 
                 "This should be a list of materials generated with the Radiance Material components.", 
                 GH_ParamAccess.list);
-            pManager.AddTextParameter("EPW File", "EPW File", "Path to where the EPW file is located.",
+            pManager.AddTextParameter("EPW File", "EPW File", "Path to where the EPW file is located. Only used for ThreePhase and Solar Radiation",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Accepts the following overrides with defaults in JSON format: \n" +
@@ -48,6 +48,7 @@ namespace ComputeGH.Radiation
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
+            pManager[4].Optional = true;
             pManager[5].Optional = true;
             
 
@@ -93,7 +94,7 @@ namespace ComputeGH.Radiation
             DA.GetData(2, ref method);
             //DA.GetData(3, ref caseType);
             if (!DA.GetDataList(3, materials)) return;
-            if (!DA.GetData(4, ref epwFile)) return;
+            if (!DA.GetData(4, ref epwFile) && (method <= 1)) return;
             DA.GetData(5, ref overrides);
 
             var outputs = RadiationSolution.Setup(
@@ -116,9 +117,11 @@ namespace ComputeGH.Radiation
 
         private static readonly List<string> Methods = new List<string>
         {
-            //"daylight_factor",
             "three_phase",
-            //"five_phase",
+            "solar_radiation",
+            "daylight_factor",
+            "sky_view_factor"
+            
         };
 
         private static readonly List<string> CaseTypes = new List<string>

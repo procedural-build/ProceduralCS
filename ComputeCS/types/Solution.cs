@@ -31,8 +31,18 @@ namespace ComputeCS.types
     {
         public uint AmbientBounces;
         public uint AmbientDivisions;
+        public double AmbientAccuracy;
+        public uint AmbientSamples;
+        public uint AmbientResolution;
+        public double DirectCertainty;
+        public double DirectSampling;
+        public double DirectThreshold;
+        public uint LimitReflections;
         public double LimitRayWeight;
         public uint Samples;
+        public uint SamplingThreshold;
+        public uint SecondaryPresampling;
+        public uint SecondaryRelay;
         public uint ReinhartDivisions;
     }
 }

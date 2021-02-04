@@ -25,9 +25,8 @@ namespace ComputeCS
                     tokens,
                     url,
                     path
-                ).GetByQueryParams(
-                    queryParams
-                );
+                ).GetByQueryParams(queryParams);
+                
                 if (task != null && create)
                 {
                     if (new List<string>{"failed", "finished", "stopped"}.IndexOf(task.Status) != -1)
