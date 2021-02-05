@@ -1,6 +1,6 @@
 ﻿# BUILD YAK PACKAGE
 cd $env:DIST_PATH\
-..\$env:YAK_EXE build --platform win
+..\yak.exe build --platform win
 
 # COPY TO RHINO 7
 $rh6 = (Get-ChildItem . -Filter *.yak)[0]
