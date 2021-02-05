@@ -38,7 +38,7 @@ namespace ComputeCS.Components
 
             var taskQueryParams = new Dictionary<string, object>
             {
-                {"name", "Daylight Metrics"},
+                {"name", Utils.SnakeCaseToHumanCase(preset)},
                 {"parent", parentTask.UID},
             };
             if (daylightTask != null)

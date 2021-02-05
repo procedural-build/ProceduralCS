@@ -44,7 +44,7 @@ namespace ComputeGH.Radiation
         /// </summary>
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
+            pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Metric", "Metric", "Result Metric",
                 GH_ParamAccess.tree);
         }
@@ -84,7 +84,7 @@ namespace ComputeGH.Radiation
                         {
                             var results = RadiationProbeResult.ReadResults(folder);
                             probeResults = ConvertToDataTree(results);
-                            info = UpdateInfo(results.Keys.ToList());
+                            info = UpdateInfo(results);
                             StringCache.setCache(cacheKey + "progress", "Done");
                             StringCache.setCache(cacheKey, "results");
                         }
@@ -112,7 +112,7 @@ namespace ComputeGH.Radiation
 
             if (info != null)
             {
-                DA.SetData(0, info);
+                DA.SetDataTree(0, info);
             }
 
             if (probeResults != null)
@@ -130,31 +130,49 @@ namespace ComputeGH.Radiation
         }
 
 
-        private static DataTree<object> ConvertToDataTree(Dictionary<string, IEnumerable<object>> data)
+        private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, IEnumerable<object>>> data)
         {
             var output = new DataTree<object>();
             var patchCounter = 0;
             foreach (var patchKey in data.Keys)
             {
-                var path = new GH_Path(patchCounter);
-                output.AddRange(data[patchKey], path);
+                var metricCounter = 0;
+                foreach (var metricKey in data[patchKey].Keys)
+                {
+                    var path = new GH_Path(new int[] {patchCounter, metricCounter});
+                    output.AddRange(data[patchKey][metricKey], path);
+                    metricCounter++;
+                }
                 patchCounter++;
             }
 
             return output;
         }
 
-        private static string UpdateInfo(List<string> keys)
+        private static DataTree<object> UpdateInfo(Dictionary<string, Dictionary<string, IEnumerable<object>>> data)
         {
             var info = "Patch Names:\n";
             var i = 0;
-            foreach (var key in keys)
+            
+            foreach (var key in data.Keys)
             {
                 info += $"{{{i};*}} is {key}\n";
                 i++;
             }
-
-            return info;
+            
+            var j = 0;
+            info += "\nMetrics:\n";
+            var output = new DataTree<object>();
+            var patchKey = data.Keys.ToList().First();
+            foreach (var metric in data[patchKey].Keys.ToList())
+            {
+                info += $"{{*;{j}}} is {metric}\n";
+                output.Add(metric, new GH_Path(1));
+                j++;
+            }
+            
+            output.Add(info, new GH_Path(0));
+            return output;
         }
 
 
@@ -168,7 +186,7 @@ namespace ComputeGH.Radiation
         /// </summary>
         public override Guid ComponentGuid => new Guid("1728a9d5-868d-4e17-aede-6d346233c9d3");
 
-        private string info;
+        private DataTree<object> info;
         private DataTree<object> probeResults;
     }
 }

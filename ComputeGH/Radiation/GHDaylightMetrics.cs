@@ -167,9 +167,10 @@ namespace ComputeGH.Radiation
         private static readonly List<string> Presets = new List<string>
         {
             "daylight_autonomy",
-            //"spatial_daylight_autonomy",
-            //"continuous_daylight_autonomy",
-            //"useful_daylight_illuminances"
+            "spatial_daylight_autonomy",
+            "continuous_daylight_autonomy",
+            "useful_daylight_illuminances",
+            "statistics"
         };
         
         private void ExpireSolutionThreadSafe(bool recompute = false)
