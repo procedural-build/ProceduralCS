@@ -35,10 +35,12 @@ jobs:
         run: msbuild  /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
       - name: Build Package
-        run: cd ${{env.DIST_PATH}}\ && ..\${{env.YAK_EXE}} build
+        run: |
+          & .\buildPackage.ps1
 
       - name: Push Package
         run: cd ${{env.DIST_PATH}}\ && Get-ChildItem . -Filter *.yak | ForEach-Object -Process {..\${{env.YAK_EXE}} push $_}
+        
       - name: Prepare Release
         run: | 
           & .\componentChanges.ps1
