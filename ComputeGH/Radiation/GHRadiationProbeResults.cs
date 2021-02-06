@@ -166,7 +166,7 @@ namespace ComputeGH.Radiation
             var patchKey = data.Keys.ToList().First();
             foreach (var metric in data[patchKey].Keys.ToList())
             {
-                info += $"{{*;{j}}} is {metric}\n";
+                info += $"{{*;{j}}} is {ComputeCS.Utils.SnakeCaseToHumanCase(metric)}\n";
                 output.Add(metric, new GH_Path(1));
                 j++;
             }

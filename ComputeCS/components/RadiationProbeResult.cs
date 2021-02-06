@@ -132,6 +132,16 @@ namespace ComputeCS.Components
                     }
                     data[name].Add("standard_deviation", values);
                 }
+                else if (file.EndsWith(".sum"))
+                {
+                    var values = ReadStatisticData(file);
+                    var name = Path.GetFileName(file).Replace(".sum", "");
+                    if (!data.ContainsKey(name))
+                    {
+                        data.Add(name, new Dictionary<string, IEnumerable<object>>());
+                    }
+                    data[name].Add("sum", values);
+                }
             }
 
             return data;
