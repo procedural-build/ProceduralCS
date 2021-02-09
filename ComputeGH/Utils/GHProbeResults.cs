@@ -37,10 +37,12 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
             pManager.AddMeshParameter("Mesh", "Mesh", "Original mesh from where the probe points is generated",
                 GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Distance", "Distance", "Distance from mesh face center to result point. Used for reconstructing the mesh.", GH_ParamAccess.item, 0.1);
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
+            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -67,7 +69,8 @@ namespace ComputeCS.Grasshopper
 
             if (!DA.GetData(0, ref folder)) return;
             DA.GetDataTree(1, out meshes);
-            DA.GetData(2, ref refresh);
+            DA.GetData(2, ref distance);
+            DA.GetData(3, ref refresh);
 
             // Get Cache to see if we already did this
             var cacheKey = folder;
@@ -174,7 +177,7 @@ namespace ComputeCS.Grasshopper
             RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
         
-        private static DataTree<object> CorrectMesh(
+        private DataTree<object> CorrectMesh(
             GH_Structure<GH_Mesh> meshes,
             Dictionary<string, List<List<double>>> points
             )
@@ -192,7 +195,7 @@ namespace ComputeCS.Grasshopper
                 // Check mesh normal. If the normal direction is fx Z, check that the points and mesh have the same value. If not throw an error. 
                 GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
                 var faceCenters = Enumerable.Range(0, mesh.Faces.Count()).Select(index => mesh.Faces.GetFaceCenter(index)).ToList();
-                var faceIndices = RTree.Point3dClosestPoints(faceCenters, GHPoints, 0.1);
+                var faceIndices = RTree.Point3dClosestPoints(faceCenters, GHPoints, distance);
 
                 var newMesh = new Mesh();
                 newMesh.Vertices.AddVertices(mesh.Vertices);
@@ -312,7 +315,8 @@ namespace ComputeCS.Grasshopper
             var fieldKey = data.Keys.ToList().First();
             var info = "Patch Names:\n";
             var i = 0;
-            foreach (var key in data[fieldKey].Keys)
+            var patches = data[fieldKey].Keys.ToList();
+            foreach (var key in patches)
             {
                 info += $"{{{i};*}} is {key}\n";
                 i++;
@@ -320,7 +324,7 @@ namespace ComputeCS.Grasshopper
 
             var j = 0;
             var angles = new List<string>();
-            var patchKey = data[fieldKey].Keys.ToList().First();
+            var patchKey = patches.First();
             info += "\nAngles:\n";
             foreach (var key in data[fieldKey][patchKey].Keys)
             {
@@ -332,9 +336,14 @@ namespace ComputeCS.Grasshopper
             var output = new DataTree<object>();
             output.Add(info, new GH_Path(0));
 
+            foreach (var patch in patches)
+            {
+                output.Add(patch, new GH_Path(1));
+            }
+            
             foreach (var angle in angles)
             {
-                output.Add(angle, new GH_Path(1));
+                output.Add(angle, new GH_Path(2));
             }
 
             return output;
@@ -380,6 +389,7 @@ namespace ComputeCS.Grasshopper
         private DataTree<object> correctedMesh;
         private DataTree<object> info;
         private List<string> resultKeys;
-        
+        private double distance;
+
     }
 }
