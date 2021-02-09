@@ -23,7 +23,7 @@ namespace ComputeCS.Grasshopper
         /// Initializes a new instance of the GHProbeResults class.
         /// </summary>
         public GHProbeResults()
-            : base("Probe Results", "Probe Results",
+            : base("Load Probe Results", "Load Probe Results",
                 "Loads the probe results from a file",
                 "Compute", "CFD")
         {
