@@ -47,7 +47,7 @@ namespace ComputeCS.Components
             var queryParams = new Dictionary<string, object> {{"filepath", downloadPath}, {"hash", true}};
             if (exclude.Count > 0)
             {
-                queryParams.Add("exclude", exclude);
+                queryParams.Add("exclude", string.Join(",", exclude));
             }
             var serverFiles = new GenericViewSet<TaskFile>(
                 tokens,
