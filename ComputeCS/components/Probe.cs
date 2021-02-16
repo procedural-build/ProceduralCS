@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ComputeCS.types;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace ComputeCS.Components
 {
     public static class Probe
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public static string ProbePoints(
             string inputJson,
             List<List<List<double>>> points,
@@ -31,6 +32,7 @@ namespace ComputeCS.Components
 
             if (parentTask == null)
             {
+                Logger.Info("Did not find any parent task.");
                 return null;
             }
 
@@ -54,7 +56,8 @@ namespace ComputeCS.Components
             var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
                 sampleSets, fields, overrides, create);
             inputData.SubTasks.Add(task);
-
+            
+            Logger.Info($"Created probe task: {task.UID}");
             return inputData.ToJson();
         }
 
@@ -72,17 +75,20 @@ namespace ComputeCS.Components
 
                 if (dependentName == subTask.Name)
                 {
+                    Logger.Info($"Found simulation task: {subTask.UID}");
                     return subTask;
                 }
 
                 if (subTask.Name == "SimpleCase")
                 {
+                    Logger.Info($"Found simulation task: {subTask.UID}");
                     return subTask;
                 }
                 if (subTask.Config == null){continue;}
                 
                 if (subTask.Config.ContainsKey("cmd") && (string) subTask.Config["cmd"] == "wind_tunnel")
                 {
+                    Logger.Info($"Found simulation task: {subTask.UID}");
                     return subTask;
                 }
 
@@ -91,11 +97,13 @@ namespace ComputeCS.Components
                     // Have to do this conversion to be able to compare the strings
                     if (((JArray) subTask.Config["commands"]).ToObject<List<string>>()[0] == "simpleFoam")
                     {
+                        Logger.Info($"Found simulation task: {subTask.UID}");
                         return subTask;
                     }
                 }
             }
 
+            Logger.Info($"Did not find any simulation task!");
             return null;
         }
 
@@ -118,7 +126,8 @@ namespace ComputeCS.Components
                 }
                 sampleSets.Add(sample);
             }
-
+            Logger.Info($"Generated sample sets for {names} with normal? {withNormals}");
+            Logger.Debug($"Generated sample set: {sampleSets}");
             return sampleSets;
         }
 
@@ -135,6 +144,7 @@ namespace ComputeCS.Components
             var index = 0;
             foreach (var name in names)
             {
+                Logger.Info($"Uploading probes from set {name} to the server");
                 new GenericViewSet<Dictionary<string, object>>(
                     tokens,
                     url,

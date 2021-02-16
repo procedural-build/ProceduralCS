@@ -5,13 +5,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="3.1.8"/>
-        <PackageReference Include="Newtonsoft.Json" Version="12.0.3"/>
-        <PackageReference Include="System.Resources.Extensions" Version="4.6.0"/>
+        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="3.1.8" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+        <PackageReference Include="NLog" Version="4.7.7" />
+        <PackageReference Include="System.Resources.Extensions" Version="4.6.0" />
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="Copy &quot;$(TargetPath)&quot; $(SolutionDir)dist\$(ProjectName).dll"/>
+        <Exec Command="Copy &quot;$(TargetPath)&quot; $(SolutionDir)dist\$(ProjectName).dll" />
     </Target>
 
 </Project>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ComputeCS.types;
 using Newtonsoft.Json;
+using NLog;
 
 namespace ComputeCS
 {
@@ -29,7 +30,8 @@ namespace ComputeCS
         public ComputeClient client = null;
         private string basePath = "";
         private string host = "";
-
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        
         public GenericViewSet(ComputeClient _client, string _host, string _basePath)
         {
             basePath = _basePath;
@@ -53,8 +55,8 @@ namespace ComputeCS
         }
 
         public ObjectType GetOrCreate(
-            Dictionary<string, object> query_params,
-            Dictionary<string, object> create_params = null,
+            Dictionary<string, object> queryParams,
+            Dictionary<string, object> createParams = null,
             bool create = false
         )
         {
@@ -63,7 +65,7 @@ namespace ComputeCS
             */
 
             // Check that at least a name or number is provided
-            if (query_params.Keys.Count == 0)
+            if (queryParams.Keys.Count == 0)
             {
                 throw new ArgumentException(@"Please provide some query parameters 
                 for filtering the List request at a minimum");
@@ -72,28 +74,30 @@ namespace ComputeCS
             // Do the Get or Create
             try
             {
-                return GetByQueryParams(query_params);
+                Logger.Debug($"Getting {typeof(ObjectType)} with query params: {queryParams}");
+                return GetByQueryParams(queryParams);
             }
             catch (ArgumentException err)
             {
                 if (create)
                 {
                     // Merge the query_params with create_params
-                    if (create_params == null)
+                    if (createParams == null)
                     {
-                        create_params = query_params;
+                        createParams = queryParams;
                     }
                     else
                     {
-                        create_params = query_params
-                            .Union(create_params)
+                        createParams = queryParams
+                            .Union(createParams)
                             .ToDictionary(s => s.Key, s => s.Value);
                     }
 
-                    // Create the object
-                    return Create(create_params);
+                    Logger.Debug($"Creating {typeof(ObjectType)} with create params: {createParams}");
+                    return Create(createParams);
                 }
-
+                
+                Logger.Error($"Could not get or create {typeof(ObjectType)}. Got error: {err.Message}");
                 return JsonConvert.DeserializeObject<ObjectType>("{\"error_messages\":[\"" + err.Message + "\"]}",
                     RESTClient.JsonSettings);
             }
@@ -117,7 +121,7 @@ namespace ComputeCS
                     "No object found."
                 );
             }
-
+            Logger.Debug($"Got {items.First().ToString()} by query params");
             return items.First();
         }
 
@@ -128,6 +132,7 @@ namespace ComputeCS
             /* Get a list of all Projects that this user can access 
             Optional query parameters may be provided to filter against name or number
             */
+            Logger.Debug($"Requesting List of {typeof(ObjectType)} on path: {basePath} with query params: {query_params}");
             return client.Request<List<ObjectType>>(
                 basePath,
                 query_params,
@@ -142,6 +147,7 @@ namespace ComputeCS
         {
             /* Create a new project with provided name and number 
             */
+            Logger.Debug($"Requesting Retrieve of {typeof(ObjectType)} on path: {ObjectPath(objectId)} with query params: {query_params}");
             return client.Request<ObjectType>(
                 ObjectPath(objectId),
                 query_params,
@@ -155,6 +161,7 @@ namespace ComputeCS
             Dictionary<string, object> query_params = null
         )
         {
+            Logger.Debug($"Requesting GET of {objectId} on path: {path} with query params: {query_params}");
             return client.Request(
                 ObjectPath(objectId),
                 path,
@@ -169,6 +176,7 @@ namespace ComputeCS
         {
             /* Create a new project with provided name and number 
             */
+            Logger.Debug($"Requesting POST of {typeof(ObjectType)} on path: {basePath} with create params: {data}");
             return client.Request<ObjectType>(
                 basePath,
                 null,
@@ -180,14 +188,15 @@ namespace ComputeCS
         public ObjectType Update(
             string objectId,
             Dictionary<string, object> data,
-            Dictionary<string, object> query_params = null
+            Dictionary<string, object> queryParams = null
         )
         {
             /* Create a new project with provided name and number 
             */
+            Logger.Debug($"Requesting PUT of {typeof(ObjectType)} on path: {ObjectPath(objectId)} with create params: {data} and query params: {queryParams}");
             return client.Request<ObjectType>(
                 ObjectPath(objectId),
-                query_params,
+                queryParams,
                 httpVerb.PUT,
                 data
             );
@@ -196,14 +205,15 @@ namespace ComputeCS
         public ObjectType PartialUpdate(
             string objectId,
             Dictionary<string, object> data,
-            Dictionary<string, object> query_params = null
+            Dictionary<string, object> queryParams = null
         )
         {
             /* Create a new project with provided name and number 
             */
+            Logger.Debug($"Requesting PATCH of {typeof(ObjectType)} on path: {ObjectPath(objectId)} with create params: {data} and query params: {queryParams}");
             return client.Request<ObjectType>(
                 ObjectPath(objectId),
-                query_params,
+                queryParams,
                 httpVerb.PATCH,
                 data
             );
@@ -211,14 +221,15 @@ namespace ComputeCS
 
         public ObjectType Delete(
             string objectId,
-            Dictionary<string, object> query_params = null
+            Dictionary<string, object> queryParams = null
         )
         {
             /* Create a new project with provided name and number 
             */
+            Logger.Debug($"Requesting DELETE of {typeof(ObjectType)} on path: {ObjectPath(objectId)} with query params: {queryParams}");
             return client.Request<ObjectType>(
                 ObjectPath(objectId),
-                query_params,
+                queryParams,
                 httpVerb.DELETE
             );
         }

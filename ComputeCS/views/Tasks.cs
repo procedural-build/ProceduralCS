@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ComputeCS;
 using ComputeCS.types;
-using Newtonsoft.Json;
-
+using NLog;
 
 namespace ComputeCS
 {
     public static class Tasks
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public static Task GetCreateOrUpdateTask(
             AuthTokens tokens,
             string url,
@@ -31,9 +30,11 @@ namespace ComputeCS
                 {
                     if (new List<string>{"failed", "finished", "stopped"}.IndexOf(task.Status) != -1)
                     {
+                        Logger.Debug($"Setting status to pending for Task: {task.UID}");
                         createParams.Add("status", "pending");
                     }
 
+                    Logger.Info($"Updating Task: {task.UID}");
                     task = new GenericViewSet<Task>(
                         tokens,
                         url,
@@ -63,6 +64,7 @@ namespace ComputeCS
                             .ToDictionary(s => s.Key, s => s.Value);
                     }
 
+                    Logger.Info($"Creating new task with create params: {createParams}");
                     // Create the object
                     return new GenericViewSet<Task>(
                         tokens,
@@ -71,6 +73,7 @@ namespace ComputeCS
                     ).Create(createParams);
                 }
 
+                Logger.Error($"Got error: {err.Message} while trying to create task");
                 return new Task {ErrorMessages = new List<string> {err.Message}};
             }
         }
