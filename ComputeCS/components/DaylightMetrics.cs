@@ -88,6 +88,10 @@ namespace ComputeCS.Components
             string dependentName = ""
         )
         {
+            if (subTasks == null)
+            {
+                return null;
+            }
             foreach (var subTask in subTasks)
             {
                 if (string.IsNullOrEmpty(subTask.UID))
