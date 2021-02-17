@@ -29,20 +29,35 @@ namespace ComputeCS.types
 
     public class RadiationSolutionOverrides : SerializeBase<RadiationSolutionOverrides>
     {
-        public uint AmbientBounces;
-        public uint AmbientDivisions;
-        public double AmbientAccuracy;
-        public uint AmbientSamples;
-        public uint AmbientResolution;
-        public double DirectCertainty;
-        public double DirectSampling;
-        public double DirectThreshold;
-        public uint LimitReflections;
-        public double LimitRayWeight;
-        public uint Samples;
-        public uint SamplingThreshold;
-        public uint SecondaryPresampling;
-        public uint SecondaryRelay;
-        public uint ReinhartDivisions;
+        public uint? AmbientBounces;
+        public uint? AmbientDivisions;
+        public double? AmbientAccuracy;
+        public uint? AmbientSamples;
+        public uint? AmbientResolution;
+        public double? DirectCertainty;
+        public double? DirectSampling;
+        public double? DirectThreshold;
+        public uint? LimitReflections;
+        public double? LimitRayWeight;
+        public uint? Samples;
+        public uint? SamplingThreshold;
+        public uint? SecondaryPresampling;
+        public uint? SecondaryRelay;
+        public uint? ReinhartDivisions;
+        public RadiationKeepSteps Keep;
+        public RadiationPaths Paths;
+    }
+
+    public class RadiationKeepSteps
+    {
+        public bool? All;
+        public bool? View;
+        public bool? Sky;
+        public bool? Daylight;
+    }
+    
+    public class RadiationPaths
+    {
+        public string Results;
     }
 }

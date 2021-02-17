@@ -283,7 +283,7 @@ namespace ComputeCS.Components
             };
             if (solution.Overrides != null)
             {
-                taskConfig.Add("overrides", solution.Overrides);
+                taskConfig.Add("overrides", solution.Overrides.ToDict());
             }
 
             if (!string.IsNullOrEmpty(solution.EPWFile))

@@ -20,6 +20,7 @@ namespace ComputeGH.Radiation
             "Create a task to compute Daylight Metrics, such as cDA, sDA, DA or UDI", "Compute", "Radiation")
         {
         }
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
@@ -28,19 +29,23 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Preset", "Preset", "Select a Daylight Metric", GH_ParamAccess.item,
                 0);
-            pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets.\nThe overrides should be given in the following JSON format:\n" +
-                                                                "{\n\"threshold\": 500,\n\"work_hours\": [8, 16], \"work_days\": [0, 5]\n}\nHere shown with the defaults.",
+            pManager.AddTextParameter("Overrides", "Overrides",
+                "Optional overrides to apply to the presets.\nThe overrides should be given in the following JSON format:\n" +
+                "{\n\"threshold\": 500,\n\"work_hours\": [8, 16], \"work_days\": [0, 5]\n}\nHere shown with the defaults.",
                 GH_ParamAccess.item, "");
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96.",
                 GH_ParamAccess.item, 1);
+            pManager.AddTextParameter("Case Directory", "Case Dir",
+                "Folder to save results in on the Compute server. Default is metrics", GH_ParamAccess.item, "metrics");
             pManager.AddBooleanParameter("Create", "Create", "Run the case on Procedural Compute",
                 GH_ParamAccess.item, false);
-            
+
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
             pManager[4].Optional = true;
+            pManager[5].Optional = true;
 
             AddNamedValues(pManager[1] as Param_Integer, Presets);
         }
@@ -85,6 +90,7 @@ namespace ComputeGH.Radiation
         {
             string inputJson = null;
             var overrides = "";
+            var caseDir = "metrics";
             var preset_ = 0;
             var compute = false;
             var cpus = 1;
@@ -101,8 +107,10 @@ namespace ComputeGH.Radiation
             {
                 return;
             }
+
             DA.GetData(3, ref cpus);
-            DA.GetData(4, ref compute);
+            DA.GetData(4, ref caseDir);
+            DA.GetData(5, ref compute);
 
             // Get Cache to see if we already did this
             var cacheKey = inputJson;
@@ -123,7 +131,8 @@ namespace ComputeGH.Radiation
                     {
                         try
                         {
-                            cachedValues = DaylightMetrics.Create(inputJson, overrides, preset, ComponentUtils.ValidateCPUs(cpus),compute);
+                            cachedValues = DaylightMetrics.Create(inputJson, overrides, preset,
+                                ComponentUtils.ValidateCPUs(cpus), caseDir, compute);
                             StringCache.setCache(cacheKey, cachedValues);
                             if (compute)
                             {
@@ -172,7 +181,7 @@ namespace ComputeGH.Radiation
             "useful_daylight_illuminances",
             "statistics"
         };
-        
+
         private void ExpireSolutionThreadSafe(bool recompute = false)
         {
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
