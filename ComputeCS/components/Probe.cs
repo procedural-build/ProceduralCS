@@ -53,7 +53,14 @@ namespace ComputeCS.Components
             
             var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
                 sampleSets, fields, overrides, create);
-            inputData.SubTasks.Add(task);
+            if (inputData.SubTasks != null)
+            {
+                inputData.SubTasks.Add(task);
+            }
+            else
+            {
+                inputData.SubTasks = new List<Task> {task};
+            }
 
             return inputData.ToJson();
         }
