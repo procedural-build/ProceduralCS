@@ -6,8 +6,10 @@ authors:
 - Mark Pitman
 description: >
   Grasshopper plugin for interacting with Procedural's APIs, such as Compute.
+  
   To see more about the latest version, visit our Github page byt following the link: https://github.com/procedural-build/ProceduralCS/releases 
-url: https://github.com/procedural-build/ProceduralCS
+  
+url: https://compute.procedural.build
 icon_url: "https://github.com/procedural-build/ProceduralCS/blob/master/procedural_thumb.png?raw=true"
 keywords:
   - guid:7b46d4ec-a9f3-428a-a838-6c5de9bb8d96
