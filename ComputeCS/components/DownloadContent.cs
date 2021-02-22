@@ -6,6 +6,7 @@ using ComputeCS.types;
 using System.Linq;
 using System.Threading;
 using ComputeCS.utils.Cache;
+using Newtonsoft.Json;
 
 namespace ComputeCS.Components
 {
@@ -15,12 +16,13 @@ namespace ComputeCS.Components
             string inputJson,
             string downloadPath,
             string localPath,
-            List<string> exclude
+            string overrides
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
+            var overrideDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
 
 
             if (parentTask?.UID == null)
@@ -45,9 +47,13 @@ namespace ComputeCS.Components
             }
 
             var queryParams = new Dictionary<string, object> {{"filepath", downloadPath}, {"hash", true}};
-            if (exclude.Count > 0)
+            if (overrideDict != null && overrideDict.ContainsKey("exclude"))
             {
-                queryParams.Add("exclude", string.Join(",", exclude));
+                queryParams.Add("exclude", overrideDict["exclude"]);
+            }
+            if (overrideDict != null && overrideDict.ContainsKey("include"))
+            {
+                queryParams.Add("pattern", overrideDict["include"]);
             }
             var serverFiles = new GenericViewSet<TaskFile>(
                 tokens,

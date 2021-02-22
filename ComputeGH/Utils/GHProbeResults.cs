@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
@@ -11,6 +12,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using Newtonsoft.Json;
 using Rhino;
 using Rhino.Geometry;
 using Mesh = Rhino.Geometry.Mesh;
@@ -37,7 +39,18 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
             pManager.AddMeshParameter("Mesh", "Mesh", "Original mesh from where the probe points is generated",
                 GH_ParamAccess.tree);
-            pManager.AddNumberParameter("Distance", "Distance", "Distance from mesh face center to result point. Used for reconstructing the mesh.", GH_ParamAccess.item, 0.1);
+            pManager.AddTextParameter("Overrides", "Overrides",
+                "Optional overrides to apply to loading the results.\n" +
+                "The overrides lets you exclude or include files from the folder, that you want to download.\n" +
+                "If you want to exclude all files that ends with '.txt', then you can do that with: {\"exclude\": [\".txt\"]}\n" +
+                "Distance from mesh face center to result point. Used for reconstructing the mesh." +
+                "The overrides takes a JSON formatted string as follows:\n" +
+                "{\n" +
+                "\"exclude\": List[string]\n," +
+                "\"include\": List[string]\n," +
+                "\"distance\": number\n," +
+                "\n}",
+                GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
 
             pManager[1].Optional = true;
@@ -66,14 +79,17 @@ namespace ComputeCS.Grasshopper
             string folder = null;
             var meshes = new GH_Structure<GH_Mesh>();
             var refresh = false;
+            var _overrides = "";
 
             if (!DA.GetData(0, ref folder)) return;
             DA.GetDataTree(1, out meshes);
-            DA.GetData(2, ref distance);
+            DA.GetData(2, ref _overrides);
             DA.GetData(3, ref refresh);
 
+            var overrides = new ProbeOverrides().FromJson(_overrides);
+
             // Get Cache to see if we already did this
-            var cacheKey = folder;
+            var cacheKey = folder + _overrides;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
@@ -88,29 +104,40 @@ namespace ComputeCS.Grasshopper
                 {
                     StringCache.setCache(queueName, "true");
                     StringCache.setCache(cacheKey + "progress", "Loading...");
-                    
-                    QueueManager.addToQueue(queueName, () => {
+
+                    QueueManager.addToQueue(queueName, () =>
+                    {
                         try
                         {
-                            var results = ProbeResult.ReadProbeResults(folder);
-                            var points = ProbeResult.ReadPointsFromResults(folder);
-                            probePoints = ConvertPointsToDataTree(points);
+                            var results = ProbeResult.ReadProbeResults(
+                                folder,
+                                overrides.Exclude,
+                                overrides.Include
+                            );
+                            cachedValues = JsonConvert.SerializeObject(results);
+                            StringCache.setCache(cacheKey, cachedValues);
                             
+                            var points = ProbeResult.ReadPointsFromResults(
+                                folder,
+                                overrides.Exclude,
+                                overrides.Include
+                                );
+                            probePoints = ConvertPointsToDataTree(points);
+
                             if (meshes.Any() && points.Any())
                             {
-                                correctedMesh = CorrectMesh(meshes, points);    
+                                correctedMesh = CorrectMesh(meshes, points, overrides.Distance ?? 0.1);
                             }
-                            
+
                             probeResults = new Dictionary<string, DataTree<object>>();
                             foreach (var key in results.Keys)
                             {
                                 probeResults.Add(key, ConvertToDataTree(results[key]));
                             }
-                            
+
                             info = UpdateInfo(results);
                             resultKeys = results.Keys.ToList();
                             StringCache.setCache(cacheKey + "progress", "Done");
-
                         }
                         catch (Exception e)
                         {
@@ -124,9 +151,7 @@ namespace ComputeCS.Grasshopper
                         StringCache.setCache(queueName, "");
                     });
                     ExpireSolutionThreadSafe(true);
-                    
                 }
-
             }
 
             // Handle Errors
@@ -138,9 +163,9 @@ namespace ComputeCS.Grasshopper
 
             if (probePoints != null)
             {
-                DA.SetDataTree(1, probePoints);    
+                DA.SetDataTree(1, probePoints);
             }
-            
+
             if (correctedMesh != null)
             {
                 DA.SetDataTree(2, correctedMesh);
@@ -158,7 +183,7 @@ namespace ComputeCS.Grasshopper
                     AddToOutput(DA, key, probeResults[key]);
                 }
             }
-            
+
             if (resultKeys != null)
             {
                 resultKeys.Add("Info");
@@ -166,9 +191,8 @@ namespace ComputeCS.Grasshopper
                 resultKeys.Add("Mesh");
                 RemoveUnusedOutputs(resultKeys);
             }
-            
+
             Message = StringCache.getCache(cacheKey + "progress");
-            
         }
 
         private void ExpireSolutionThreadSafe(bool recompute = false)
@@ -176,11 +200,12 @@ namespace ComputeCS.Grasshopper
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
             RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
-        
+
         private DataTree<object> CorrectMesh(
             GH_Structure<GH_Mesh> meshes,
-            Dictionary<string, List<List<double>>> points
-            )
+            Dictionary<string, List<List<double>>> points,
+            double distance
+        )
         {
 
             var newMeshes = new DataTree<object>();
@@ -191,26 +216,27 @@ namespace ComputeCS.Grasshopper
                 var patchPoints = points[patches[j]];
                 var GHPoints = patchPoints.Select(point => new Point3d(point[0], point[1], point[2])).ToList();
                 var mesh = new Mesh();
-                
+
                 // Check mesh normal. If the normal direction is fx Z, check that the points and mesh have the same value. If not throw an error. 
                 GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
-                var faceCenters = Enumerable.Range(0, mesh.Faces.Count()).Select(index => mesh.Faces.GetFaceCenter(index)).ToList();
+                var faceCenters = Enumerable.Range(0, mesh.Faces.Count())
+                    .Select(index => mesh.Faces.GetFaceCenter(index)).ToList();
                 var faceIndices = RTree.Point3dClosestPoints(faceCenters, GHPoints, distance);
 
                 var newMesh = new Mesh();
                 newMesh.Vertices.AddVertices(mesh.Vertices);
                 foreach (var face in faceIndices)
                 {
-                    if (face.Length > 0) {
+                    if (face.Length > 0)
+                    {
                         newMesh.Faces.AddFace(mesh.Faces[face[0]]);
                     }
-                    
                 }
 
                 newMesh.Normals.ComputeNormals();
                 newMesh.UnifyNormals();
                 newMesh.Compact();
-                
+
                 var path = new GH_Path(j);
                 newMeshes.Add(newMesh, path);
                 j++;
@@ -340,7 +366,7 @@ namespace ComputeCS.Grasshopper
             {
                 output.Add(patch, new GH_Path(1));
             }
-            
+
             foreach (var angle in angles)
             {
                 output.Add(angle, new GH_Path(2));
@@ -389,7 +415,5 @@ namespace ComputeCS.Grasshopper
         private DataTree<object> correctedMesh;
         private DataTree<object> info;
         private List<string> resultKeys;
-        private double distance;
-
     }
 }

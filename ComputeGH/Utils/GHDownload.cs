@@ -33,7 +33,16 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.item);
             pManager.AddTextParameter("Local Path", "Local Path", "The local path where to you want the download content to be stored.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Exclude", "Exclude", "Files to exclude. Provide a pattern and the component will exclude them from being downloaded. If you want to exclude all files that ends with '.txt', then you can do that with: 'txt'", GH_ParamAccess.list);
+            pManager.AddTextParameter("Overrides", "Overrides", 
+                "Optional overrides to apply to the download.\n" +
+                "The overrides lets you exclude or include files from the server in the provided path, that you want to download.\n" +
+                "If you want to exclude all files that ends with '.txt', then you can do that with: {\"exclude\": [\".txt\"]}\n" +
+                "The overrides takes a JSON formatted string as follows:\n" +
+                "{\n" +
+                "\"exclude\": List[string]\n," +
+                "\"include\": List[string]\n," +
+                "\n}",
+                GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Reload", "Reload", "Redownload the content from Compute", GH_ParamAccess.item);
             
             pManager[3].Optional = true;
@@ -57,13 +66,13 @@ namespace ComputeCS.Grasshopper
             string input = null;
             string downloadPath = null;
             string localPath = null;
-            var exclude = new List<string>();
+            var overrides = "";
             var reload = false;
 
             if (!DA.GetData(0, ref input)) return;
             if (!DA.GetData(1, ref downloadPath)) return;
             if (!DA.GetData(2, ref localPath)) return;
-            DA.GetDataList(3, exclude);
+            DA.GetData(3, ref overrides);
             DA.GetData(4, ref reload);
 
             // Get Cache to see if we already did this
@@ -73,7 +82,7 @@ namespace ComputeCS.Grasshopper
 
             if (cachedValues == null || reload)
             {
-                PollDownloadContent(input, downloadPath, localPath, exclude, reload, cacheKey);
+                PollDownloadContent(input, downloadPath, localPath, overrides, reload, cacheKey);
             }
 
             if (!Directory.Exists(localPath))
@@ -105,7 +114,7 @@ namespace ComputeCS.Grasshopper
             string inputJson,
             string downloadPath,
             string localPath,
-            List<string> exclude,
+            string overrides,
             bool reload,
             string cacheKey
             )
@@ -133,7 +142,7 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey + "progress", "Downloading...");
                             ExpireSolutionThreadSafe(true);
                             
-                            downloaded = DownloadContent.Download(inputJson, downloadPath, localPath, exclude);
+                            downloaded = DownloadContent.Download(inputJson, downloadPath, localPath, overrides);
                             StringCache.setCache(cacheKey, downloaded.ToString());
                             
                             if (!downloaded)
