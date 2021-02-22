@@ -20,7 +20,7 @@ We also have a [video](https://www.youtube.com/embed/oQU_Uke5368) walking throug
 
 ## Update with YAK
 
-1. Write `TestPackageManager` in the Rhino console.
+1. *Rhino 6:* Write `TestPackageManager` in the Rhino console. *Rhino 7:* Write `PackageManager`
 2. Select the `Installed` tab. 
 3. Click on `ProceduralCS`.
 4. Click `Update`. 
@@ -29,13 +29,15 @@ We also have a [video](https://www.youtube.com/embed/oQU_Uke5368) walking throug
 ![alt text](https://github.com/procedural-build/ProceduralCS/raw/master/.github/releases/UpdateYAK.gif "Update ProceduralCS with YAK")
 
 ### Manual Installation/Update (Not recommended)
-If using the YAK package manager doesn't work you can install the package manually by downloading the [ComputeGH.gha](https://github.com/procedural-build/ProceduralCS/blob/{{ RELEASE_VERSION }}/dist/ComputeGH.gha?raw=true) and [ComputeCS.dll](https://github.com/procedural-build/ProceduralCS/blob/{{ RELEASE_VERSION }}/dist/ComputeCS.dll?raw=true) putting them in the Grasshopper Components folder.
+If using the YAK package manager doesn't work you can install the package manually by going to [Food4Rhino](https://www.food4rhino.com/app/proceduralcs) and downloading the package there.
+Put the downloaded in the Grasshopper Components folder.
 That folder can be found in Edit > Special Folders > Components.
+We recommend that you create a separate folder ther called `ProceduralCS`, where you store the files.
 
 ![alt text](https://github.com/procedural-build/ProceduralCS/raw/master/.github/releases/GrasshopperLibraries.png "Find the Grasshopper Components folder.")
 
-**Remember to unblock ProceduralCS.dll and ProceduralGH.gha**
+**Remember to unblock the files**
 
 ![alt text](https://github.com/procedural-build/ProceduralCS/raw/master/.github/releases/Unblock.png "Unblock ProceduralCS.dll and ProceduralGH.gha")
 
-This release is only tested on Rhino 6!
+This release works with both Rhino 6 and 7

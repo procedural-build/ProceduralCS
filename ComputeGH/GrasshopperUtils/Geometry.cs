@@ -437,8 +437,8 @@ namespace ComputeGH.Grasshopper.Utils
 
                     try
                     {
-                        brepSurface = splitFaces.First(face =>
-                            !brep.IsPointInside(AreaMassProperties.Compute((Brep) face).Centroid, tolerance, false));
+                        brepSurface = splitFaces.Where(face => face != null).First(face =>
+                            !brep.IsPointInside(AreaMassProperties.Compute(face).Centroid, tolerance, false));
                     }
                     catch (InvalidOperationException)
                     {

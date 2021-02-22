@@ -14,7 +14,7 @@ namespace ComputeCS
             /* Programmatically set class attributes from ket,value pairs (Pythonic)
             */
             foreach (KeyValuePair<string, object> item in overrides) {
-                PropertyInfo propertyInfo = this.GetType().GetProperty(item.Key);
+                PropertyInfo propertyInfo = GetType().GetProperty(item.Key);
                 if (item.Value != null)
                 {
                     propertyInfo.SetValue(this, item.Value);
@@ -44,6 +44,11 @@ namespace ComputeCS
             }
 
             return JsonConvert.SerializeObject(this, JsonSettings);
+        }
+
+        public Dictionary<string, object> ToDict()
+        {
+            return JsonConvert.DeserializeObject<Dictionary<string, object>>(this.ToJson(), JsonSettings);
         }
     }
 }

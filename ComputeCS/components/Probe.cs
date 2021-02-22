@@ -55,8 +55,14 @@ namespace ComputeCS.Components
             
             var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
                 sampleSets, fields, overrides, create);
-            inputData.SubTasks.Add(task);
-            
+            if (inputData.SubTasks != null)
+            {
+                inputData.SubTasks.Add(task);
+            }
+            else
+            {
+                inputData.SubTasks = new List<Task> {task};
+            }
             Logger.Info($"Created probe task: {task.UID}");
             return inputData.ToJson();
         }
@@ -66,6 +72,11 @@ namespace ComputeCS.Components
             string dependentName = ""
         )
         {
+            if (subTasks == null)
+            {
+                return null;
+            }
+            
             foreach (var subTask in subTasks)
             {
                 if (string.IsNullOrEmpty(subTask.UID))

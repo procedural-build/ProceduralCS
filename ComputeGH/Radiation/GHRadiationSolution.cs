@@ -19,13 +19,13 @@ namespace ComputeGH.Radiation
                 "Compute", "Radiation")
         {
         }
-        
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", 
+            pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component",
                 GH_ParamAccess.item);
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "Number of CPUs to run the simulation across. Valid choices are:\n" +
@@ -34,15 +34,17 @@ namespace ComputeGH.Radiation
             pManager.AddIntegerParameter("Method", "Method", "Select which Radiance Method to use.",
                 GH_ParamAccess.item, 0);
             //pManager.AddIntegerParameter("Case Type", "Case Type", "Available Options: Grid, Image", GH_ParamAccess.item, 0);
-            pManager.AddTextParameter("Materials", "Materials", 
-                "This should be a list of materials generated with the Radiance Material components.", 
+            pManager.AddTextParameter("Materials", "Materials",
+                "This should be a list of materials generated with the Radiance Material components.",
                 GH_ParamAccess.list);
-            pManager.AddTextParameter("EPW File", "EPW File", "Path to where the EPW file is located. Only used for ThreePhase and Solar Radiation",
+            pManager.AddTextParameter("EPW File", "EPW File",
+                "Path to where the EPW file is located. Only used for ThreePhase and Solar Radiation",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Accepts the following overrides with defaults in JSON format: \n" +
                 "{\n\t\"ambient_bounces\": 4,\n\t\"ambient_divisions\": 5000,\n" +
-                "\t\"limit_ray_weight\": 0.0002,\n\t\"samples\": 1000\n\t\"reinhart_divisions\": 1\n}",
+                "\t\"limit_ray_weight\": 0.0002,\n\t\"samples\": 1000\n\t\"reinhart_divisions\": 1\n\t\"" +
+                "keep\": {\n\t\t\"all\": false,\n\t\t\"view\": false,\n\t\t\"daylight\": false,\n\t\t\"sky\": false\n\t}\n}",
                 GH_ParamAccess.item);
 
             pManager[1].Optional = true;
@@ -50,7 +52,7 @@ namespace ComputeGH.Radiation
             pManager[3].Optional = true;
             pManager[4].Optional = true;
             pManager[5].Optional = true;
-            
+
 
             AddNamedValues(pManager[2] as Param_Integer, Methods);
             //AddNamedValues(pManager[3] as Param_Integer, CaseTypes);
@@ -106,7 +108,7 @@ namespace ComputeGH.Radiation
                 epwFile,
                 overrides
             );
-            
+
             DA.SetData(0, outputs);
         }
 
@@ -121,14 +123,13 @@ namespace ComputeGH.Radiation
             "solar_radiation",
             "daylight_factor",
             "sky_view_factor"
-            
         };
 
         private static readonly List<string> CaseTypes = new List<string>
         {
             "Grid", "Image"
         };
-        
+
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
