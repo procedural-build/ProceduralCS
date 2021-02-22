@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace ComputeCS.Components
 {
     public static class ProbeResult
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        
         public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> ReadProbeResults(
             string folder,
             List<string> exclude,
@@ -14,6 +17,12 @@ namespace ComputeCS.Components
         )
         {
             var data = new Dictionary<string, Dictionary<string, Dictionary<string, object>>>();
+            if (File.Exists(folder))
+            {
+                Logger.Info($"{folder} is a file");
+                var dataPath = FolderToDataPath(Directory.GetParent(folder).FullName);
+                return GetDataFromFile(folder, data, dataPath);
+            }
             var subFolders = Directory.GetDirectories(folder)
                 .OrderBy(_folder => float.Parse(FolderToDataPath(_folder)));
             data = subFolders.Aggregate(data,
@@ -85,31 +94,39 @@ namespace ComputeCS.Components
             {
                 files = files.Where(file => includes.Any(file.Contains)).ToArray();
             }
-                
-            foreach (var file in files)
+
+            return files.Aggregate(data, (current, file) => GetDataFromFile(file, current, dataPath));
+        }
+
+        public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> GetDataFromFile(
+            string file,
+            Dictionary<string, Dictionary<string, Dictionary<string, object>>> data,
+            string dataPath
+            )
+        {
+            Logger.Debug($"Getting probe results from {file}");
+            
+            var names = FileNameToNames(file);
+            var fieldName = names["field"];
+            var patchName = names["patch"];
+            var values = ReadProbeData(file);
+
+            if (!data.ContainsKey(fieldName))
             {
-                var names = FileNameToNames(file);
-                var fieldName = names["field"];
-                var patchName = names["patch"];
-                var values = ReadProbeData(file);
-
-                if (!data.ContainsKey(fieldName))
-                {
-                    data.Add(fieldName, new Dictionary<string, Dictionary<string, object>>());
-                }
-
-                if (!data[fieldName].ContainsKey(patchName))
-                {
-                    data[fieldName].Add(patchName, new Dictionary<string, object>());
-                }
-
-                data[fieldName][patchName].Add(dataPath, values);
+                data.Add(fieldName, new Dictionary<string, Dictionary<string, object>>());
             }
+
+            if (!data[fieldName].ContainsKey(patchName))
+            {
+                data[fieldName].Add(patchName, new Dictionary<string, object>());
+            }
+
+            data[fieldName][patchName].Add(dataPath, values);
 
             return data;
         }
 
-        public static string FolderToDataPath(string folder)
+        private static string FolderToDataPath(string folder)
         {
             return folder.Split(Path.DirectorySeparatorChar).Last();
         }
@@ -121,6 +138,11 @@ namespace ComputeCS.Components
         )
         {
             var data = new Dictionary<string, List<List<double>>>();
+            if (File.Exists(folder))
+            {
+                Logger.Info($"{folder} is a file");
+                return GetPointsFromFile(folder, data);
+            }
             var subFolders = Directory.GetDirectories(folder).OrderBy(f => float.Parse(FolderToDataPath(f)));
             data = subFolders.Aggregate(data, (current, subFolder) => GetPointsFromFolder(subFolder, current, exclude, include));
 
@@ -144,16 +166,22 @@ namespace ComputeCS.Components
             {
                 files = files.Where(file => includes.Any(file.Contains)).ToArray();
             }
-            
-            foreach (var file in files)
-            {
-                var names = FileNameToNames(file);
-                var patchName = names["patch"];
 
-                if (!data.ContainsKey(patchName))
-                {
-                    data.Add(patchName, ReadPoints(file));
-                }
+            return files.Aggregate(data, (current, file) => GetPointsFromFile(file, current));
+        }
+
+        public static Dictionary<string, List<List<double>>> GetPointsFromFile(
+            string file,
+            Dictionary<string, List<List<double>>> data
+        )
+        {
+            Logger.Debug($"Getting probe points from {file}");
+            var names = FileNameToNames(file);
+            var patchName = names["patch"];
+
+            if (!data.ContainsKey(patchName))
+            {
+                data.Add(patchName, ReadPoints(file));
             }
 
             return data;

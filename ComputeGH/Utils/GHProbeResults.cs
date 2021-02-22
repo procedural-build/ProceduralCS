@@ -34,7 +34,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
             pManager.AddMeshParameter("Mesh", "Mesh", "Original mesh from where the probe points is generated",
@@ -46,9 +46,10 @@ namespace ComputeCS.Grasshopper
                 "Distance from mesh face center to result point. Used for reconstructing the mesh." +
                 "The overrides takes a JSON formatted string as follows:\n" +
                 "{\n" +
-                "\"exclude\": List[string]\n," +
-                "\"include\": List[string]\n," +
-                "\"distance\": number\n," +
+                "  \"exclude\": List[string],\n" +
+                "  \"include\": List[string],\n" +
+                "  \"distance\": number\n," +
+                "  \"outputs\": List[string]\n," +
                 "\n}",
                 GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
@@ -61,7 +62,7 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.tree);
             pManager.AddPointParameter("Points", "Points", "Points that were extracted from probe files",
@@ -86,7 +87,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(2, ref _overrides);
             DA.GetData(3, ref refresh);
 
-            var overrides = new ProbeOverrides().FromJson(_overrides) ?? new ProbeOverrides{Exclude = null, Include = null, Distance = 0.1};
+            var overrides = new ProbeOverrides().FromJson(_overrides) ?? new ProbeOverrides{Exclude = null, Include = null, Distance = 0.1, Outputs = null};
 
             // Get Cache to see if we already did this
             var cacheKey = folder + _overrides;
@@ -154,6 +155,18 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
+            if (overrides.Outputs != null && overrides.Outputs.Any())
+            {
+                foreach (var output in overrides.Outputs)
+                {
+                    AddOutput(output);
+                }
+
+                var outputs = new List<string> {"Info", "Points", "Mesh"};
+                outputs.AddRange(overrides.Outputs);
+                RemoveUnusedOutputs(outputs);
+            }
+            
             // Handle Errors
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
@@ -180,11 +193,11 @@ namespace ComputeCS.Grasshopper
             {
                 foreach (var key in probeResults.Keys)
                 {
-                    AddToOutput(DA, key, probeResults[key]);
+                    AddToOutput(DA, key, probeResults[key], overrides.Outputs);
                 }
             }
 
-            if (resultKeys != null)
+            if (resultKeys != null && overrides.Outputs == null)
             {
                 resultKeys.Add("Info");
                 resultKeys.Add("Points");
@@ -301,7 +314,7 @@ namespace ComputeCS.Grasshopper
             return output;
         }
 
-        private void AddToOutput(IGH_DataAccess DA, string name, DataTree<object> data)
+        private void AddToOutput(IGH_DataAccess DA, string name, DataTree<object> data, List<string> outputs)
         {
             var index = 0;
             var found = false;
@@ -317,17 +330,17 @@ namespace ComputeCS.Grasshopper
                 index++;
             }
 
-            if (!found)
+            if (!found && (outputs == null || !outputs.Any()))
             {
-                var p = new Param_GenericObject
-                {
-                    Name = name,
-                    NickName = name,
-                    Access = GH_ParamAccess.tree
-                };
-                Params.RegisterOutputParam(p);
-                Params.OnParametersChanged();
-                ExpireSolution(true);
+                AddOutput(name);
+            }
+            else if (!found && outputs.Contains(name))
+            {
+                AddOutput(name);
+            }
+            else if (!found)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"We found {name} in your results. It is not outputted because {string.Join(",", outputs)} does not contain {name}. Try to remove outputs or add {name} to the outputs");
             }
             else
             {
@@ -335,6 +348,21 @@ namespace ComputeCS.Grasshopper
             }
         }
 
+        private void AddOutput(string name)
+        {
+            if (Params.Output.Any(param => param.Name == name)) return;
+            
+            var p = new Param_GenericObject
+            {
+                Name = name,
+                NickName = name,
+                Access = GH_ParamAccess.tree
+            };
+            Params.RegisterOutputParam(p);
+            Params.OnParametersChanged();
+            ExpireSolution(true);
+        }
+        
         private static DataTree<object> UpdateInfo(
             Dictionary<string, Dictionary<string, Dictionary<string, object>>> data)
         {
@@ -377,17 +405,9 @@ namespace ComputeCS.Grasshopper
 
         private void RemoveUnusedOutputs(List<string> keys)
         {
-            var parametersToDelete = new List<IGH_Param>();
+            var parametersToDelete = Params.Output.Where(param => !keys.Contains(param.Name)).ToList();
 
-            foreach (var param in Params.Output)
-            {
-                if (!keys.Contains(param.Name))
-                {
-                    parametersToDelete.Add(param);
-                }
-            }
-
-            if (parametersToDelete.Count() > 0)
+            if (parametersToDelete.Any())
             {
                 foreach (var param in parametersToDelete)
                 {

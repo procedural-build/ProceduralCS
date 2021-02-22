@@ -4,8 +4,9 @@ namespace ComputeCS.types
 {
     public class ProbeOverrides : SerializeBase<ProbeOverrides>
     {
-        public List<string> Exclude = null;
-        public List<string> Include = null;
-        public double? Distance = 0.1;
+        public List<string> Exclude;
+        public List<string> Include;
+        public double? Distance;
+        public List<string> Outputs;
     }
 }
