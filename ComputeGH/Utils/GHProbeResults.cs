@@ -86,7 +86,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(2, ref _overrides);
             DA.GetData(3, ref refresh);
 
-            var overrides = new ProbeOverrides().FromJson(_overrides);
+            var overrides = new ProbeOverrides().FromJson(_overrides) ?? new ProbeOverrides{Exclude = null, Include = null, Distance = 0.1};
 
             // Get Cache to see if we already did this
             var cacheKey = folder + _overrides;
