@@ -7,3 +7,5 @@ riderModule.iml
 ComputeCS.sln.DotSettings.user
 .vs
 *.yak
+*.dll
+*.gha
