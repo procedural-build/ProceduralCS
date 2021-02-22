@@ -90,7 +90,7 @@ namespace ComputeCS.Grasshopper
                                 StringCache.setCache(cacheKey, "error");
                                 throw new Exception(results.ErrorMessages.First());
                             }
-                            else if (results.ErrorMessages == null)
+                            if (results.ErrorMessages == null)
                             {
                                 StringCache.ClearCache();
                                 cachedTokens = results.ToJson();

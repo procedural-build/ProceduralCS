@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using ComputeCS.utils.Cache;
+using NLog;
 
 namespace ComputeCS
 {
@@ -30,7 +31,7 @@ namespace ComputeCS
         public httpVerb httpMethod { get; set; }
         public Dictionary<string, object> payload { get; set; }
         public string token = null;
-        
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public RESTClient()
         {
@@ -44,6 +45,7 @@ namespace ComputeCS
         private static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors policyErrors)
         {
             bool result = cert.Subject.Contains("procedural.build");
+            Logger.Debug($"Validating Remote Certificate: {cert.Subject}");
             return result;
         }
 
@@ -118,6 +120,7 @@ namespace ComputeCS
             
             if (payload.ContainsKey("file"))
             {
+                Logger.Debug("Setting file payload");
                 request.ContentType = "application/octet-stream";
                 using (var filePayload = new StreamWriter(request.GetRequestStream()))
                 {
@@ -129,6 +132,7 @@ namespace ComputeCS
             }
             else
             {
+                Logger.Debug("Setting JSON payload");
                 request.ContentType = "application/json";
                 using (var swJSONPayload = new StreamWriter(request.GetRequestStream()))
                 {
@@ -141,17 +145,16 @@ namespace ComputeCS
         }
 
         private string GetResponseString() {
-            string responseString = string.Empty;
-            System.Net.ServicePointManager.ServerCertificateValidationCallback
-                = ((sender, cert, chain, errors) => ValidateRemoteCertificate(sender, cert, chain, errors));
+            var responseString = string.Empty;
+            ServicePointManager.ServerCertificateValidationCallback = (ValidateRemoteCertificate);
 
             response = (HttpWebResponse)request.GetResponse();
 
-            using (Stream responseStream = response.GetResponseStream())
+            using (var responseStream = response.GetResponseStream())
             {
                 if (responseStream != null)
                 {
-                    using (StreamReader reader = new StreamReader(responseStream))
+                    using (var reader = new StreamReader(responseStream))
                     {
                         responseString = reader.ReadToEnd();
                     }
@@ -184,7 +187,9 @@ namespace ComputeCS
             return path;
         }
 
-        public string RequestToFile(string path) {
+        public string RequestToFile(string path)
+        {
+            Logger.Debug("Fetching file");
             var responseString = string.Empty;
 
             // Generate the request object
@@ -193,11 +198,13 @@ namespace ComputeCS
             
             if (HasFetched(FullUrl, httpMethod.ToString()))
             {
+                Logger.Debug($"Already fetch on {FullUrl} with {httpMethod}. Returning empty string ");
                 return "";
             }
             
             if (token != null)
             {
+                Logger.Debug("Setting auth headers");
                 request.Headers.Add("Authorization", $"JWT {token}");
             }
 
@@ -205,16 +212,18 @@ namespace ComputeCS
             try
             {
                 responseString = WriteResponseToFile(path);
+                Logger.Debug("Succesfully fetched");
             }
             catch (Exception ex)
             {
-                responseString = ex.Message.ToString();
+                Logger.Error($"Got error while fetching: {ex.Message}");
+                responseString = ex.Message;
             }
             finally
             {
                 ((IDisposable) response)?.Dispose();
             }
-
+            Logger.Debug("Returning fetch response");
             return responseString;
         }
 
@@ -228,26 +237,31 @@ namespace ComputeCS
 
             if (HasFetched(FullUrl, httpMethod.ToString()))
             {
+                Logger.Debug($"Already fetch on {FullUrl} with {httpMethod}. Returning empty string ");
                 return "";
             }
             
             if (token != null)
             {
+                Logger.Debug("Setting auth headers");
                 request.Headers.Add("Authorization", $"JWT {token}");
             }
 
             if ((request.Method == "POST" || request.Method == "PUT"  || request.Method == "PATCH") && payload != null)
             {
-                this.SetPayload();
+                Logger.Debug("Setting payload");
+                SetPayload();
             }
 
             // Get the response object of fallback to error message - then release resources from the request.
             try
             {
                 responseString = GetResponseString();
+                Logger.Debug("Succesfully fetched");
             }
             catch (Exception ex)
             {
+                Logger.Error($"Got error while fetching: {ex.Message}");
                 responseString = "{\"error_messages\":[\"" + ex.Message + "\"],\"errors\":{}}";
             }
             finally
@@ -255,11 +269,13 @@ namespace ComputeCS
                 ((IDisposable) response)?.Dispose();
             }
 
+            Logger.Debug("Returning fetch response");
             return responseString;
         }
         
         private static bool HasFetched(string url, string method, int timeLimit = 100)
         {
+            Logger.Debug($"Checking fetch cache");
             var now = DateTime.Now;
             var cacheKey = $"{method} {url}";
             
@@ -270,10 +286,12 @@ namespace ComputeCS
                 var timeDelta = now - lastFetched;
                 if (timeDelta < TimeSpan.FromMilliseconds(timeLimit))
                 {
+                    Logger.Debug($"Found valid cache for {url} and {method}");
                     return true;
                 }
             }
             StringCache.setCache(cacheKey, now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'"));
+            Logger.Debug($"Did not find valid cache for {url} and {method}");
             return false;
         }
     }
