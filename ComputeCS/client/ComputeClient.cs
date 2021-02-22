@@ -11,7 +11,7 @@ namespace ComputeCS
     {
         public RESTClient http = new RESTClient();
         public AuthTokens Tokens = new AuthTokens();
-        //private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         
         public ComputeClient(string _host = null)
         {
@@ -67,7 +67,7 @@ namespace ComputeCS
                 }
             );
             http.token = Tokens.Access;
-            //Logger.Debug("Got tokens");
+            Logger.Debug("Got tokens");
             return Tokens;
         }
 
@@ -101,8 +101,8 @@ namespace ComputeCS
             // Get the expiry time
             var tokenExpireTime = Convert.ToInt64(decodedToken["exp"]);
             var now = DateTimeOffset.UtcNow;
-            // True if now is later than exiry time
-            //Logger.Debug($"Checking token expiry: {tokenExpireTime} and now: {now.ToUnixTimeSeconds()}");
+            // True if now is later than expiry time
+            Logger.Debug($"Checking token expiry: {tokenExpireTime} and now: {now.ToUnixTimeSeconds()}");
             return now.ToUnixTimeSeconds() > tokenExpireTime;
         }
 
@@ -110,7 +110,7 @@ namespace ComputeCS
         {
             if (IsTokenExpired())
             {
-                //Logger.Debug("Refreshing access token");
+                Logger.Debug("Refreshing access token");
                 Tokens.Access = RefreshAccessToken();
             }
 
@@ -131,7 +131,7 @@ namespace ComputeCS
                     {"refresh", Tokens.Refresh}
                 }
             );
-            //Logger.Debug($"Got new access token");
+            Logger.Debug($"Got new access token");
             return Tokens.Access;
         }
 

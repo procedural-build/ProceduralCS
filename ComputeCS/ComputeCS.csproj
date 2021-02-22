@@ -13,6 +13,7 @@
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Exec Command="Copy &quot;$(TargetPath)&quot; $(SolutionDir)dist\$(ProjectName).dll" />
+        <Exec Command="Copy &quot;$(ProjectDir)&quot;\Nlog.config $(SolutionDir)dist\Nlog.dll.nlog" />
     </Target>
 
 </Project>
