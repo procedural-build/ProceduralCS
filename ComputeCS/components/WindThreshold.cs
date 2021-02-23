@@ -5,11 +5,13 @@ using System.Linq;
 using System.Text;
 using ComputeCS.types;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace ComputeCS.Components
 {
     public static class WindThreshold
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public static string ComputeWindThresholds(
             string inputJson,
             string epwFile,
@@ -104,7 +106,15 @@ namespace ComputeCS.Components
                 throw new Exception(task.ErrorMessages[0]);
             }
 
-            inputData.SubTasks.Add(task);
+            if (inputData.SubTasks != null)
+            {
+                inputData.SubTasks.Add(task);
+            }
+            else
+            {
+                inputData.SubTasks = new List<Task> {task};
+            }
+            Logger.Info($"Created Wind Threshold task: {task.UID}");
 
             return inputData.ToJson();
         }
@@ -167,20 +177,18 @@ namespace ComputeCS.Components
 
             foreach (var file in Directory.GetFiles(folder))
             {
-                if (resultFileTypes.Contains(Path.GetExtension(file).Replace(".", "")))
+                var extension = Path.GetExtension(file).Replace(".", "");
+                if (!resultFileTypes.Contains(extension)) continue;
+                
+                var patchName = Path.GetFileNameWithoutExtension(file);
+                var values = ReadThresholdData(file);
+
+                if (!data.ContainsKey(extension))
                 {
-                    var fileName = Path.GetFileName(file).Split('.');
-                    var extension = fileName[1];
-                    var patchName = fileName[0];
-                    var values = ReadThresholdData(file);
-
-                    if (!data.ContainsKey(extension))
-                    {
-                        data.Add(extension, new Dictionary<string, object>());
-                    }
-
-                    data[extension].Add(patchName, values);
+                    data.Add(extension, new Dictionary<string, object>());
                 }
+
+                data[extension].Add(patchName, values);
             }
 
             return data;

@@ -22,7 +22,7 @@ namespace ComputeCS.Components
             var inputData = new Inputs().FromJson(inputJson);
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
-            var overrideDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
+            var overrideDict = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(overrides);
 
 
             if (parentTask?.UID == null)
@@ -49,11 +49,11 @@ namespace ComputeCS.Components
             var queryParams = new Dictionary<string, object> {{"filepath", downloadPath}, {"hash", true}};
             if (overrideDict != null && overrideDict.ContainsKey("exclude"))
             {
-                queryParams.Add("exclude", overrideDict["exclude"]);
+                queryParams.Add("exclude", string.Join(",", overrideDict["exclude"]));
             }
             if (overrideDict != null && overrideDict.ContainsKey("include"))
             {
-                queryParams.Add("pattern", overrideDict["include"]);
+                queryParams.Add("pattern", string.Join(",", overrideDict["include"]));
             }
             var serverFiles = new GenericViewSet<TaskFile>(
                 tokens,
