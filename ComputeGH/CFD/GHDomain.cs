@@ -157,15 +157,13 @@ namespace ComputeCS.Grasshopper
                     SnappyHexMesh = new SnappyHexMesh
                     {
                         Surfaces = surfaces,
-                        Overrides = new Dictionary<string, object>
+                        Overrides = new SnappyHexMeshOverrides
                         {
+                            CastellatedMeshControls = new CastellatedMeshControls
                             {
-                                "castellatedMeshControls", new CastellatedMeshControls
+                                LocationInMesh = new List<double>
                                 {
-                                    LocationInMesh = new List<double>
-                                    {
-                                        locationInMesh.X, locationInMesh.Y, locationInMesh.Z
-                                    }
+                                    locationInMesh.X, locationInMesh.Y, locationInMesh.Z
                                 }
                             }
                         },

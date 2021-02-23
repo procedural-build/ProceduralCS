@@ -68,7 +68,7 @@ namespace ComputeCS.Grasshopper
                     }
                 }
             };
-            var overrides = new Dictionary<string, object>();
+            var overrides = "";
             var setSets = new List<string>();
 
             if (!DA.GetData(0, ref inputJson)) return;

@@ -61,7 +61,7 @@ namespace ComputeCS.Components
                             {"task_type", "magpy"},
                             {"cmd", "cfd.io.tasks.write_mesh"},
                             {"base_mesh", inputData.Mesh.BaseMesh},
-                            {"snappyhex_mesh", inputData.Mesh.SnappyHexMesh},
+                            {"snappyhex_mesh", inputData.Mesh.SnappyHexMesh.ToDict()},
                         }
                     }
                 },

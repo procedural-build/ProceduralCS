@@ -13,7 +13,7 @@ namespace ComputeCS.Components
             string inputJson,
             string domain,
             Dictionary<string, object> defaultSurface,
-            Dictionary<string, object> overrides = null,
+            string overrides = null,
             List<string> setSetRegions = null
         )
         {
@@ -24,44 +24,31 @@ namespace ComputeCS.Components
             inputData.Mesh = domainData.Mesh;
             inputData.Mesh.SnappyHexMesh.DefaultSurface = defaultSurface;
 
-            if (overrides != null)
+            if (!string.IsNullOrEmpty(overrides))
             {
+                var _overrides = new SnappyHexMeshOverrides().FromJson(overrides);
                 if (inputData.Mesh.SnappyHexMesh.Overrides == null)
                 {
-                    inputData.Mesh.SnappyHexMesh.Overrides = overrides;  
+                    inputData.Mesh.SnappyHexMesh.Overrides = _overrides;  
                 }
 
-                var existingOverrides = inputData.Mesh.SnappyHexMesh.Overrides;
-                inputData.Mesh.SnappyHexMesh.Overrides = existingOverrides
-                    .Concat(overrides)
-                    .ToLookup(x => x.Key, x => x.Value)
-                    .ToDictionary(x => x.Key, g => g.First());
-                
+                inputData.Mesh.SnappyHexMesh.Overrides.Merge(_overrides);
             }
 
             if (setSetRegions != null)
             {
-                var setSetRegions_ = setSetRegions.Select(region => new setSetRegion().FromJson(region)).ToList();
-                List<double> locationInMesh = null;
-                if (inputData.Mesh.SnappyHexMesh.Overrides.ContainsKey("castellatedMeshControls"))
-                {
-                    
-                    var castellatedMeshControls = new CastellatedMeshControls().FromJson(inputData.Mesh.SnappyHexMesh.Overrides["castellatedMeshControls"].ToString());
-                    locationInMesh = castellatedMeshControls.LocationInMesh;
-                }
+                var _setSetRegions = setSetRegions.Select(region => new setSetRegion().FromJson(region)).ToList();
+                var locationInMesh = inputData.Mesh.SnappyHexMesh.Overrides.CastellatedMeshControls.LocationInMesh;
                 
-                foreach (var setSetRegion in setSetRegions_)
+                foreach (var setSetRegion in _setSetRegions.Where(setSetRegion => setSetRegion.KeepPoint == null))
                 {
-                    if (setSetRegion.KeepPoint == null)
+                    if (locationInMesh == null)
                     {
-                        if (locationInMesh == null)
-                        {
-                            throw new Exception("Could not find castellatedMeshControls.locationInMesh in SnappyHexMesh.Overrides. You need to provide locationInMesh if you haven't specified the keep point for the setSet regions.");
-                        }
-                        setSetRegion.KeepPoint = locationInMesh;
+                        throw new Exception("Could not find castellatedMeshControls.locationInMesh in SnappyHexMesh.Overrides. You need to provide locationInMesh if you haven't specified the keep point for the setSet regions.");
                     }
+                    setSetRegion.KeepPoint = locationInMesh;
                 }
-                inputData.Mesh.BaseMesh.setSetRegions = setSetRegions_;
+                inputData.Mesh.BaseMesh.setSetRegions = _setSetRegions;
             }
 
             return inputData.ToJson();
