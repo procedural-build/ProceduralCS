@@ -28,7 +28,12 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Domain", "Domain", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Default Surface", "Default Surface", "", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
-                "Takes overrides in JSON format: {'setup': [...], 'fields': [...], 'presets': [...], 'caseFiles: [...]'}",
+                "Takes overrides for SnappyHexMesh in JSON format:\n{\n" +
+                "'castellatedMeshControls': {...},\n'snapControls': {...},\n" +
+                "'addLayersControls': {...},\n'meshQualityControls': {...},\n" +
+                "'mergeTolerance': number" +
+                "\n}" +
+                "\nA full reference of available keys can be found at: https://www.openfoam.com/documentation/guides/latest/doc/guide-meshing-snappyhexmesh-quick-reference.html",
                 GH_ParamAccess.item);
             pManager.AddTextParameter("setSet", "setSet", "setSet regions", GH_ParamAccess.list);
 
