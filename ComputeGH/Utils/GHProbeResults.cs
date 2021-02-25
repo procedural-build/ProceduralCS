@@ -127,7 +127,15 @@ namespace ComputeCS.Grasshopper
 
                             if (meshes.Any() && points.Any())
                             {
-                                correctedMesh = CorrectMesh(meshes, points, overrides.Distance ?? 0.1);
+                                try
+                                {
+                                    correctedMesh = CorrectMesh(meshes, points, overrides.Distance ?? 0.1);
+                                }
+                                catch (InvalidOperationException error)
+                                {
+                                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                                        $"Could not construct new mesh. Got error: {error.Message}");
+                                }
                             }
 
                             probeResults = new Dictionary<string, DataTree<object>>();
@@ -270,6 +278,11 @@ namespace ComputeCS.Grasshopper
                 {
                     var path = new GH_Path(new int[] {patchCounter, angleCounter});
                     var data_ = (List<object>) data[patchKey][fieldKey];
+                    if (data_.Count < 1)
+                    {
+                        output.Add(null, path);
+                        continue;
+                    }
                     var dataType = data_.First().GetType();
                     if (dataType == typeof(double))
                     {
