@@ -10,27 +10,29 @@ using Newtonsoft.Json;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadianceMaterial: GH_Component
+    public class GHRadianceMaterial : GH_Component
     {
         public GHRadianceMaterial() : base("Radiance Material", "Material",
             "Define and apply a Radiance material to the construction", "Compute", "Radiation")
         {
         }
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Names", "Names", 
-                "The names of the meshes to apply this material to.\nIf the name ends with a * it applies to all the geometry that have a name that starts with the name given here.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Preset", "Preset", 
+            pManager.AddTextParameter("Names", "Names",
+                "The names of the meshes to apply this material to.\nIf the name ends with a * it applies to all the geometry that have a name that starts with the name given here.",
+                GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Preset", "Preset",
                 "Material preset.\n" +
                 "All presets can be changed by applying overrides.\n" +
                 "If you pick window as preset, you can only apply the bsdf override.\n" +
-                "If you want to see the preset values, visit https://compute.procedural.build/docs/daylight/materials", 
+                "If you want to see the preset values, visit https://compute.procedural.build/docs/daylight/materials",
                 GH_ParamAccess.item,
                 0);
-            pManager.AddTextParameter("Overrides", "Overrides", 
+            pManager.AddTextParameter("Overrides", "Overrides",
                 "Optional overrides to apply to the presets.\n" +
                 "If you have chosen window, you should add a override with {\"bsdf\": \"BSDF FILE\"}.\n" +
                 "The BSDF file can either be given as a path to a local file or \"clear.xml\", which is a default BSDF file Compute provides.\n" +
@@ -103,8 +105,19 @@ namespace ComputeGH.Radiation
                 return;
             }
 
-            var output = names.Select(name =>
-                new RadianceMaterial {Name = name, Preset = preset, Overrides = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides)}.ToJson()).ToList();
+            var output = new List<string>();
+            try
+            {
+                output = names.Select(name =>
+                    new RadianceMaterial
+                            {Name = name, Preset = preset, Overrides = new MaterialOverrides().FromJson(overrides)}
+                        .ToJson()).ToList();
+            }
+            catch (JsonSerializationException error)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                    error.InnerException != null ? error.InnerException.Message : error.Message);
+            }
 
             DA.SetDataList(0, output);
         }

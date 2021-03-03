@@ -239,7 +239,7 @@ namespace ComputeCS.Components
             {
                 {"task_type", "magpy"},
                 {"cmd", "radiance.io.tasks.write_rad"},
-                {"materials", inputData.RadiationSolution.Materials},
+                {"materials", inputData.RadiationSolution.Materials.Select(material => material.ToDict()).ToList()},
                 {"case_dir", caseDir},
                 {"method", solution.Method},
             };
@@ -765,29 +765,23 @@ namespace ComputeCS.Components
         {
             foreach (var material in materials)
             {
-                if (material.Overrides != null && material.Overrides.ContainsKey("bsdf") && File.Exists((string)material.Overrides["bsdf"]))
-                {
-                    var path = (string) material.Overrides["bsdf"];
-                    var bsdfName = Path.GetFileName(path);
-                    var bsdfFileContent = File.ReadAllBytes(path);
+                if (material.Overrides?.BSDF == null) continue;
+                var bsdfFileContent = File.ReadAllBytes(material.Overrides.BSDFPath);
                     
-                    var uploadTask = new GenericViewSet<Dictionary<string, object>>(
-                        tokens,
-                        url,
-                        $"/api/task/{taskId}/file/bsdf/{bsdfName}"
-                    ).Update(
-                        null,
-                        new Dictionary<string, object>
-                        {
-                            {"file", bsdfFileContent}
-                        }
-                    );
-                    if (uploadTask.ContainsKey("error_messages"))
+                var uploadTask = new GenericViewSet<Dictionary<string, object>>(
+                    tokens,
+                    url,
+                    $"/api/task/{taskId}/file/bsdf/{material.Overrides.BSDF}"
+                ).Update(
+                    null,
+                    new Dictionary<string, object>
                     {
-                        throw new Exception(uploadTask["error_messages"].ToString());
+                        {"file", bsdfFileContent}
                     }
-
-                    material.Overrides["bsdf"] = bsdfName;
+                );
+                if (uploadTask.ContainsKey("error_messages"))
+                {
+                    throw new Exception(uploadTask["error_messages"].ToString());
                 }
             }
         }
