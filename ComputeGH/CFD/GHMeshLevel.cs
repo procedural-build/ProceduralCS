@@ -17,16 +17,16 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Objects", "Objects", "Objects", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Min Level", "Min Level", "Minimum Level", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Max Level", "Max Level", "Maximum Level", GH_ParamAccess.item, 0);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes to apply mesh level to.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Min Level", "Min Level", "Minimum Mesh Level. Usually you only need to set this. ", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Max Level", "Max Level", "Maximum Mesh Level. If this is not explicitly set, then it will be the same as Min Level.", GH_ParamAccess.item, 0);
 
             pManager[2].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Level", "Level", "Level", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes with level applied", GH_ParamAccess.list);
         }
 
         protected override Bitmap Icon => Resources.IconMeshLevel;
@@ -36,8 +36,8 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             var ghObjs = new List<IGH_GeometricGoo>();
-            double minLevel = 2;
-            double maxLevel = 2;
+            var minLevel = 2;
+            var maxLevel = 2;
 
             if (!DA.GetDataList(0, ghObjs))
             {

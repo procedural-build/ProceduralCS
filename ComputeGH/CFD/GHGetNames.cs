@@ -10,18 +10,18 @@ namespace ComputeGH.Grasshopper
 {
     public class GetNames : GH_Component
     {
-        public GetNames() : base("getNames", "getNames", "Get the Compute Name of Objects", "Compute", "Utils")
+        public GetNames() : base("Get Names", "Get Names", "Get the Compute Name of Meshes", "Compute", "Utils")
         {
         }
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("objs", "objs", "objs", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes to get name from", GH_ParamAccess.list);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("names", "names", "names", GH_ParamAccess.list);
+            pManager.AddTextParameter("Names", "Names", "Names of meshes", GH_ParamAccess.list);
         }
 
         protected override Bitmap Icon => Resources.IconGetName;
@@ -30,23 +30,23 @@ namespace ComputeGH.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<IGH_GeometricGoo> ghObjs = new List<IGH_GeometricGoo>();
-            List<string> ids = new List<string>();
+            var ghObjs = new List<IGH_GeometricGoo>();
+            var ids = new List<string>();
 
             if (!DA.GetDataList(0, ghObjs))
             {
                 return;
             }
 
-            foreach (IGH_GeometricGoo ghObj in ghObjs)
+            foreach (var ghObj in ghObjs)
             {
-                string refID = "";
+                var refId = "";
                 if (ghObj.IsReferencedGeometry)
                 {
-                    refID = ghObj.ReferenceID.ToString();
+                    refId = ghObj.ReferenceID.ToString();
                 }
 
-                ids.Add(Geometry.getOrSetUserString(ghObj, "ComputeName", Geometry.fixName(refID)));
+                ids.Add(Geometry.getOrSetUserString(ghObj, "ComputeName", Geometry.fixName(refId)));
             }
 
             DA.SetDataList(0, ids);

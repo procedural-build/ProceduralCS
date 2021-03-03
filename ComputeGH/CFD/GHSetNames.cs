@@ -17,7 +17,7 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Objects", "Objects", "Objects", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes", GH_ParamAccess.list);
             pManager.AddTextParameter("Names", "Names", "Names", GH_ParamAccess.list);
 
             pManager[1].Optional = true;
@@ -25,7 +25,7 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Objects", "Objects", "Objects", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes with naming applied. To see what names have been applied use the Get Names component.", GH_ParamAccess.list);
         }
 
         protected override Bitmap Icon => Resources.IconSetName;
@@ -34,9 +34,8 @@ namespace ComputeCS.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<IGH_GeometricGoo> ghObjs = new List<IGH_GeometricGoo>();
-            List<string> names = new List<string>();
-            string name;
+            var ghObjs = new List<IGH_GeometricGoo>();
+            var names = new List<string>();
 
             if (!DA.GetDataList(0, ghObjs))
             {
@@ -48,32 +47,29 @@ namespace ComputeCS.Grasshopper
             // If the number of names is less than the number of objects then pad it out
             if ((names.Count > 0) & (ghObjs.Count > names.Count))
             {
-                int shortFall = ghObjs.Count - names.Count;
-                string lastName = names.Last();
-                int padLen = ((int) Math.Log10(ghObjs.Count)) + 1;
+                var shortFall = ghObjs.Count - names.Count;
+                var lastName = names.Last();
+                var padLen = ((int) Math.Log10(ghObjs.Count)) + 1;
                 if (padLen < 3)
                 {
                     padLen = 3;
                 }
 
                 names[names.Count - 1] = lastName + "." + 0.ToString().PadLeft(padLen);
-                for (int i = 0; i < shortFall; i++)
+                for (var i = 0; i < shortFall; i++)
                 {
                     names.Add(lastName + "." + (i + 1).ToString().PadLeft(padLen));
                 }
             }
 
-            for (int i = 0; i < ghObjs.Count(); i++)
+            for (var i = 0; i < ghObjs.Count(); i++)
             {
-                if (names.Count() >= ghObjs.Count())
-                {
-                    name = names[i];
-                }
-                else
-                {
-                    name = "";
-                }
+                var name = names.Count() >= ghObjs.Count() ? names[i] : "";
 
+                if (!ghObjs[i].IsValid)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Mesh {ghObjs[i]} is not a valid Mesh. {ghObjs[i]} is element {i} in the input list");
+                }
                 Geometry.setUserString(ghObjs[i], "ComputeName", Geometry.fixName(name));
             }
 

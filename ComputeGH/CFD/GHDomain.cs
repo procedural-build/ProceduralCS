@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using ComputeCS.types;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
@@ -19,7 +20,7 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Objects", "Objects", "Objects to include in the CFD domain",
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes to include in the CFD domain",
                 GH_ParamAccess.list);
             pManager.AddIntegerParameter("Domain Type", "Domain Type",
                 "Domain type. Choose between: 0: 3D domain, 1: 2D domain.", GH_ParamAccess.item, 0);
@@ -64,7 +65,7 @@ namespace ComputeCS.Grasshopper
                 "Info\nCell estimation is based on an equation developed by Alexander Jacobson", GH_ParamAccess.item);
             pManager.AddBoxParameter("Bounding Box", "Bounding Box", "Bounding boxes representing the domain",
                 GH_ParamAccess.item);
-            pManager.AddGenericParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.list);
         }
 
         protected override Bitmap Icon => Resources.IconRectDomain;
@@ -105,11 +106,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(9, ref plane);
 
             // Create Bounding Box
-            var bbs = new List<BoundingBox>();
-            foreach (var element in geometry)
-            {
-                bbs.Add(element.Boundingbox);
-            }
+            var bbs = geometry.Select(element => element.Boundingbox).ToList();
 
             var bb = Domain.getMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
             if (domainType == 1)
