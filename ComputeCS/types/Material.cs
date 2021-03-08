@@ -20,15 +20,15 @@ namespace ComputeCS.types
         public string Type;
         public string Modifier;
 
-        public string BSDFPath => bsdf;
+        public string BSDFPath
+        {
+            get => bsdf;
+            set => bsdf = CheckValidFile(value);
+        }
         private string bsdf;
         
         [JsonProperty("bsdf")]
-        public string BSDF
-        {
-            get => Path.GetFileName(bsdf);
-            set => bsdf = CheckValidFile(value);
-        }
+        public string BSDF => Path.GetFileName(bsdf);
 
         private static string CheckValidFile(string path)
         {
