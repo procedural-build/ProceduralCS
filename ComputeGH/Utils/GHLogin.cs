@@ -119,7 +119,7 @@ namespace ComputeCS.Grasshopper
                     errors = "Could not login with the provided credentials. Try again.";
                 }
 
-                throw new Exception(errors);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
 
             var tokens = new AuthTokens();

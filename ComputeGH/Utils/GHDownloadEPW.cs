@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 
@@ -43,11 +45,27 @@ namespace ComputeGH.Utils
             var launch = false;
 
             if (!DA.GetData(0, ref launch)) return;
-
+            DA.DisableGapLogic();
             const string url = "https://energyplus.net/weather";
             if (launch)
             {
-                Process.Start(url);
+                QueueManager.addToQueue(url, () =>
+                {
+                    try
+                    {
+                        Process.Start(url);
+                    }
+                    catch (Exception e)
+                    {
+                        StringCache.setCache(InstanceGuid.ToString(), e.Message);
+                    }
+                });
+            }
+            
+            var errors = StringCache.getCache(InstanceGuid.ToString());
+            if (errors != null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
         }
 
