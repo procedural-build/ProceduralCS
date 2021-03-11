@@ -46,6 +46,7 @@ namespace ComputeCS.types
         public uint? ReinhartDivisions;
         public RadiationKeepSteps Keep;
         public RadiationPaths Paths;
+        public bool? SuppressWarnings;
     }
 
     public class RadiationKeepSteps
