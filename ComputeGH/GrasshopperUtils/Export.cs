@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.Permissions;
 using System.Text;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
@@ -14,14 +17,14 @@ namespace ComputeGH.Grasshopper.Utils
             bool WriteRefinementRegions = false
             )
         {
-            UnicodeEncoding uniEncoding = new UnicodeEncoding();
-            MemoryStream stream = new MemoryStream();
+            var uniEncoding = new UnicodeEncoding();
+            var stream = new MemoryStream();
             using (var memStream = new StreamWriter(stream))
             {
-                foreach (GH_Mesh ghMesh in surfaceMeshes)
+                foreach (var ghMesh in surfaceMeshes)
                 {
-                    Mesh mesh = ghMesh.Value;
-                    string name = Geometry.getUserString(ghMesh, "ComputeName");
+                    var mesh = ghMesh.Value;
+                    var name = Geometry.getUserString(ghMesh, "ComputeName");
                     var refinementDetails = Geometry.getUserString(ghMesh, "ComputeRefinementRegion");
                     if (refinementDetails != null && WriteRefinementRegions == false)
                     {
@@ -33,7 +36,7 @@ namespace ComputeGH.Grasshopper.Utils
                     mesh.FaceNormals.UnitizeFaceNormals();
 
                     MeshFace face;
-                    int[] verts = new int[3] {0, 0, 0};
+                    var verts = new int[3] {0, 0, 0};
                     memStream.Write($"solid {name}\n");
 
                     for (int f = 0; f < mesh.Faces.Count; f++)
@@ -84,6 +87,61 @@ namespace ComputeGH.Grasshopper.Utils
             }
 
             return stls;
+        }
+
+        public static Dictionary<string, byte[]> MeshToObj(GH_Structure<GH_Mesh> meshes, List<string> names)
+        {
+            var objs = new Dictionary<string, byte[]>();
+            var i = 0;
+            foreach (var _meshes in meshes.Branches)
+            {
+                objs.Add(names[i], ObjObject(_meshes));
+                i++;
+            }
+
+            return objs;
+        }
+        
+        public static byte[] ObjObject(List<GH_Mesh> meshes)
+        {
+            var uniEncoding = new UnicodeEncoding();
+            var stream = new MemoryStream();
+            using (var memStream = new StreamWriter(stream))
+            {
+                foreach (var mesh in meshes)
+                {
+                    foreach (var vertex in mesh.Value.Vertices)
+                    {
+                        memStream.WriteLine($"v {vertex.X} {vertex.Y} {vertex.Z}");
+                    }
+                    memStream.WriteLine("");
+                    
+                    foreach (var normal in mesh.Value.Normals)
+                    {
+                        memStream.WriteLine($"vn {normal.X} {normal.Y} {normal.Z}");
+                    }
+
+                    memStream.WriteLine("");
+                    
+                    foreach (var face in mesh.Value.Faces)
+                    {
+                        var vertA = face.A + 1;
+                        var vertB = face.B + 1;
+                        var vertC = face.C + 1;
+                        if (face.IsQuad)
+                        {
+                            var vertD = face.D + 1;
+                            memStream.WriteLine($"f {vertA}/{vertA}/{vertA} {vertB}/{vertB}/{vertB} {vertC}/{vertC}/{vertC} {vertD}/{vertD}/{vertD}");
+                        }
+                        else
+                        {
+                            memStream.WriteLine($"f {vertA}/{vertA}/{vertA} {vertB}/{vertB}/{vertB} {vertC}/{vertC}/{vertC}");
+                        }
+                    }
+                }
+            }
+
+            return stream.ToArray();
         }
     }
 }

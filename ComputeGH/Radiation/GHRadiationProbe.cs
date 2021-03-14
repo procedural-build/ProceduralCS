@@ -33,6 +33,8 @@ namespace ComputeGH.Radiation
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Input your analysis mesh here, if you wish to visualize your results in the browser",
+                GH_ParamAccess.tree);
             pManager.AddPointParameter("Points", "Points", "Probe points where you want to get radiation values.",
                 GH_ParamAccess.tree);
             pManager.AddVectorParameter("Normals", "Normals", "Normals to the probe points given above.",
@@ -44,8 +46,9 @@ namespace ComputeGH.Radiation
                 "Whether to create a new probe task, if one doesn't exist. If the Probe task already exists, then this component will create a new task config, that will run after the previous config is finished.",
                 GH_ParamAccess.item, false);
 
-            pManager[3].Optional = true;
+            pManager[1].Optional = true;
             pManager[4].Optional = true;
+            pManager[5].Optional = true;
         }
 
         /// <summary>
@@ -63,15 +66,17 @@ namespace ComputeGH.Radiation
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string inputJson = null;
+            var mesh = new GH_Structure<GH_Mesh>();
             var points = new GH_Structure<GH_Point>();
             var normals = new GH_Structure<GH_Vector>();
             var names = new List<string>();
             var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
-            if (!DA.GetDataTree(1, out points)) return;
-            if (!DA.GetDataTree(2, out normals)) return;
-            if (!DA.GetDataList(3, names))
+            if (!DA.GetDataTree(1, out mesh)) return;
+            if (!DA.GetDataTree(2, out points)) return;
+            if (!DA.GetDataTree(3, out normals)) return;
+            if (!DA.GetDataList(4, names))
             {
                 for (var i = 0; i < points.Branches.Count; i++)
                 {
@@ -79,10 +84,9 @@ namespace ComputeGH.Radiation
                 }
             }
 
-            DA.GetData(4, ref create);
+            DA.GetData(5, ref create);
 
-            var convertedPoints = Geometry.ConvertPointsToList(points);
-            var convertedNormals = Geometry.ConvertPointsToList(normals);
+            
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", points) + string.Join("", names) + inputJson;
@@ -103,11 +107,13 @@ namespace ComputeGH.Radiation
                     {
                         try
                         {
+                            var meshFile = Export.MeshToObj(mesh, names);
                             var results = Probe.RadiationProbes(
                                 inputJson,
-                                convertedPoints,
-                                convertedNormals,
+                                Geometry.ConvertPointsToList(points),
+                                Geometry.ConvertPointsToList(normals),
                                 names,
+                                meshFile,
                                 create
                             );
                             cachedValues = results;

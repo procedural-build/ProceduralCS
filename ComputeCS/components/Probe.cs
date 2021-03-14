@@ -11,6 +11,7 @@ namespace ComputeCS.Components
     public static class Probe
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         public static string ProbePoints(
             string inputJson,
             List<List<List<double>>> points,
@@ -52,7 +53,7 @@ namespace ComputeCS.Components
             {
                 UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
             }
-            
+
             var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
                 sampleSets, fields, overrides, create);
             if (inputData.SubTasks != null)
@@ -63,6 +64,7 @@ namespace ComputeCS.Components
             {
                 inputData.SubTasks = new List<Task> {task};
             }
+
             Logger.Info($"Created probe task: {task.UID}");
             return inputData.ToJson();
         }
@@ -76,7 +78,7 @@ namespace ComputeCS.Components
             {
                 return null;
             }
-            
+
             foreach (var subTask in subTasks)
             {
                 if (string.IsNullOrEmpty(subTask.UID))
@@ -95,8 +97,12 @@ namespace ComputeCS.Components
                     Logger.Info($"Found simulation task: {subTask.UID}");
                     return subTask;
                 }
-                if (subTask.Config == null){continue;}
-                
+
+                if (subTask.Config == null)
+                {
+                    continue;
+                }
+
                 if (subTask.Config.ContainsKey("cmd") && (string) subTask.Config["cmd"] == "wind_tunnel")
                 {
                     Logger.Info($"Found simulation task: {subTask.UID}");
@@ -135,8 +141,10 @@ namespace ComputeCS.Components
                 {
                     sample.Add("normals", $"{name}.nls");
                 }
+
                 sampleSets.Add(sample);
             }
+
             Logger.Info($"Generated sample sets for {names} with normal? {withNormals}");
             Logger.Debug($"Generated sample set: {sampleSets}");
             return sampleSets;
@@ -214,15 +222,16 @@ namespace ComputeCS.Components
                 var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
                 config.Add("overrides", json);
             }
+
             var createParams = new Dictionary<string, object>
             {
                 {
-                    "config", config 
+                    "config", config
                 }
             };
 
             taskQueryParams.Add("project", projectId);
-            
+
             var task = Tasks.GetCreateOrUpdateTask(
                 tokens,
                 url,
@@ -240,6 +249,7 @@ namespace ComputeCS.Components
             List<List<List<double>>> points,
             List<List<List<double>>> normals,
             List<string> names,
+            Dictionary<string, byte[]> meshFiles,
             bool create = false
         )
         {
@@ -254,6 +264,7 @@ namespace ComputeCS.Components
             {
                 return null;
             }
+
             var sampleSets = GenerateSampleSet(names, true);
 
             var taskQueryParams = new Dictionary<string, object>
@@ -261,27 +272,61 @@ namespace ComputeCS.Components
                 {"name", "Probe"},
                 {"parent", parentTask.UID},
             };
-            
+
             if (create)
             {
                 UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, uploadDir);
                 UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, normals, uploadDir, "nls");
+                UploadMeshFile(tokens, inputData.Url, parentTask.UID, meshFiles, uploadDir);
             }
-            
+
             var task = CreateRadiationProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
                 sampleSets, create);
- 
-            inputData.SubTasks = new List<Task>{task};
+
+            inputData.SubTasks = new List<Task> {task};
             var probes = new Dictionary<string, int>();
             for (var i = 0; i < names.Count; i++)
             {
                 probes.Add(names[i], points[i].Count);
             }
+
             inputData.RadiationSolution.Probes = probes;
 
             return inputData.ToJson();
         }
-        
+
+        public static void UploadMeshFile(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            Dictionary<string, byte[]> meshFiles,
+            string caseDir = "geometry"
+        )
+        {
+            foreach (var name in meshFiles.Keys)
+            {
+                Logger.Info($"Uploading mesh: {name} to the server");
+                var upload = new GenericViewSet<Dictionary<string, object>>(
+                    tokens,
+                    url,
+                    $"/api/task/{taskId}/file/{caseDir}/{name}.obj"
+                ).Update(
+                    null,
+                    new Dictionary<string, object>
+                    {
+                        {"file", meshFiles[name]}
+                    }
+                );
+                if (upload.ContainsKey("errors"))
+                {
+                    Logger.Error(upload["error"]);
+                    throw new Exception($"Got error while uploading mesh to server: {upload["error"]}");
+                }
+
+                Logger.Debug($"Uploaded {caseDir}/{name}.obj to server");
+            }
+        }
+
         public static Task CreateRadiationProbeTask(
             AuthTokens tokens,
             string url,
@@ -307,7 +352,7 @@ namespace ComputeCS.Components
             };
 
             taskQueryParams.Add("project", projectId);
-            
+
             var task = Tasks.GetCreateOrUpdateTask(
                 tokens,
                 url,
@@ -321,7 +366,7 @@ namespace ComputeCS.Components
             {
                 throw new Exception(task.ErrorMessages.First());
             }
-            
+
             return task;
         }
     }
