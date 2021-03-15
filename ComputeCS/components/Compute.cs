@@ -765,7 +765,7 @@ namespace ComputeCS.Components
         {
             foreach (var material in materials)
             {
-                if (material.Overrides?.BSDF == null) continue;
+                if (material.Overrides?.BSDF == null || material.Overrides?.BSDFPath == "clear.xml") continue;
                 var bsdfFileContent = File.ReadAllBytes(material.Overrides.BSDFPath);
                     
                 var uploadTask = new GenericViewSet<Dictionary<string, object>>(
