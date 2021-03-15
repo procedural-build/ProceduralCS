@@ -75,7 +75,7 @@ namespace ComputeCS.Components
             );
             if (metricTask.ErrorMessages != null && metricTask.ErrorMessages.Count > 0)
             {
-                if (create == false && metricTask.ErrorMessages.First() == "No object found")
+                if (create == false && metricTask.ErrorMessages.First() == "No object found.")
                 {
                     // pass
                 }
