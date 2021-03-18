@@ -125,7 +125,6 @@
     </Compile>
     <Compile Include="Radiation\GHDaylightMetrics.cs" />
     <Compile Include="Radiation\GHRadianceMaterial.cs" />
-    <Compile Include="Radiation\GHRadiationMesh.cs" />
     <Compile Include="Radiation\GHRadiationProbe.cs" />
     <Compile Include="Radiation\GHRadiationProbeResults.cs" />
     <Compile Include="Radiation\GHRadiationSolution.cs" />
