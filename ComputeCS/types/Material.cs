@@ -19,6 +19,7 @@ namespace ComputeCS.types
         public string Identifier;
         public string Type;
         public string Modifier;
+        public string Normal;
 
         public string BSDFPath
         {

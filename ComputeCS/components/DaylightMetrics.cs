@@ -75,7 +75,15 @@ namespace ComputeCS.Components
             );
             if (metricTask.ErrorMessages != null && metricTask.ErrorMessages.Count > 0)
             {
-                throw new Exception(metricTask.ErrorMessages.First());
+                if (create == false && metricTask.ErrorMessages.First() == "No object found.")
+                {
+                    // pass
+                }
+                else
+                {
+                    throw new Exception(metricTask.ErrorMessages.First());    
+                }
+                
             }
             
             inputData.SubTasks.Add(metricTask);
