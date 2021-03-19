@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.types;
+using ComputeCS.utils.Cache;
+using ComputeCS.utils.Queue;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
+using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
@@ -49,8 +53,11 @@ namespace ComputeCS.Grasshopper
                     "{\"field\": \"unsafe_frail\", \"value\": 99.977}",
                     "{\"field\": \"unsafe_all\", \"value\": 99.977}"
                 });
+            pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
+            
             pManager[1].Optional = true;
             pManager[2].Optional = true;
+            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -60,55 +67,55 @@ namespace ComputeCS.Grasshopper
         {
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.item);
             pManager.AddNumberParameter(
-                "winter_morning", "winter_morning", 
+                "winter_morning", "winter_morning",
                 "Included period: 12/01-03/01 07:00-10:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "winter_noon", "winter_noon", 
+                "winter_noon", "winter_noon",
                 "Included period: 12/01-03/01 11:00-14:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "winter_afternoon", "winter_afternoon", 
+                "winter_afternoon", "winter_afternoon",
                 "Included period: 12/01-03/01 15:00-18:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "winter_evenings", "winter_evenings", 
+                "winter_evenings", "winter_evenings",
                 "Included period: 12/01-03/01 19:00-22:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "spring_morning", "spring_morning", 
+                "spring_morning", "spring_morning",
                 "Included period: 03/01-06/01 07:00-10:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "spring_noon", "spring_noon", 
+                "spring_noon", "spring_noon",
                 "Included period: 03/01-06/01 11:00-14:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
                 "spring_afternoon", "spring_afternoon",
                 "Included period: 03/01-06/01 15:00-18:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "spring_evenings", "spring_evenings", 
+                "spring_evenings", "spring_evenings",
                 "Included period: 03/01-06/01 19:00-22:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "summer_morning", "summer_morning", 
+                "summer_morning", "summer_morning",
                 "Included period: 06/01-09/01 07:00-10:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "summer_noon", "summer_noon", 
+                "summer_noon", "summer_noon",
                 "Included period: 06/01-09/01 11:00-14:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "summer_afternoon", "summer_afternoon", 
+                "summer_afternoon", "summer_afternoon",
                 "Included period: 06/01-09/01 15:00-18:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "summer_evenings", "summer_evenings", 
+                "summer_evenings", "summer_evenings",
                 "Included period: 06/01-09/01 19:00-22:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "fall_morning", "fall_morning", 
+                "fall_morning", "fall_morning",
                 "Included period: 09/01-12/01 07:00-10:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "fall_noon", "fall_noon", 
+                "fall_noon", "fall_noon",
                 "Included period: 09/01-12/01 11:00-14:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "fall_afternoon", "fall_afternoon", 
+                "fall_afternoon", "fall_afternoon",
                 "Included period: 09/01-12/01 15:00-18:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "fall_evenings", "fall_evenings", 
+                "fall_evenings", "fall_evenings",
                 "Included period: 09/01-12/01 19:00-22:00", GH_ParamAccess.tree);
             pManager.AddNumberParameter(
-                "yearly", "yearly", 
+                "yearly", "yearly",
                 "Included period: 1/1-12/31 00:00-24:00", GH_ParamAccess.tree);
         }
 
@@ -121,45 +128,108 @@ namespace ComputeCS.Grasshopper
             string folder = null;
             var criteria = 0;
             var thresholdsFrequencies = new List<string>();
+            var refresh = false;
 
             if (!DA.GetData(0, ref folder)) return;
             DA.GetData(1, ref criteria);
             DA.GetDataList(2, thresholdsFrequencies);
+            DA.GetData(3, ref refresh);
 
-            var results = WindThreshold.ReadThresholdResults(folder);
-            var info = new DataTree<object>();
-            if (criteria == 1)
+            var cacheKey = folder + criteria + string.Join("", thresholdsFrequencies);
+            var cachedValues = StringCache.getCache(cacheKey);
+            DA.DisableGapLogic();
+
+            if (cachedValues == null || refresh)
             {
-                var _thresholdFrequencies = thresholdsFrequencies
-                    .Select(frequency => new WindThresholds.Threshold().FromJson(frequency)).ToList();
-                var lawsons = WindThreshold.LawsonsCriteria(results, _thresholdFrequencies);
-                foreach (var season in lawsons.Keys)
+                const string queueName = "thresholdResults";
+                StringCache.setCache(InstanceGuid.ToString(), "");
+
+                // Get queue lock
+                var queueLock = StringCache.getCache(queueName);
+                if (queueLock != "true")
                 {
-                    var data = ConvertLawsonToDataTree(lawsons[season]);
+                    StringCache.setCache(queueName, "true");
+                    StringCache.setCache(cacheKey + "progress", "Loading...");
+
+                    QueueManager.addToQueue(queueName, () =>
+                    {
+                        try
+                        {
+                            var results = WindThreshold.ReadThresholdResults(folder);
+                            if (criteria == 1)
+                            {
+                                _thresholdFrequencies = thresholdsFrequencies
+                                    .Select(frequency => new WindThresholds.Threshold().FromJson(frequency)).ToList();
+                                lawsonResults = WindThreshold.LawsonsCriteria(results, _thresholdFrequencies);
+                            }
+                            else
+                            {
+                                (thresholdOutput, thresholdLegend) = TransposeThresholdMatrix(results);
+                            }
+                            StringCache.setCache(cacheKey + "progress", "Done");
+                            StringCache.setCache(cacheKey, "results");
+                        }
+                        catch (Exception e)
+                        {
+                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
+                            StringCache.setCache(cacheKey, "error");
+                            StringCache.setCache(cacheKey + "progress", "");
+                        }
+
+                        ExpireSolutionThreadSafe(true);
+                        Thread.Sleep(2000);
+                        StringCache.setCache(queueName, "");
+                    });
+                    ExpireSolutionThreadSafe(true);
+                }
+            }
+
+            // Handle Errors
+            var errors = StringCache.getCache(InstanceGuid.ToString());
+            if (!string.IsNullOrEmpty(errors))
+            {
+                throw new Exception(errors);
+            }
+
+            if (lawsonResults != null && criteria == 1)
+            {
+                foreach (var season in lawsonResults.Keys)
+                {
+                    var data = ConvertLawsonToDataTree(lawsonResults[season]);
                     AddToOutput(DA, season, data);
                 }
 
-                info = UpdateInfo(lawsons.First().Value.Keys.ToList(), _thresholdFrequencies, criteria);
-                RemoveUnusedOutputs(lawsons.Keys.ToList());
+                info = UpdateInfo(lawsonResults.First().Value.Keys.ToList(), _thresholdFrequencies, criteria);
+                RemoveUnusedOutputs(lawsonResults.Keys.ToList());
             }
-            else
+
+            if (thresholdOutput != null && criteria == 0)
             {
-                var (outputs, outputLegend) = TransposeThresholdMatrix(results);
-                foreach (var key in outputs.Keys)
+                foreach (var key in thresholdOutput.Keys)
                 {
-                    AddToOutput(DA, key, outputs[key]);
+                    AddToOutput(DA, key, thresholdOutput[key]);
                 }
 
                 info = UpdateInfo(
-                    outputLegend["patch"], 
-                    outputLegend["threshold"].Select(threshold => new WindThresholds.Threshold{Field = threshold}).ToList(),
+                    thresholdLegend["patch"],
+                    thresholdLegend["threshold"].Select(threshold => new WindThresholds.Threshold {Field = threshold})
+                        .ToList(),
                     criteria
-                    );
-                RemoveUnusedOutputs(outputs.Keys.ToList());
+                );
+                RemoveUnusedOutputs(thresholdOutput.Keys.ToList());
             }
 
+            if (info != null)
+            {
+                DA.SetDataTree(0, info);
+            }
+            Message = StringCache.getCache(cacheKey + "progress");
+        }
 
-            DA.SetDataTree(0, info);
+        private void ExpireSolutionThreadSafe(bool recompute = false)
+        {
+            var delegated = new ExpireSolutionDelegate(ExpireSolution);
+            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         private static DataTree<object> ConvertLawsonToDataTree(Dictionary<string, List<int>> data)
@@ -183,7 +253,8 @@ namespace ComputeCS.Grasshopper
         }
 
 
-        public static (Dictionary<string, DataTree<object>>, Dictionary<string, List<string>>) TransposeThresholdMatrix(Dictionary<string, Dictionary<string, object>> resultsToTranspose)
+        public static (Dictionary<string, DataTree<object>>, Dictionary<string, List<string>>) TransposeThresholdMatrix(
+            Dictionary<string, Dictionary<string, object>> resultsToTranspose)
         {
             var output = new Dictionary<string, DataTree<object>>();
             var legend = new Dictionary<string, List<string>>
@@ -192,12 +263,12 @@ namespace ComputeCS.Grasshopper
                 {"patch", new List<string>()},
                 {"threshold", new List<string>()}
             };
-            
+
             var seasons = WindThreshold.ThresholdSeasons();
-            
+
             // results[threshold][patch][pointIndex][season]
             // results[season][patch][threshold][pointIndex]
-            
+
             foreach (var thresholdKey in resultsToTranspose.Keys)
             {
                 foreach (var patchKey in resultsToTranspose[thresholdKey].Keys)
@@ -211,14 +282,29 @@ namespace ComputeCS.Grasshopper
                         {
                             var seasonKey = seasons[seasonCounter];
 
-                            if (!legend["season"].Contains(seasonKey)){legend["season"].Add(seasonKey);}
-                            if (!legend["patch"].Contains(patchKey)){legend["patch"].Add(patchKey);}
-                            if (!legend["threshold"].Contains(thresholdKey)){legend["threshold"].Add(thresholdKey);}
-                            if (!output.ContainsKey(seasonKey)){output.Add(seasonKey, new DataTree<object>());}
-                            
+                            if (!legend["season"].Contains(seasonKey))
+                            {
+                                legend["season"].Add(seasonKey);
+                            }
+
+                            if (!legend["patch"].Contains(patchKey))
+                            {
+                                legend["patch"].Add(patchKey);
+                            }
+
+                            if (!legend["threshold"].Contains(thresholdKey))
+                            {
+                                legend["threshold"].Add(thresholdKey);
+                            }
+
+                            if (!output.ContainsKey(seasonKey))
+                            {
+                                output.Add(seasonKey, new DataTree<object>());
+                            }
+
                             var patchCounter = legend["patch"].IndexOf(patchKey);
                             var thresholdCounter = legend["threshold"].IndexOf(thresholdKey);
-                            
+
                             var path = new GH_Path(patchCounter, thresholdCounter);
                             output[seasonKey].Add(seasonValue, path);
                             seasonCounter++;
@@ -227,7 +313,6 @@ namespace ComputeCS.Grasshopper
                         //pointIndex++;
                     }
                 }
-                
             }
 
             return (output, legend);
@@ -267,11 +352,12 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds, int criteria)
+        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds,
+            int criteria)
         {
             var info = "Patch Names:\n";
             var output = new DataTree<object>();
-            
+
             if (criteria == 1)
             {
                 var i = 0;
@@ -280,6 +366,7 @@ namespace ComputeCS.Grasshopper
                     info += $"{{{i}}} is {key}\n";
                     i++;
                 }
+
                 info += "\nComfort Categories\n";
                 var j = 0;
                 foreach (var threshold in thresholds)
@@ -297,6 +384,7 @@ namespace ComputeCS.Grasshopper
                     info += $"{{{i};*}} is {key}\n";
                     i++;
                 }
+
                 info += "\nThreshold Categories\n";
                 var j = 0;
                 foreach (var threshold in thresholds)
@@ -306,8 +394,8 @@ namespace ComputeCS.Grasshopper
                     j++;
                 }
             }
-            
-            
+
+
             output.Add(info, new GH_Path(0));
             return output;
         }
@@ -348,5 +436,11 @@ namespace ComputeCS.Grasshopper
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid => new Guid("d2422b3c-e13a-46a4-9700-ec3d53544013");
+
+        private DataTree<object> info;
+        private Dictionary<string, Dictionary<string, List<int>>> lawsonResults;
+        private List<WindThresholds.Threshold> _thresholdFrequencies;
+        private Dictionary<string, DataTree<object>> thresholdOutput;
+        private Dictionary<string, List<string>> thresholdLegend;
     }
 }
