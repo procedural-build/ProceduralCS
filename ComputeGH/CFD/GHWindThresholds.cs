@@ -56,7 +56,7 @@ namespace ComputeGH.CFD
                 "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96", GH_ParamAccess.item, 4);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
-                GH_ParamAccess.item);
+                GH_ParamAccess.item, "Probe");
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new Wind Threshold task, if one doesn't exist", GH_ParamAccess.item, false);
 
@@ -86,10 +86,11 @@ namespace ComputeGH.CFD
             var patches = new List<string>();
             var thresholds = new List<string>();
             var cpus = 4;
-            string dependentOn = null;
+            var dependentOn = "Probe";
             var create = false;
 
             if (!DA.GetData(0, ref inputJson)) return;
+            if (inputJson == "error") return;
             if (!DA.GetData(1, ref epwFile)) return;
             if (!DA.GetDataList(2, patches))
             {
@@ -103,7 +104,7 @@ namespace ComputeGH.CFD
             DA.GetData(6, ref create);
 
             // Get Cache to see if we already did this
-            var cacheKey = string.Join("", patches) + epwFile;
+            var cacheKey = string.Join("", patches) + epwFile + inputJson;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
@@ -157,7 +158,7 @@ namespace ComputeGH.CFD
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
-                throw new Exception(errors);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
 
             // Read from Cache

@@ -46,7 +46,7 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.item, 1);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
-                GH_ParamAccess.item);
+                GH_ParamAccess.item, "VirtualWindTunnel");
             pManager.AddTextParameter("Case Directory", "Case Dir",
                 "Folder to probe on the Compute server. Default is VWT", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
@@ -91,7 +91,7 @@ namespace ComputeCS.Grasshopper
             var names = new List<string>();
             var fields = new List<string>();
             var cpus = 1;
-            string dependentOn = null;
+            var dependentOn = "VirtualWindTunnel";
             var caseDir = "VWT";
             var overrides = "";
             var create = false;
@@ -183,7 +183,7 @@ namespace ComputeCS.Grasshopper
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (errors != null)
             {
-                throw new Exception(errors);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
 
             // Read from Cache

@@ -12,13 +12,14 @@ namespace ComputeCS.Components
     public static class WindThreshold
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         public static string ComputeWindThresholds(
             string inputJson,
             string epwFile,
             List<string> patches,
             List<string> thresholds,
             List<int> cpus,
-            string dependentOn = "",
+            string dependentOn = "Probe",
             bool create = false
         )
         {
@@ -26,7 +27,8 @@ namespace ComputeCS.Components
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
             var subTasks = inputData.SubTasks;
-            var postProcessTask = GetPostProcessTask(subTasks, dependentOn);
+            var postProcessTask =
+                TaskUtils.GetDependentTask(subTasks, dependentOn, inputData.Url, tokens, parentTask.UID);
             var project = inputData.Project;
 
             if (parentTask?.UID == null)
@@ -73,7 +75,6 @@ namespace ComputeCS.Components
                     {
                         throw new Exception(uploadTask["error_messages"].ToString());
                     }
-
                 }
             }
 
@@ -114,6 +115,7 @@ namespace ComputeCS.Components
             {
                 inputData.SubTasks = new List<Task> {task};
             }
+
             Logger.Info($"Created Wind Threshold task: {task.UID}");
 
             return inputData.ToJson();
@@ -128,7 +130,7 @@ namespace ComputeCS.Components
             {
                 return null;
             }
-            
+
             foreach (var subTask in subTasks)
             {
                 if (string.IsNullOrEmpty(subTask.UID))
@@ -145,8 +147,11 @@ namespace ComputeCS.Components
                 {
                     return subTask;
                 }
-                
-                if (subTask.Config == null){continue;}
+
+                if (subTask.Config == null)
+                {
+                    continue;
+                }
 
                 if (subTask.Config.ContainsKey("commands"))
                 {
@@ -179,7 +184,7 @@ namespace ComputeCS.Components
             {
                 var extension = Path.GetExtension(file).Replace(".", "");
                 if (!resultFileTypes.Contains(extension)) continue;
-                
+
                 var patchName = Path.GetFileNameWithoutExtension(file);
                 var values = ReadThresholdData(file);
 
@@ -211,7 +216,6 @@ namespace ComputeCS.Components
             List<WindThresholds.Threshold> thresholds
         )
         {
-
             var newData = new Dictionary<string, Dictionary<string, object>>();
             foreach (var threshold in thresholds)
             {
@@ -249,7 +253,7 @@ namespace ComputeCS.Components
             // {"winter": [point1, point2, ...], "spring": [point1, point2, ...], ...}
             foreach (var resultKey in patchValues.Keys)
             {
-                var thresholdFrequency = thresholds.First(threshold => threshold.Field == resultKey).Value/100;
+                var thresholdFrequency = thresholds.First(threshold => threshold.Field == resultKey).Value / 100;
                 var pointValues = (List<List<double>>) patchValues[resultKey];
                 var pointLength = pointValues.Count();
                 var pointIndex = 0;
@@ -305,6 +309,5 @@ namespace ComputeCS.Components
                 "yearly"
             };
         }
-        
     }
 }

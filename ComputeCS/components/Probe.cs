@@ -18,7 +18,7 @@ namespace ComputeCS.Components
             List<string> fields,
             List<string> names,
             List<int> cpus,
-            string dependentOn = "",
+            string dependentOn = "VirtualWindTunnel",
             string caseDir = "VWT/",
             string overrides = "",
             bool create = false
@@ -28,7 +28,8 @@ namespace ComputeCS.Components
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
             var subTasks = inputData.SubTasks;
-            var simulationTask = GetSimulationTask(subTasks, dependentOn);
+            var simulationTask = TaskUtils.GetDependentTask(subTasks, dependentOn,
+                inputData.Url, tokens, parentTask.UID);
             var project = inputData.Project;
 
             if (parentTask == null)
@@ -67,61 +68,6 @@ namespace ComputeCS.Components
 
             Logger.Info($"Created probe task: {task.UID}");
             return inputData.ToJson();
-        }
-
-        private static Task GetSimulationTask(
-            List<Task> subTasks,
-            string dependentName = ""
-        )
-        {
-            if (subTasks == null)
-            {
-                return null;
-            }
-
-            foreach (var subTask in subTasks)
-            {
-                if (string.IsNullOrEmpty(subTask.UID))
-                {
-                    continue;
-                }
-
-                if (dependentName == subTask.Name)
-                {
-                    Logger.Info($"Found simulation task: {subTask.UID}");
-                    return subTask;
-                }
-
-                if (subTask.Name == "SimpleCase")
-                {
-                    Logger.Info($"Found simulation task: {subTask.UID}");
-                    return subTask;
-                }
-
-                if (subTask.Config == null)
-                {
-                    continue;
-                }
-
-                if (subTask.Config.ContainsKey("cmd") && (string) subTask.Config["cmd"] == "wind_tunnel")
-                {
-                    Logger.Info($"Found simulation task: {subTask.UID}");
-                    return subTask;
-                }
-
-                if (subTask.Config.ContainsKey("commands"))
-                {
-                    // Have to do this conversion to be able to compare the strings
-                    if (((JArray) subTask.Config["commands"]).ToObject<List<string>>()[0] == "simpleFoam")
-                    {
-                        Logger.Info($"Found simulation task: {subTask.UID}");
-                        return subTask;
-                    }
-                }
-            }
-
-            Logger.Info($"Did not find any simulation task!");
-            return null;
         }
 
         public static List<Dictionary<string, object>> GenerateSampleSet(
