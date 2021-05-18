@@ -25,7 +25,8 @@ namespace ComputeCS.Grasshopper
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes with naming applied. To see what names have been applied use the Get Names component.", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes with naming applied.", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Names", "Names", "List of names applied.", GH_ParamAccess.list);
         }
 
         protected override Bitmap Icon => Resources.IconSetName;
@@ -62,6 +63,7 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
+            var ghNames = new List<string>();
             for (var i = 0; i < ghObjs.Count(); i++)
             {
                 var name = names.Count() >= ghObjs.Count() ? names[i] : "";
@@ -70,10 +72,14 @@ namespace ComputeCS.Grasshopper
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Mesh {ghObjs[i]} is not a valid Mesh. {ghObjs[i]} is element {i} in the input list");
                 }
-                Geometry.setUserString(ghObjs[i], "ComputeName", Geometry.fixName(name));
+
+                name = Geometry.fixName(name);
+                Geometry.setUserString(ghObjs[i], "ComputeName", name);
+                ghNames.Add(name);
             }
 
             DA.SetDataList(0, ghObjs);
+            DA.SetDataList(1, ghNames);
         }
     }
 }
