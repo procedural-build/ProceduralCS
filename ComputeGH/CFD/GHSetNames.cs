@@ -26,7 +26,7 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Meshes", "Meshes", "Meshes with naming applied.", GH_ParamAccess.list);
-            pManager.AddMeshParameter("Names", "Names", "List of names applied.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Names", "Names", "List of names applied.", GH_ParamAccess.list);
         }
 
         protected override Bitmap Icon => Resources.IconSetName;
