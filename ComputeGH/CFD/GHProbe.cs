@@ -200,14 +200,21 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static void ValidateName(string name)
+        private void ValidateName(string name)
         {
             var illegalCharacters = new List<string> {"?", "&", "/", "%", "#", "!", "+", " "};
             if (illegalCharacters.Any(name.Contains))
             {
-                throw new ValidationException(
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
                     $"{name} contains illegal characters. " +
                     $"A name cannot include any on the following characters: {string.Join(", ", illegalCharacters)}"
+                );
+            }
+
+            if (int.TryParse(name, out var _))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                    $"{name} contains illegal characters. A name cannot be a number"
                 );
             }
         }
