@@ -37,11 +37,16 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("ProjectName", "ProjectName", "Project Name", GH_ParamAccess.item);
             pManager.AddIntegerParameter("ProjectNumber", "ProjectNumber", "Project  Number", GH_ParamAccess.item);
             pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
+            pManager.AddTextParameter("Overrides", "Overrides",
+                "Takes overrides in JSON format: \n" +
+                "{\n  \"company\": companyId,\n  \"copy_from\": [\n{\"task\": taskId, \"files\": [fileName1, fileName2]}\n]\n}",
+                GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
 
             pManager[2].Optional = true;
             pManager[4].Optional = true;
+            pManager[5].Optional = true;
         }
 
         /// <summary>
@@ -62,13 +67,15 @@ namespace ComputeCS.Grasshopper
             string projectName = null;
             int? projectNumber = null;
             string taskName = null;
+            string overrides = null;
             var create = false;
 
             if (!DA.GetData(0, ref auth)) return;
             if (!DA.GetData(1, ref projectName)) return;
             DA.GetData(2, ref projectNumber);
             if (!DA.GetData(3, ref taskName)) return;
-            DA.GetData(4, ref create);
+            DA.GetData(4, ref overrides);
+            DA.GetData(5, ref create);
 
             ValidateName(taskName);
             ValidateName(projectName);
@@ -97,6 +104,7 @@ namespace ComputeCS.Grasshopper
                                 projectName,
                                 projectNumber,
                                 taskName,
+                                overrides,
                                 create
                             );
                             cachedValues = results;
@@ -137,12 +145,14 @@ namespace ComputeCS.Grasshopper
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
+                var messageLevel = GH_RuntimeMessageLevel.Error;
                 if (errors.Contains("No object found"))
                 {
                     errors = "Could not find the desired project. Click create to create a new project.";
+                    messageLevel = GH_RuntimeMessageLevel.Warning;
                 }
 
-                throw new Exception(errors);
+                AddRuntimeMessage(messageLevel, errors);
             }
         }
 
@@ -160,7 +170,7 @@ namespace ComputeCS.Grasshopper
                 throw new ValidationException(
                     $"{name} contains illegal characters. " +
                     $"A name cannot include any on the following characters: {string.Join(", ", illegalCharacters)}"
-                    );
+                );
             }
         }
 

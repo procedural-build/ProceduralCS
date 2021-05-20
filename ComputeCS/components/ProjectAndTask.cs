@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ComputeCS.types;
+using Newtonsoft.Json;
 
 namespace ComputeCS.Components
 {
@@ -12,12 +13,14 @@ namespace ComputeCS.Components
             string projectName,
             int? projectNumber,
             string taskName,
+            string overrides,
             bool create
         )
         {
             var inputData = new Inputs().FromJson(inputJson);
             // Unpack to an AuthToken instances
             var tokens = inputData.Auth;
+            var overrideDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
 
             var queryParams = new Dictionary<string, object>
             {
@@ -26,6 +29,11 @@ namespace ComputeCS.Components
             if (projectNumber != null)
             {
                 queryParams.Add("number", projectNumber);
+            }
+
+            if (overrideDict.ContainsKey("company"))
+            {
+                queryParams.Add("company", overrideDict["company"]);
             }
 
             // Get a list of Projects for this user
@@ -47,22 +55,30 @@ namespace ComputeCS.Components
 
             try
             {
+                var taskQueryParams = new Dictionary<string, object>
+                {
+                    {"name", taskName}
+                };
+                if (overrideDict.ContainsKey("copy_from"))
+                {
+                    queryParams.Add("copy_from", overrideDict["copy_from"]);
+                }
+
                 var task = new GenericViewSet<Task>(
                     tokens,
                     inputData.Url,
                     $"/api/project/{project.UID}/task/"
                 ).GetOrCreate(
-                    new Dictionary<string, object>
-                    {
-                        {"name", taskName}
-                    },
+                    taskQueryParams,
                     new Dictionary<string, object>
                     {
                         {
                             "config", new Dictionary<string, string>
                             {
                                 {"case_dir", "foam"},
-                                {"task_type", "parent"} // This is optional - task types of "parent" will not execute jobs
+                                {
+                                    "task_type", "parent"
+                                } // This is optional - task types of "parent" will not execute jobs
                             }
                         }
                     },
@@ -71,10 +87,6 @@ namespace ComputeCS.Components
                 inputData.Task = task;
             }
             catch (Exception) {}
-
-            
-
-
             // We could have a function here that makes life easier to
             // merge the outputs with the provided inputs
             
