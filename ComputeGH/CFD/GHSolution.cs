@@ -53,7 +53,12 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list, 16);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
-                "{\n\t\"setup\": [...],\n\t\"fields\": [...],\n\t\"presets\": [...],\n\t\"caseFiles\": [...]\n}",
+                "{\n" +
+                "    \"setup\": [...],\n" +
+                "    \"fields\": [...],\n" +
+                "    \"presets\": [...],\n" +
+                "    \"caseFiles\": [...]\n" +
+                "}",
                 GH_ParamAccess.item);
 
             pManager[2].Optional = true;

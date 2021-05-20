@@ -39,8 +39,8 @@ namespace ComputeCS.Grasshopper
                 "If you want to exclude all files that ends with '.txt', then you can do that with: {\"exclude\": [\".txt\"]}\n" +
                 "The overrides takes a JSON formatted string as follows:\n" +
                 "{\n" +
-                "\"exclude\": List[string]\n," +
-                "\"include\": List[string]\n," +
+                "    \"exclude\": List[string],\n" +
+                "    \"include\": List[string],\n" +
                 "\n}",
                 GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Reload", "Reload", "Redownload the content from Compute", GH_ParamAccess.item);

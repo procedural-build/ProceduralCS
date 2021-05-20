@@ -34,12 +34,12 @@ namespace ComputeGH.Radiation
                 0);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Optional overrides to apply to the presets.\n" +
-                "If you have chosen window, you should add a override with {\"bsdf\": \"BSDF FILE\"}.\n" +
+                "If you have chosen window, you should add a override with {\"bsdf_path\": \"BSDF FILE\"}.\n" +
                 "The BSDF file can either be given as a path to a local file or \"clear.xml\", which is a default BSDF file Compute provides.\n" +
                 "If you want to override a material, which is not a window preset, the following overrides can be given:\n" +
                 "{\n" +
-                "\"type\": \"plastic\"\n," +
-                "\"reals\": [0.2, 0.2, 0.2, 0, 0]\n," +
+                "    \"type\": \"plastic\",\n" +
+                "    \"reals\": [0.2, 0.2, 0.2, 0, 0],\n" +
                 "\n}",
                 GH_ParamAccess.item, "");
 

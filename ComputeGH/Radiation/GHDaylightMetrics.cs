@@ -30,8 +30,17 @@ namespace ComputeGH.Radiation
             pManager.AddIntegerParameter("Preset", "Preset", "Select a Daylight Metric", GH_ParamAccess.item,
                 0);
             pManager.AddTextParameter("Overrides", "Overrides",
-                "Optional overrides to apply to the presets.\nThe overrides should be given in the following JSON format:\n" +
-                "{\n\"threshold\": 500,\n\"work_hours\": [8, 16], \"work_days\": [0, 5]\n}\nHere shown with the defaults.",
+                "Optional overrides to apply to the presets.\n" +
+                "The overrides should be given in the following JSON format:\n" +
+                "{\n" +
+                "    \"threshold\": 500,\n" +
+                "    \"work_hours\": [8, 16],\n" +
+                "    \"work_days\": [0, 5],\n" +
+                "    \"selected_hours\": []\n" +
+                " }\n" +
+                "Here shown with the defaults.\n" +
+                "\"selected_hours\" is a list of true/false values that represents whether or not that hour should be included in the calculation.\n" +
+                "In case it is given then it will override the \"work_hours\" and \"work_days\".",
                 GH_ParamAccess.item, "");
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96.",

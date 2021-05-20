@@ -42,9 +42,19 @@ namespace ComputeGH.Radiation
                 GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Accepts the following overrides with defaults in JSON format: \n" +
-                "{\n\t\"ambient_bounces\": 4,\n\t\"ambient_divisions\": 5000,\n" +
-                "\t\"limit_ray_weight\": 0.0002,\n\t\"samples\": 1000\n\t\"reinhart_divisions\": 1\n\t\"" +
-                "keep\": {\n\t\t\"all\": false,\n\t\t\"view\": false,\n\t\t\"daylight\": false,\n\t\t\"sky\": false\n\t}\n}",
+                "{\n" +
+                "    \"ambient_bounces\": 4,\n" +
+                "    \"ambient_divisions\": 5000,\n" +
+                "    \"limit_ray_weight\": 0.0002,\n" +
+                "    \"samples\": 1000,\n" +
+                "    \"reinhart_divisions\": 1,\n" +
+                "    \"keep\": {\n" +
+                "        \"all\": false,\n" +
+                "        \"view\": false,\n" +
+                "        \"daylight\": false,\n" +
+                "        \"sky\": false\n" +
+                "    }\n" +
+                "}",
                 GH_ParamAccess.item);
 
             pManager[1].Optional = true;
