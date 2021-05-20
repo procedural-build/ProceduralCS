@@ -20,7 +20,9 @@ namespace ComputeCS.Components
             var inputData = new Inputs().FromJson(inputJson);
             // Unpack to an AuthToken instances
             var tokens = inputData.Auth;
-            var overrideDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
+            var overrideDict = overrides != null
+                ? JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides)
+                : new Dictionary<string, object>();
 
             var queryParams = new Dictionary<string, object>
             {
@@ -86,10 +88,12 @@ namespace ComputeCS.Components
                 );
                 inputData.Task = task;
             }
-            catch (Exception) {}
+            catch (Exception)
+            {
+            }
             // We could have a function here that makes life easier to
             // merge the outputs with the provided inputs
-            
+
             inputData.Project = project;
 
             return inputData.ToJson();
@@ -136,14 +140,14 @@ namespace ComputeCS.Components
             {
                 tasksQueryParams.Add("parent", "null");
             }
-            
+
             var tasks = new GenericViewSet<Task>(
                 tokens,
                 inputData.Url,
                 $"/api/project/{project.UID}/task/"
             ).List(tasksQueryParams);
 
-            return string.Join(";",tasks.Select(task => task.ToJson()));
+            return string.Join(";", tasks.Select(task => task.ToJson()));
         }
     }
 }
