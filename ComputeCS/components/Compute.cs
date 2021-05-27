@@ -4,6 +4,7 @@ using ComputeCS.types;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Newtonsoft.Json;
 
 namespace ComputeCS.Components
 {
@@ -765,25 +766,89 @@ namespace ComputeCS.Components
         {
             foreach (var material in materials)
             {
-                if (material.Overrides?.BSDF == null || material.Overrides?.BSDFPath == "clear.xml") continue;
-                var bsdfFileContent = File.ReadAllBytes(material.Overrides.BSDFPath);
+                if (material.Overrides?.BSDF == null) continue;
+                var bsdfIndex = 0;
+                foreach (var bsdfPath in material.Overrides.BSDFPath)
+                {
+                    if (bsdfPath == "clear.xml")
+                    {
+                        bsdfIndex++;
+                        continue;
+                    }
+                    var bsdfFileContent = File.ReadAllBytes(bsdfPath);
                     
+                    var uploadTask = new GenericViewSet<Dictionary<string, object>>(
+                        tokens,
+                        url,
+                        $"/api/task/{taskId}/file/bsdf/{material.Overrides.BSDF[bsdfIndex]}"
+                    ).Update(
+                        null,
+                        new Dictionary<string, object>
+                        {
+                            {"file", bsdfFileContent}
+                        }
+                    );
+                    if (uploadTask.ContainsKey("error_messages"))
+                    {
+                        throw new Exception(uploadTask["error_messages"].ToString());
+                    }
+
+                    bsdfIndex++;
+                }
+
+                if (material.Overrides.ScheduleValues != null)
+                {
+                    UploadScheduleFiles(tokens, url, taskId, material);
+                }
+            }
+        }
+
+        public static void UploadScheduleFiles(
+            AuthTokens tokens,
+            string url,
+            string taskId,
+            RadianceMaterial material
+        )
+        {
+            var scheduleIndex = 0;
+            foreach (var schedule in material.Overrides.ScheduleValues)
+            {
+                var stream = new MemoryStream();
+                using (var memStream = new StreamWriter(stream))
+                {
+                    memStream.Write(
+                        $"{JsonConvert.SerializeObject(schedule)}");
+                }
+                var scheduleContent = stream.ToArray();
+                var scheduleName = $"{material.Name.Replace("*", "")}_{scheduleIndex}.json";
+                if (material.Overrides.Schedules == null)
+                {
+                    material.Overrides.Schedules = new List<string>();
+                }
+
+                material.Overrides.Schedules.Add(scheduleName);
                 var uploadTask = new GenericViewSet<Dictionary<string, object>>(
                     tokens,
                     url,
-                    $"/api/task/{taskId}/file/bsdf/{material.Overrides.BSDF}"
+                    $"/api/task/{taskId}/file/schedules/{scheduleName}"
                 ).Update(
                     null,
                     new Dictionary<string, object>
                     {
-                        {"file", bsdfFileContent}
+                        {"file", scheduleContent}
                     }
                 );
                 if (uploadTask.ContainsKey("error_messages"))
                 {
                     throw new Exception(uploadTask["error_messages"].ToString());
                 }
+
+                scheduleIndex++;
             }
+
+            material.Overrides.ScheduleValues = null;
         }
     }
+    
+
 }

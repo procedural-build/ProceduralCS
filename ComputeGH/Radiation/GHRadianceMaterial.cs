@@ -34,7 +34,21 @@ namespace ComputeGH.Radiation
                 0);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Optional overrides to apply to the presets.\n" +
-                "If you have chosen window, you should add a override with {\"bsdf_path\": \"BSDF FILE\"}.\n" +
+                "If you have chosen window, you should add a override with:\n" +
+                "{\n" +
+                "    \"bsdf_path\": \"BSDF FILE\"\n" +
+                "}.\n" +
+                "If you want to add a window with variable shading given by a schedule then the following override should be applied:\n" +
+                "{\n" +
+                "    \"bsdf_path\": [\n" +
+                "         \"BSDF FILE 1\",\n" +
+                "         \"BSDF FILE 2\",\n" +
+                "    ]\n" +
+                "    \"schedules\": [\n" +
+                "         [true, false, false, ...],\n" +
+                "         [false, true, true, ...],\n" +
+                "    ]\n" +
+                "}.\n" +
                 "The BSDF file can either be given as a path to a local file or \"clear.xml\", which is a default BSDF file Compute provides.\n" +
                 "If you want to override a material, which is not a window preset, the following overrides can be given:\n" +
                 "{\n" +
