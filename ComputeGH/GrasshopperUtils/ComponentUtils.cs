@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ComputeCS.utils.Cache;
 
 namespace ComputeGH.Grasshopper.Utils
 {
@@ -57,6 +58,33 @@ namespace ComputeGH.Grasshopper.Utils
             }
 
             throw new Exception($"Number of CPUs ({cpus}) were not valid. Valid choices are: 1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96");
-        } 
+        }
+
+        public static Tuple<string, string> BlockingComponent(string cacheKey, string instanceGuid)
+        {
+            if (string.IsNullOrEmpty(cacheKey) || string.IsNullOrEmpty(instanceGuid))
+            {
+                return new Tuple<string, string>("", "");
+            }
+            
+            var cachedValues = StringCache.getCache(cacheKey);
+            var errors = StringCache.getCache(instanceGuid);
+
+            if (StringCache.getCache("compute.blocking") != "true")
+                return new Tuple<string, string>(cachedValues, errors);
+            
+            var startTime = DateTime.Now;
+            while (string.IsNullOrEmpty(cachedValues) && string.IsNullOrEmpty(errors))
+            {
+                cachedValues = StringCache.getCache(cacheKey);
+                errors = StringCache.getCache(instanceGuid);
+                if (DateTime.Now - startTime > TimeSpan.FromSeconds(10))
+                {
+                    break;
+                }
+            }
+
+            return new Tuple<string, string>(cachedValues, errors);
+        }
     }
 }

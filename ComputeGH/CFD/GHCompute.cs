@@ -108,6 +108,7 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey + "create", "");
                         }
 
+                        if (StringCache.getCache("compute.blocking") == "true") return;
                         ExpireSolutionThreadSafe(true);
                         Thread.Sleep(2000);
                         StringCache.setCache(queueName, "");
@@ -115,8 +116,11 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
+            var instanceId = InstanceGuid.ToString();
+            string errors;
+            (cachedValues, errors) = ComponentUtils.BlockingComponent(cacheKey, instanceId);
+
             // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
                 throw new Exception(errors);
@@ -126,8 +130,7 @@ namespace ComputeCS.Grasshopper
             if (cachedValues != null)
             {
                 DA.SetData(0, Info(TimeEstimate));
-                var outputs = cachedValues;
-                DA.SetData(1, outputs);
+                DA.SetData(1, cachedValues);
                 Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {

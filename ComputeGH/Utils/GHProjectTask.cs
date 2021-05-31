@@ -7,6 +7,7 @@ using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
@@ -39,7 +40,15 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
-                "{\n    \"company\": companyId,\n    \"copy_from\": [\n        {\n            \"task\": taskId,\n            \"files\": [fileName1, fileName2]\n        }\n    ]\n}",
+                "{\n" +
+                "    \"company\": companyId,\n" +
+                "    \"copy_from\": [\n" +
+                "        {\n" +
+                "            \"task\": taskId,\n" +
+                "            \"files\": [fileName1, fileName2]\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}",
                 GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
@@ -122,18 +131,23 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(cacheKey + "create", "");
                         }
 
+                        if (StringCache.getCache("compute.blocking") == "true") return;
                         ExpireSolutionThreadSafe(true);
                         Thread.Sleep(2000);
                         StringCache.setCache(queueName, "");
+
                     });
                 }
             }
 
+            var instanceId = InstanceGuid.ToString();
+            string errors;
+            (cachedValues, errors) = ComponentUtils.BlockingComponent(cacheKey, instanceId);
+            
             // Read from Cache
             if (cachedValues != null)
             {
-                var outputs = cachedValues;
-                DA.SetData(0, outputs);
+                DA.SetData(0, cachedValues);
                 Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
@@ -142,7 +156,7 @@ namespace ComputeCS.Grasshopper
             }
 
             // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
+            
             if (!string.IsNullOrEmpty(errors))
             {
                 var messageLevel = GH_RuntimeMessageLevel.Error;

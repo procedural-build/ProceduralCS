@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.types;
@@ -31,7 +32,7 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
-            pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.list);
             pManager.AddTextParameter("Local Path", "Local Path", "The local path where to you want the download content to be stored.", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides", 
                 "Optional overrides to apply to the download.\n" +
@@ -64,33 +65,38 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string input = null;
-            string downloadPath = null;
+            var downloadPaths = new List<string>();
             string localPath = null;
             var overrides = "";
             var reload = false;
 
             if (!DA.GetData(0, ref input)) return;
-            if (!DA.GetData(1, ref downloadPath)) return;
+            if (!DA.GetDataList(1, downloadPaths)) return;
             if (!DA.GetData(2, ref localPath)) return;
             DA.GetData(3, ref overrides);
             DA.GetData(4, ref reload);
-
-            // Get Cache to see if we already did this
-            var cacheKey = input + downloadPath;
-            var cachedValues = StringCache.getCache(cacheKey);
-            DA.DisableGapLogic();
-
-            if (cachedValues == null || reload)
-            {
-                PollDownloadContent(input, downloadPath, localPath, overrides, reload, cacheKey);
-            }
 
             if (!Directory.Exists(localPath))
             {
                 Directory.CreateDirectory(localPath);
             }
             
-            if (cachedValues == "True" && Directory.Exists(localPath))
+            // Get Cache to see if we already did this
+            foreach (var downloadPath in downloadPaths)
+            {
+                var cacheKey = input + downloadPath;
+                var cachedValues = StringCache.getCache(cacheKey);
+                DA.DisableGapLogic();
+
+                if (cachedValues == null || reload)
+                {
+                    PollDownloadContent(input, downloadPath, localPath, overrides, reload, cacheKey);
+                }                
+            }
+
+            var cacheKeys = downloadPaths.Select(path => input + path);
+            
+            if (Directory.Exists(localPath) && cacheKeys.All(cacheKey => StringCache.getCache(cacheKey) == "True"))
             {
                 DA.SetData(0, localPath);
             }
@@ -103,10 +109,10 @@ namespace ComputeCS.Grasshopper
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
-                throw new Exception(errors);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
             
-            Message = StringCache.getCache(cacheKey + "progress");
+            Message = StringCache.getCache(InstanceGuid.ToString() + "progress");
 
         }
 
@@ -125,9 +131,10 @@ namespace ComputeCS.Grasshopper
             var queueLock = StringCache.getCache(queueName);
             var downloaded = false;
             var inputData = new Inputs().FromJson(inputJson);
+            var instanceId = InstanceGuid.ToString();
             if (reload)
             {
-                StringCache.setCache(InstanceGuid.ToString(), "");
+                StringCache.setCache(instanceId, "");
             }
 
             if (queueLock != "true" && inputData.Task != null)
@@ -139,7 +146,7 @@ namespace ComputeCS.Grasshopper
                     {
                         while (!downloaded)
                         {
-                            StringCache.setCache(cacheKey + "progress", "Downloading...");
+                            StringCache.setCache(instanceId + "progress", "Downloading...");
                             ExpireSolutionThreadSafe(true);
                             
                             downloaded = DownloadContent.Download(inputJson, downloadPath, localPath, overrides);
@@ -147,18 +154,18 @@ namespace ComputeCS.Grasshopper
                             
                             if (!downloaded)
                             {
-                                StringCache.setCache(cacheKey + "progress", "Waiting for results...");
+                                StringCache.setCache(instanceId + "progress", "Waiting for results...");
                                 ExpireSolutionThreadSafe(true);
                                 Thread.Sleep(60000);
                             }
-                            else { StringCache.setCache(cacheKey + "progress", "Downloaded files");}
+                            else { StringCache.setCache(instanceId + "progress", "Downloaded files");}
                             ExpireSolutionThreadSafe(true);
                         }
 
                     }
                     catch (Exception e)
                     {
-                        StringCache.setCache(InstanceGuid.ToString(), e.Message);
+                        StringCache.setCache(instanceId, e.Message);
                         StringCache.setCache(cacheKey, "error");
                     }
                     ExpireSolutionThreadSafe(true);

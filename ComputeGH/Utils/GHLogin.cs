@@ -5,6 +5,7 @@ using System.Threading;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
@@ -32,8 +33,10 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Password", "Password", "Password", GH_ParamAccess.item);
             pManager.AddTextParameter("Compute URL", "URL", "URL for Compute", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Retry", "Retry", "Force retry to connect to Compute", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Blocking", "Blocking", "Make Compute components blocking throughout the canvas.", GH_ParamAccess.item, false);
 
             pManager[3].Optional = true;
+            pManager[4].Optional = true;
         }
 
         /// <summary>
@@ -54,11 +57,13 @@ namespace ComputeCS.Grasshopper
             string password = null;
             string url = null;
             var retry = false;
+            var blocking = false;
 
             if (!DA.GetData(0, ref username)) return;
             if (!DA.GetData(1, ref password)) return;
             if (!DA.GetData(2, ref url)) return;
             DA.GetData(3, ref retry);
+            DA.GetData(4, ref blocking);
 
             var client = new ComputeClient(url);
 
@@ -66,14 +71,18 @@ namespace ComputeCS.Grasshopper
             {
                 StringCache.ClearCache();
             }
+            if (blocking)
+            {
+                StringCache.setCache("compute.blocking", "true");
+            }
 
             //Async Execution
             var cacheKey = username + password + url;
-            var cachedTokens = StringCache.getCache(cacheKey);
+            var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
-            if (cachedTokens == null)
+            if (cachedValues == null)
             {
-                var queueName = "login";
+                const string queueName = "login";
                 // Get queue lock
                 var queueLock = StringCache.getCache(queueName);
                 if (queueLock != "true")
@@ -93,8 +102,8 @@ namespace ComputeCS.Grasshopper
                             if (results.ErrorMessages == null)
                             {
                                 StringCache.ClearCache();
-                                cachedTokens = results.ToJson();
-                                StringCache.setCache(cacheKey, cachedTokens);
+                                cachedValues = results.ToJson();
+                                StringCache.setCache(cacheKey, cachedValues);
                             }
                         }
                         catch (Exception e)
@@ -102,6 +111,7 @@ namespace ComputeCS.Grasshopper
                             StringCache.setCache(InstanceGuid.ToString(), e.Message);
                         }
 
+                        if (StringCache.getCache("compute.blocking") == "true") return;
                         ExpireSolutionThreadSafe(true);
                         Thread.Sleep(2000);
                         StringCache.setCache(queueName, "");
@@ -109,9 +119,12 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
+            var instanceId = InstanceGuid.ToString();
+            string errors;
+            (cachedValues, errors) = ComponentUtils.BlockingComponent(cacheKey, instanceId);
+
 
             // Read from Cache
-            var errors = StringCache.getCache(InstanceGuid.ToString());
             if (errors != null)
             {
                 if (errors.Contains("(401) Unauthorized"))
@@ -123,9 +136,9 @@ namespace ComputeCS.Grasshopper
             }
 
             var tokens = new AuthTokens();
-            if (cachedTokens != null)
+            if (cachedValues != null)
             {
-                tokens = tokens.FromJson(cachedTokens);
+                tokens = tokens.FromJson(cachedValues);
                 var output = new Inputs
                 {
                     Auth = tokens,

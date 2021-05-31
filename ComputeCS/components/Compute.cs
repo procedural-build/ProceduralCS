@@ -202,12 +202,12 @@ namespace ComputeCS.Components
 
             if (parentTask == null)
             {
-                return null;
+                return "error";
             }
 
             if (project == null)
             {
-                return null;
+                return "error";
             }
 
             if (create)
@@ -268,7 +268,7 @@ namespace ComputeCS.Components
             {
                 if (actionTask.ErrorMessages.First() == "No object found.")
                 {
-                    return null;
+                    return "error";
                 }
                 throw new Exception(actionTask.ErrorMessages.First());
             }

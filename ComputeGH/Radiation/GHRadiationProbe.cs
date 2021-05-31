@@ -130,7 +130,7 @@ namespace ComputeGH.Radiation
                             StringCache.setCache(cacheKey + "create", "");
                         }
 
-
+                        if (StringCache.getCache("compute.blocking") == "true") return;
                         ExpireSolutionThreadSafe(true);
                         Thread.Sleep(2000);
                         StringCache.setCache(queueName, "");
@@ -139,7 +139,10 @@ namespace ComputeGH.Radiation
             }
 
             // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
+            var instanceId = InstanceGuid.ToString();
+            string errors;
+            (cachedValues, errors) = ComponentUtils.BlockingComponent(cacheKey, instanceId);
+
             if (errors != null)
             {
                 if (errors.Contains("No object found"))
