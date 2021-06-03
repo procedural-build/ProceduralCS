@@ -23,7 +23,7 @@ namespace ComputeCS.Grasshopper
         public ComputeProjectTask()
             : base("Get or Create Project and Task", "Project and Task",
                 "Get or Create a project and/or a parent Task on Procedural Compute",
-                "Compute", "Utils")
+                "Compute", "General")
         {
         }
 

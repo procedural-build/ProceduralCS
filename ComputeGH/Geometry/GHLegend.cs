@@ -17,7 +17,7 @@ namespace ComputeGH.Utils
         public GHLegend()
           : base("Legend", "Legend",
               "Create a legend.",
-              "Compute", "Utils")
+              "Compute", "Geometry")
         {
         }
 

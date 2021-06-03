@@ -24,7 +24,7 @@ namespace ComputeCS.Grasshopper
         public ComputeCompute()
             : base("Compute", "Compute",
                 "Upload and compute the CFD Case",
-                "Compute", "CFD")
+                "Compute", "General")
         {
         }
 

@@ -16,7 +16,7 @@ namespace ComputeGH.Utils
         public GHSliceDomain()
           : base("SliceDomain", "SliceDomain",
               "Create an analysis mesh by slicing a domain box",
-              "Compute", "Utils")
+              "Compute", "Geometry")
         {
         }
 

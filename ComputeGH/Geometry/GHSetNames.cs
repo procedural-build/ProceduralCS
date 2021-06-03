@@ -11,7 +11,7 @@ namespace ComputeCS.Grasshopper
 {
     public class SetNames : GH_Component
     {
-        public SetNames() : base("Set Names", "Set Names", "Set the Compute Name of Objects", "Compute", "Utils")
+        public SetNames() : base("Set Names", "Set Names", "Set the Compute Name of Objects", "Compute", "Geometry")
         {
         }
 

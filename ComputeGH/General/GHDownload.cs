@@ -21,7 +21,7 @@ namespace ComputeCS.Grasshopper
         public Download()
           : base("Download", "Download",
               "Download files or folders from Compute. This component will keep polling the Compute server until the files are available. If you reload this component it will check if the files on the server matches the local files and download them if needed.",
-              "Compute", "Utils")
+              "Compute", "General")
         {
         }
 

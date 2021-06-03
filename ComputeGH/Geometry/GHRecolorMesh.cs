@@ -18,7 +18,7 @@ namespace ComputeCS.Grasshopper
         public GHRecolorMesh()
             : base("Recolor Mesh", "Recolor Mesh",
                 "Recoloring mesh with parallel threading",
-                "Compute", "Utils")
+                "Compute", "Geometry")
         {
         }
 

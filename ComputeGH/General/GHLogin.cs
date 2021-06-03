@@ -19,7 +19,7 @@ namespace ComputeCS.Grasshopper
         public ComputeLogin()
             : base("Compute Login", "Login",
                 "Login to Procedural Compute",
-                "Compute", "Utils")
+                "Compute", "General")
         {
         }
 

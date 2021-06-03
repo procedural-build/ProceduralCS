@@ -48,6 +48,9 @@ namespace ComputeGH.Radiation
                 "    \"limit_ray_weight\": 0.0002,\n" +
                 "    \"samples\": 1000,\n" +
                 "    \"reinhart_divisions\": 1,\n" +
+                "    \"keep_tmp\": false\n" +
+                "    \"suppress_warnings\": false\n" +
+                "    \"sun_only\": false\n" +
                 "    \"keep\": {\n" +
                 "        \"all\": false,\n" +
                 "        \"view\": false,\n" +
@@ -132,7 +135,8 @@ namespace ComputeGH.Radiation
             "three_phase",
             "solar_radiation",
             "daylight_factor",
-            "sky_view_factor"
+            "sky_view_factor",
+            "mean_radiant_temperature"
         };
 
         private static readonly List<string> CaseTypes = new List<string>

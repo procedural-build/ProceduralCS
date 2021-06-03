@@ -24,7 +24,7 @@ namespace ComputeGH.Utils
         public GHAnalysisMesh()
             : base("AnalysisMesh", "AnalysisMesh",
                 "Create a mesh from a surface, which can be used for analyses",
-                "Compute", "Utils")
+                "Compute", "Geometry")
         {
         }
 
