@@ -54,17 +54,18 @@ namespace ComputeCS.Components
             {
                 throw new Exception(project.ErrorMessages.First());
             }
+
             inputData.Project = project;
 
-            var parentTask = CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/", taskName,
+            var parentTask = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/", taskName,
                 overrideDict, create);
             inputData.Task = parentTask;
 
             if (overrideDict.ContainsKey("nest_with"))
             {
-                var nestedParent = CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/", 
-                    (string)overrideDict["nest_with"],
-                    new Dictionary<string, object>{{"parent", parentTask.UID}}, create);
+                var nestedParent = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
+                    (string) overrideDict["nest_with"],
+                    new Dictionary<string, object> {{"parent", parentTask.UID}}, create);
                 inputData.Task = nestedParent;
             }
 
@@ -120,60 +121,6 @@ namespace ComputeCS.Components
             ).List(tasksQueryParams);
 
             return string.Join(";", tasks.Select(task => task.ToJson()));
-        }
-
-        public static Task CreateParent(
-            AuthTokens tokens,
-            string url,
-            string path,
-            string taskName,
-            Dictionary<string, object> overrides,
-            bool create
-            )
-        {
-            var taskQueryParams = new Dictionary<string, object>
-            {
-                {"name", taskName}
-            };
-            if (overrides.ContainsKey("parent"))
-            {
-                taskQueryParams.Add("parent", overrides["parent"]);
-            }
-            
-            var taskCreateParams = new Dictionary<string, object>
-            {
-                {
-                    "config", new Dictionary<string, string>
-                    {
-                        {"case_dir", "foam"},
-                        {
-                            "task_type", "parent"
-                        }
-                    }
-                }
-            };
-
-            if (overrides.ContainsKey("copy_from"))
-            {
-                taskCreateParams.Add("copy_from", overrides["copy_from"]);
-            }
-
-            var task = new GenericViewSet<Task>(
-                tokens,
-                url,
-                path
-            ).GetOrCreate(
-                taskQueryParams,
-                taskCreateParams,
-                create
-            );
-            
-            if (task.ErrorMessages != null)
-            {
-                throw new Exception(task.ErrorMessages.First());
-            }
-
-            return task;
         }
     }
 }

@@ -77,5 +77,59 @@ namespace ComputeCS
                 return new Task {ErrorMessages = new List<string> {err.Message}};
             }
         }
+        
+        public static Task CreateParent(
+            AuthTokens tokens,
+            string url,
+            string path,
+            string taskName,
+            Dictionary<string, object> overrides,
+            bool create
+        )
+        {
+            var taskQueryParams = new Dictionary<string, object>
+            {
+                {"name", taskName}
+            };
+            if (overrides.ContainsKey("parent"))
+            {
+                taskQueryParams.Add("parent", overrides["parent"]);
+            }
+            
+            var taskCreateParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, string>
+                    {
+                        {"case_dir", "foam"},
+                        {
+                            "task_type", "parent"
+                        }
+                    }
+                }
+            };
+
+            if (overrides.ContainsKey("copy_from"))
+            {
+                taskCreateParams.Add("copy_from", overrides["copy_from"]);
+            }
+
+            var task = new GenericViewSet<Task>(
+                tokens,
+                url,
+                path
+            ).GetOrCreate(
+                taskQueryParams,
+                taskCreateParams,
+                create
+            );
+            
+            if (task.ErrorMessages != null)
+            {
+                throw new Exception(task.ErrorMessages.First());
+            }
+
+            return task;
+        }
     }
 }
