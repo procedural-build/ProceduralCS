@@ -39,7 +39,16 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
-                "{\n    \"company\": companyId,\n    \"copy_from\": [\n        {\n            \"task\": taskId,\n            \"files\": [fileName1, fileName2]\n        }\n    ]\n}",
+                "{\n" +
+                "    \"company\": companyId,\n" +
+                "    \"copy_from\": [\n" +
+                "        {\n" +
+                "            \"task\": taskId,\n" +
+                "            \"files\": [fileName1, fileName2]\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"nest_with\": parentNameToNestWith\n" +
+                "}",
                 GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
