@@ -57,6 +57,8 @@ namespace ComputeGH.Radiation
                 "        \"daylight\": false,\n" +
                 "        \"sky\": false\n" +
                 "    }\n" +
+                "    \"suppress_warnings\": false,\n" +
+                "    \"octree_resolution\": 16384\n" +
                 "}",
                 GH_ParamAccess.item);
 

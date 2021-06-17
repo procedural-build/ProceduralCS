@@ -47,6 +47,7 @@ namespace ComputeCS.types
         public RadiationKeepSteps Keep;
         public RadiationPaths Paths;
         public bool? SuppressWarnings;
+        public uint? OctreeResolution;
         public bool? KeepTmp;
         public bool? SunOnly;
     }
