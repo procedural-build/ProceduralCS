@@ -16,15 +16,15 @@ using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHThresholdResults : GH_Component
+    public class GHOutdoorComfortResults : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbeResults class.
         /// </summary>
-        public GHThresholdResults()
-            : base("Wind Threshold Results", "Wind Threshold Results",
-                "Loads wind threshold results from a file(s).",
-                "Compute", "CFD")
+        public GHOutdoorComfortResults()
+            : base("Outdoor Comfort Results", "Comfort Results",
+                "Loads the outdoor comfort results from a file(s).",
+                "Compute", "Radiation")
         {
         }
 
@@ -45,13 +45,16 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list,
                 new List<string>
                 {
-                    "{\"field\": \"sitting\", \"value\": 5}",
-                    "{\"field\": \"standing\", \"value\": 5}",
-                    "{\"field\": \"strolling\", \"value\": 5}",
-                    "{\"field\": \"business_walking\", \"value\": 5}",
-                    "{\"field\": \"uncomfortable\", \"value\": 95}",
-                    "{\"field\": \"unsafe_frail\", \"value\": 99.977}",
-                    "{\"field\": \"unsafe_all\", \"value\": 99.977}"
+                    "{\"field\": \"extreme cold stress\", \"value\": 5}",
+                    "{\"field\": \"very strong cold stress\", \"value\": 5}",
+                    "{\"field\": \"strong cold stress\", \"value\": 5}",
+                    "{\"field\": \"moderate cold stress\", \"value\": 5}",
+                    "{\"field\": \"slight cold stress\", \"value\": 5}",
+                    "{\"field\": \"no thermal stress\", \"value\": 5}",
+                    "{\"field\": \"moderate heat stress\", \"value\": 5}",
+                    "{\"field\": \"strong heat stress\", \"value\": 5}",
+                    "{\"field\": \"very strong heat stress\", \"value\": 5}",
+                    "{\"field\": \"extreme heat stress\", \"value\": 5}",
                 });
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
             
@@ -126,22 +129,18 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string folder = null;
-            var criteria = 0;
-            var thresholdsFrequencies = new List<string>();
             var refresh = false;
 
             if (!DA.GetData(0, ref folder)) return;
-            DA.GetData(1, ref criteria);
-            DA.GetDataList(2, thresholdsFrequencies);
-            DA.GetData(3, ref refresh);
+            DA.GetData(2, ref refresh);
 
-            var cacheKey = folder + criteria + string.Join("", thresholdsFrequencies);
+            var cacheKey = folder;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
             if (cachedValues == null || refresh)
             {
-                const string queueName = "thresholdResults";
+                const string queueName = "comfortResults";
                 StringCache.setCache(InstanceGuid.ToString(), "");
 
                 // Get queue lock
@@ -155,17 +154,8 @@ namespace ComputeCS.Grasshopper
                     {
                         try
                         {
-                            var results = WindThreshold.ReadThresholdResults(folder);
-                            if (criteria == 1)
-                            {
-                                _thresholdFrequencies = thresholdsFrequencies
-                                    .Select(frequency => new WindThresholds.Threshold().FromJson(frequency)).ToList();
-                                lawsonResults = WindThreshold.LawsonsCriteria(results, _thresholdFrequencies);
-                            }
-                            else
-                            {
-                                (thresholdOutput, thresholdLegend) = TransposeThresholdMatrix(results);
-                            }
+                            var results = OutdoorComfort.ReadComfortResults(folder);
+                            (comfortOutput, comfortLegend) = TransposeThresholdMatrix(results);
                             StringCache.setCache(cacheKey + "progress", "Done");
                             StringCache.setCache(cacheKey, "results");
                         }
@@ -435,12 +425,10 @@ namespace ComputeCS.Grasshopper
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("d2422b3c-e13a-46a4-9700-ec3d53544013");
+        public override Guid ComponentGuid => new Guid("73cf955e-d12a-4ec2-9012-bbb1eb161c00");
 
         private DataTree<object> info;
-        private Dictionary<string, Dictionary<string, List<int>>> lawsonResults;
-        private List<WindThresholds.Threshold> _thresholdFrequencies;
-        private Dictionary<string, DataTree<object>> thresholdOutput;
-        private Dictionary<string, List<string>> thresholdLegend;
+        private Dictionary<string, DataTree<object>> comfortOutput;
+        private Dictionary<string, List<string>> comfortLegend;
     }
 }

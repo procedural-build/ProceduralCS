@@ -90,11 +90,11 @@ namespace ComputeCS.Grasshopper
             ValidateName(projectName);
 
             // Get Cache to see if we already did this
-            var cacheKey = projectName + taskName;
+            var cacheKey = projectName + taskName + overrides;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null || create == true)
+            if (cachedValues == null || create)
             {
                 var queueName = "ProjectAndTask" + cacheKey;
 

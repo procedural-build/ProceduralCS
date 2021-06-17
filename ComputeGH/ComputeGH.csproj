@@ -136,6 +136,8 @@
     <Compile Include="Radiation\GHRadiationProbe.cs" />
     <Compile Include="Radiation\GHRadiationProbeResults.cs" />
     <Compile Include="Radiation\GHRadiationSolution.cs" />
+    <Compile Include="Radiation\GHOutdoorComfortResults.cs" />
+    <Compile Include="Radiation\GHOutdoorComfort.cs" />
     <Compile Include="Utils\GHDownloadEPW.cs" />
     <Compile Include="Utils\GHListFiles.cs" />
     <Compile Include="Utils\GHListTasks.cs" />

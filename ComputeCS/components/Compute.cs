@@ -233,16 +233,16 @@ namespace ComputeCS.Components
 
             if (solution.Method == "mean_radiant_temperature")
             {
-                var mrtParentTask = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
+                var rayTracingTask = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
                     "Ray Tracing",
-                    new Dictionary<string, object>(), create);
+                    new Dictionary<string, object>{{"parent", parentTask.UID}}, create);
 
                 // Create Sky View Task
                 solution.Method = "sky_view_factor";
                 var skyViewTask = RadianceCompute.CreateRadianceTask(
                     tokens,
                     inputData.Url,
-                    mrtParentTask,
+                    rayTracingTask,
                     actionTask,
                     project,
                     solution,
@@ -253,10 +253,19 @@ namespace ComputeCS.Components
 
                 // Create Solar Radiation Task
                 solution.Method = "solar_radiation";
+                if (solution.Overrides == null)
+                {
+                    solution.Overrides = new RadiationSolutionOverrides {SunOnly = true};
+                }
+                else
+                {
+                    solution.Overrides.SunOnly = true;
+                }
+                
                 var solarRadiationTask = RadianceCompute.CreateRadianceTask(
                     tokens,
                     inputData.Url,
-                    mrtParentTask,
+                    rayTracingTask,
                     actionTask,
                     project,
                     solution,
@@ -264,7 +273,9 @@ namespace ComputeCS.Components
                     create
                 );
                 inputData.SubTasks.Add(solarRadiationTask);
-                parentTask = mrtParentTask;
+                actionTask = rayTracingTask;
+                solution.Overrides.SunOnly = null;
+                solution.Method = "mean_radiant_temperature";
             }
 
             var radianceTask = RadianceCompute.CreateRadianceTask(
@@ -274,7 +285,7 @@ namespace ComputeCS.Components
                 actionTask,
                 project,
                 solution,
-                caseDir,
+                "results",
                 create
             );
             inputData.SubTasks.Add(radianceTask);
@@ -297,7 +308,7 @@ namespace ComputeCS.Components
         )
         {
             var nCPUs = 1;
-            cpus.ForEach(cpu => nCPUs = nCPUs * cpu);
+            cpus.ForEach(cpu => nCPUs *= cpu);
             var commands = new List<string>
             {
                 "blockMesh",

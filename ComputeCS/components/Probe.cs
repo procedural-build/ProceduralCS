@@ -141,17 +141,7 @@ namespace ComputeCS.Components
             var commands = new List<string> {"write_sample_set"};
             var nCPUs = 1;
             cpus.ForEach(cpu => nCPUs *= cpu);
-            if (nCPUs > 1)
-            {
-                //commands.Add("decomposePar -time :10000");
-                commands.Add("!postProcess -func internalCloud");
-                //commands.Add("reconstructPar");
-            }
-            else
-            {
-                commands.Add("postProcess -func internalCloud");
-            }
-
+            commands.Add(nCPUs > 1 ? "!postProcess -func internalCloud" : "postProcess -func internalCloud");
 
             var config = new Dictionary<string, object>
             {

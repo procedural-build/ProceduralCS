@@ -53,35 +53,15 @@ namespace ComputeCS.Components
                 throw new Exception("A .epw file is needed to proceed!");
             }
 
-            var epwName = Path.GetFileName(epwFile);
-
             if (create)
             {
-                var epwFileContent = File.ReadAllBytes(epwFile);
-                {
-                    // Upload EPW File to parent task
-                    var uploadTask = new GenericViewSet<Dictionary<string, object>>(
-                        tokens,
-                        inputData.Url,
-                        $"/api/task/{parentTask.UID}/file/WeatherFiles/{epwName}"
-                    ).Update(
-                        null,
-                        new Dictionary<string, object>
-                        {
-                            {"file", epwFileContent}
-                        }
-                    );
-                    if (uploadTask.ContainsKey("error_messages"))
-                    {
-                        throw new Exception(uploadTask["error_messages"].ToString());
-                    }
-                }
+                Compute.UploadEPWFile(tokens, inputData.Url, parentTask.UID, epwFile);
             }
-
 
             var _thresholds = thresholds.Select(threshold => new WindThresholds.Threshold().FromJson(threshold))
                 .ToList();
-
+            
+            var epwName = Path.GetFileName(epwFile);
             var taskCreateParams = new Dictionary<string, object>
             {
                 {
@@ -90,7 +70,7 @@ namespace ComputeCS.Components
                         {"task_type", "cfd"},
                         {"cmd", "run_wind_thresholds"},
                         {"case_dir", "VWT/"},
-                        {"epw_file", $"WeatherFiles/{epwName}"},
+                        {"epw_file", $"weather/{epwName}"},
                         {"patches", patches},
                         {"thresholds", _thresholds},
                         {"set_foam_patch_fields", false},
