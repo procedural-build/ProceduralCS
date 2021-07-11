@@ -10,7 +10,7 @@ namespace ComputeCS.types
         public string CaseType;
         public Dictionary<string, object> BoundaryConditions;
         public Dictionary<string, int> Iterations;
-        public List<double> Angles;
+        public List<object> Angles;
         public Dictionary<string, object> Overrides;
         public List<Dictionary<string, object>> Files;
     }

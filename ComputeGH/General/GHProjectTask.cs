@@ -47,7 +47,8 @@ namespace ComputeCS.Grasshopper
                 "            \"files\": [fileName1, fileName2]\n" +
                 "        }\n" +
                 "    ],\n" +
-                "    \"nest_with\": parentNameToNestWith\n" +
+                "    \"nest_with\": parentNameToNestWith,\n" +
+                "    \"comment\": commentHTMLFormattedText\n" +
                 "}",
                 GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create",
