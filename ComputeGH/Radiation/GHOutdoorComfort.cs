@@ -46,22 +46,25 @@ namespace ComputeGH.CFD
                 GH_ParamAccess.list,
                 new List<string>
                 {
-                    "{\"field\": \"extreme cold stress\", \"value\": -40}",
-                    "{\"field\": \"very strong cold stress\", \"value\": -27}",
-                    "{\"field\": \"strong cold stress\", \"value\": -13}",
-                    "{\"field\": \"moderate cold stress\", \"value\": 0}",
-                    "{\"field\": \"slight cold stress\", \"value\": 9}",
-                    "{\"field\": \"no thermal stress\", \"value\": 26}",
-                    "{\"field\": \"moderate heat stress\", \"value\": 32}",
-                    "{\"field\": \"strong heat stress\", \"value\": 38}",
-                    "{\"field\": \"very strong heat stress\", \"value\": 46}",
-                    "{\"field\": \"extreme heat stress\", \"value\": 100}",
+                    "{\"field\": \"extreme cold stress\", \"value\": [null, -40]}",
+                    "{\"field\": \"very strong cold stress\", \"value\": [-40, -27]}",
+                    "{\"field\": \"strong cold stress\", \"value\": [-27, -13]}",
+                    "{\"field\": \"moderate cold stress\", \"value\": [-13, 0]}",
+                    "{\"field\": \"slight cold stress\", \"value\": [0, 9]}",
+                    "{\"field\": \"no thermal stress\", \"value\": [9, 18]}",
+                    "{\"field\": \"thermal comfort\", \"value\": [18, 26]}",
+                    "{\"field\": \"moderate heat stress\", \"value\": [26, 32]}",
+                    "{\"field\": \"strong heat stress\", \"value\": [32, 38]}",
+                    "{\"field\": \"very strong heat stress\", \"value\": [38, 46]}",
+                    "{\"field\": \"extreme heat stress\", \"value\": [46, null]}",
                 });
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96", GH_ParamAccess.item, 4);
             pManager.AddTextParameter("DependentOn", "DependentOn",
                 "By default the probe task is dependent on a wind tunnel task or a task running simpleFoam. If you want it to be dependent on another task. Please supply the name of that task here.",
                 GH_ParamAccess.item, "Probe");
+            pManager.AddTextParameter("Overrides", "Overrides", "Optional overrides to apply to the presets.",
+                GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new Wind Threshold task, if one doesn't exist", GH_ParamAccess.item, false);
 
@@ -71,6 +74,7 @@ namespace ComputeGH.CFD
             pManager[5].Optional = true;
             pManager[6].Optional = true;
             pManager[7].Optional = true;
+            pManager[8].Optional = true;
         }
 
         /// <summary>
@@ -106,7 +110,7 @@ namespace ComputeGH.CFD
             DA.GetData(5, ref cpus);
 
             DA.GetData(6, ref dependentOn);
-            DA.GetData(7, ref create);
+            DA.GetData(8, ref create);
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", probes) + epwFile + inputJson + method;

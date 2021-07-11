@@ -159,7 +159,7 @@ namespace ComputeCS.Grasshopper
                             if (criteria == 1)
                             {
                                 _thresholdFrequencies = thresholdsFrequencies
-                                    .Select(frequency => new WindThresholds.Threshold().FromJson(frequency)).ToList();
+                                    .Select(frequency => new Thresholds.WindThreshold().FromJson(frequency)).ToList();
                                 lawsonResults = WindThreshold.LawsonsCriteria(results, _thresholdFrequencies);
                             }
                             else
@@ -212,7 +212,7 @@ namespace ComputeCS.Grasshopper
 
                 info = UpdateInfo(
                     thresholdLegend["patch"],
-                    thresholdLegend["threshold"].Select(threshold => new WindThresholds.Threshold {Field = threshold})
+                    thresholdLegend["threshold"].Select(threshold => new Thresholds.WindThreshold {Field = threshold})
                         .ToList(),
                     criteria
                 );
@@ -352,7 +352,7 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds,
+        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<Thresholds.WindThreshold> thresholds,
             int criteria)
         {
             var info = "Patch Names:\n";
@@ -439,7 +439,7 @@ namespace ComputeCS.Grasshopper
 
         private DataTree<object> info;
         private Dictionary<string, Dictionary<string, List<int>>> lawsonResults;
-        private List<WindThresholds.Threshold> _thresholdFrequencies;
+        private List<Thresholds.WindThreshold> _thresholdFrequencies;
         private Dictionary<string, DataTree<object>> thresholdOutput;
         private Dictionary<string, List<string>> thresholdLegend;
     }

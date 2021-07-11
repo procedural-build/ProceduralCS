@@ -12,11 +12,12 @@ using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
-using Rhino;
+using ComputeGH.Grasshopper.Utils;
+
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHOutdoorComfortResults : GH_Component
+    public class GHOutdoorComfortResults : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbeResults class.
@@ -34,33 +35,9 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("ThresholdType", "ThresholdType", "0: Wind Thresholds\n1: Lawsons Criteria",
-                GH_ParamAccess.item, 0);
-            pManager.AddTextParameter("ThresholdFrequency", "ThresholdFrequency",
-                "Thresholds frequencies for different wind comfort categories. This only applies if you have chosen 1 in the ThresholdType." +
-                "\nInput should be a list JSON formatted strings, " +
-                "with the fields: \"field\" and \"value\", respectively describing the category name and threshold frequency in % that the wind velocity should be less than." +
-                "\nThe category names should match the names from the Wind Threshold component. Only matching category names will be shown." +
-                "\nThe default values corresponds to the Lawson 2001 Criteria",
-                GH_ParamAccess.list,
-                new List<string>
-                {
-                    "{\"field\": \"extreme cold stress\", \"value\": 5}",
-                    "{\"field\": \"very strong cold stress\", \"value\": 5}",
-                    "{\"field\": \"strong cold stress\", \"value\": 5}",
-                    "{\"field\": \"moderate cold stress\", \"value\": 5}",
-                    "{\"field\": \"slight cold stress\", \"value\": 5}",
-                    "{\"field\": \"no thermal stress\", \"value\": 5}",
-                    "{\"field\": \"moderate heat stress\", \"value\": 5}",
-                    "{\"field\": \"strong heat stress\", \"value\": 5}",
-                    "{\"field\": \"very strong heat stress\", \"value\": 5}",
-                    "{\"field\": \"extreme heat stress\", \"value\": 5}",
-                });
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
-            
+
             pManager[1].Optional = true;
-            pManager[2].Optional = true;
-            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -132,7 +109,7 @@ namespace ComputeCS.Grasshopper
             var refresh = false;
 
             if (!DA.GetData(0, ref folder)) return;
-            DA.GetData(2, ref refresh);
+            DA.GetData(1, ref refresh);
 
             var cacheKey = folder;
             var cachedValues = StringCache.getCache(cacheKey);
@@ -158,6 +135,7 @@ namespace ComputeCS.Grasshopper
                             (comfortOutput, comfortLegend) = TransposeThresholdMatrix(results);
                             StringCache.setCache(cacheKey + "progress", "Done");
                             StringCache.setCache(cacheKey, "results");
+                            StringCache.setCache(InstanceGuid.ToString(), "");
                         }
                         catch (Exception e)
                         {
@@ -175,73 +153,29 @@ namespace ComputeCS.Grasshopper
             }
 
             // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
-            if (lawsonResults != null && criteria == 1)
+            if (comfortOutput != null)
             {
-                foreach (var season in lawsonResults.Keys)
+                foreach (var key in comfortOutput.Keys)
                 {
-                    var data = ConvertLawsonToDataTree(lawsonResults[season]);
-                    AddToOutput(DA, season, data);
-                }
-
-                info = UpdateInfo(lawsonResults.First().Value.Keys.ToList(), _thresholdFrequencies, criteria);
-                RemoveUnusedOutputs(lawsonResults.Keys.ToList());
-            }
-
-            if (thresholdOutput != null && criteria == 0)
-            {
-                foreach (var key in thresholdOutput.Keys)
-                {
-                    AddToOutput(DA, key, thresholdOutput[key]);
+                    AddToOutput(DA, key, comfortOutput[key]);
                 }
 
                 info = UpdateInfo(
-                    thresholdLegend["patch"],
-                    thresholdLegend["threshold"].Select(threshold => new WindThresholds.Threshold {Field = threshold})
-                        .ToList(),
-                    criteria
+                    comfortLegend["patch"],
+                    comfortLegend["threshold"].Select(threshold => new Thresholds.ComfortThreshold {Field = threshold})
+                        .ToList()
                 );
-                RemoveUnusedOutputs(thresholdOutput.Keys.ToList());
             }
 
             if (info != null)
             {
                 DA.SetDataTree(0, info);
             }
+
             Message = StringCache.getCache(cacheKey + "progress");
         }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
-
-        private static DataTree<object> ConvertLawsonToDataTree(Dictionary<string, List<int>> data)
-        {
-            var patchCounter = 0;
-
-            var output = new DataTree<object>();
-            foreach (var patchKey in data.Keys)
-            {
-                var points = data[patchKey];
-                var path = new GH_Path(patchCounter);
-                foreach (var value in points)
-                {
-                    output.Add(value, path);
-                }
-
-                patchCounter++;
-            }
-
-            return output;
-        }
-
 
         public static (Dictionary<string, DataTree<object>>, Dictionary<string, List<string>>) TransposeThresholdMatrix(
             Dictionary<string, Dictionary<string, object>> resultsToTranspose)
@@ -256,51 +190,43 @@ namespace ComputeCS.Grasshopper
 
             var seasons = WindThreshold.ThresholdSeasons();
 
-            // results[threshold][patch][pointIndex][season]
-            // results[season][patch][threshold][pointIndex]
-
             foreach (var thresholdKey in resultsToTranspose.Keys)
             {
                 foreach (var patchKey in resultsToTranspose[thresholdKey].Keys)
                 {
                     //var pointIndex = 0;
                     var pointValues = (List<List<double>>) resultsToTranspose[thresholdKey][patchKey];
-                    foreach (var pointValue in pointValues)
+                    var seasonCounter = 0;
+                    foreach (var seasonValue in pointValues)
                     {
-                        var seasonCounter = 0;
-                        foreach (var seasonValue in pointValue)
+                        var seasonKey = seasons[seasonCounter];
+
+                        if (!legend["season"].Contains(seasonKey))
                         {
-                            var seasonKey = seasons[seasonCounter];
-
-                            if (!legend["season"].Contains(seasonKey))
-                            {
-                                legend["season"].Add(seasonKey);
-                            }
-
-                            if (!legend["patch"].Contains(patchKey))
-                            {
-                                legend["patch"].Add(patchKey);
-                            }
-
-                            if (!legend["threshold"].Contains(thresholdKey))
-                            {
-                                legend["threshold"].Add(thresholdKey);
-                            }
-
-                            if (!output.ContainsKey(seasonKey))
-                            {
-                                output.Add(seasonKey, new DataTree<object>());
-                            }
-
-                            var patchCounter = legend["patch"].IndexOf(patchKey);
-                            var thresholdCounter = legend["threshold"].IndexOf(thresholdKey);
-
-                            var path = new GH_Path(patchCounter, thresholdCounter);
-                            output[seasonKey].Add(seasonValue, path);
-                            seasonCounter++;
+                            legend["season"].Add(seasonKey);
                         }
 
-                        //pointIndex++;
+                        if (!legend["patch"].Contains(patchKey))
+                        {
+                            legend["patch"].Add(patchKey);
+                        }
+
+                        if (!legend["threshold"].Contains(thresholdKey))
+                        {
+                            legend["threshold"].Add(thresholdKey);
+                        }
+
+                        if (!output.ContainsKey(seasonKey))
+                        {
+                            output.Add(seasonKey, new DataTree<object>());
+                        }
+
+                        var patchCounter = legend["patch"].IndexOf(patchKey);
+                        var thresholdCounter = legend["threshold"].IndexOf(thresholdKey);
+
+                        var path = new GH_Path(patchCounter, thresholdCounter);
+                        output[seasonKey].AddRange(seasonValue.Select(elem => (object)elem), path);
+                        seasonCounter++;
                     }
                 }
             }
@@ -342,47 +268,27 @@ namespace ComputeCS.Grasshopper
             }
         }
 
-        private static DataTree<object> UpdateInfo(List<string> patchKeys, List<WindThresholds.Threshold> thresholds,
-            int criteria)
+        private static DataTree<object> UpdateInfo(
+            List<string> patchKeys,
+            List<Thresholds.ComfortThreshold> thresholds
+        )
         {
             var info = "Patch Names:\n";
             var output = new DataTree<object>();
-
-            if (criteria == 1)
+            var i = 0;
+            foreach (var key in patchKeys)
             {
-                var i = 0;
-                foreach (var key in patchKeys)
-                {
-                    info += $"{{{i}}} is {key}\n";
-                    i++;
-                }
-
-                info += "\nComfort Categories\n";
-                var j = 0;
-                foreach (var threshold in thresholds)
-                {
-                    info += $"{threshold.Field} is {j}\n";
-                    output.Add(threshold.Field, new GH_Path(1));
-                    j++;
-                }
+                info += $"{{{i};*}} is {key}\n";
+                i++;
             }
-            else
-            {
-                var i = 0;
-                foreach (var key in patchKeys)
-                {
-                    info += $"{{{i};*}} is {key}\n";
-                    i++;
-                }
 
-                info += "\nThreshold Categories\n";
-                var j = 0;
-                foreach (var threshold in thresholds)
-                {
-                    info += $"{{*;{j}}} is {threshold.Field}\n";
-                    output.Add(threshold.Field, new GH_Path(1));
-                    j++;
-                }
+            info += "\nThreshold Categories\n";
+            var j = 0;
+            foreach (var threshold in thresholds)
+            {
+                info += $"{{*;{j}}} is {threshold.Field}\n";
+                output.Add(threshold.Field, new GH_Path(1));
+                j++;
             }
 
 

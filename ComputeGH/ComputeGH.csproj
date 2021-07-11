@@ -125,6 +125,7 @@
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />
+    <Compile Include="GrasshopperUtils\PB_Component.cs" />
     <Compile Include="GrasshopperUtils\Types.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>

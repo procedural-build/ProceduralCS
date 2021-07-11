@@ -59,7 +59,7 @@ namespace ComputeCS.Components
             }
 
 
-            var _thresholds = thresholds.Select(threshold => new WindThresholds.Threshold().FromJson(threshold))
+            var _thresholds = thresholds.Select(threshold => new Thresholds.ComfortThreshold().FromJson(threshold))
                 .ToList();
 
             var taskCreateParams = new Dictionary<string, object>
@@ -102,11 +102,34 @@ namespace ComputeCS.Components
             return inputData.ToJson();
         }
 
-        public static string ReadComfortResults(
+        public static Dictionary<string, Dictionary<string, object>> ReadComfortResults(
             string folder
         )
         {
-            return "";
+            var data = new Dictionary<string, Dictionary<string, object>>();
+
+            foreach (var file in Directory.GetFiles(folder))
+            {
+                var extension = Path.GetExtension(file).Replace(".", "");
+                if (extension == "utci"){continue;}
+                var patchName = Path.GetFileNameWithoutExtension(file);
+                var values = WindThreshold.ReadThresholdData(file, 0);
+
+                if (!data.ContainsKey(extension))
+                {
+                    data.Add(extension, new Dictionary<string, object>());
+                }
+
+                data[extension].Add(patchName, values);
+            }
+
+            return data;
+        }
+        
+        private static List<string> ReadComfortFileTypes(string folder)
+        {
+            var allFiles = Directory.GetFiles(folder).ToList();
+            return allFiles.Select(file => Path.GetExtension(file).Replace(".", "")).ToList();
         }
     }
 }

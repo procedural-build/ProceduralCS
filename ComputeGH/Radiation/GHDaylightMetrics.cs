@@ -36,7 +36,8 @@ namespace ComputeGH.Radiation
                 "    \"threshold\": 500,\n" +
                 "    \"work_hours\": [8, 16],\n" +
                 "    \"work_days\": [0, 5],\n" +
-                "    \"selected_hours\": []\n" +
+                "    \"selected_hours\": [],\n" +
+                "    \"file_extension\": \".res\"\n" +
                 " }\n" +
                 "Here shown with the defaults.\n" +
                 "\"selected_hours\" is a list of true/false values that represents whether or not that hour should be included in the calculation.\n" +
@@ -188,7 +189,8 @@ namespace ComputeGH.Radiation
             "spatial_daylight_autonomy",
             "continuous_daylight_autonomy",
             "useful_daylight_illuminances",
-            "statistics"
+            "statistics",
+            "seasonal_statistics"
         };
 
         private void ExpireSolutionThreadSafe(bool recompute = false)

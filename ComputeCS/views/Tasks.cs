@@ -113,6 +113,11 @@ namespace ComputeCS
             {
                 taskCreateParams.Add("copy_from", overrides["copy_from"]);
             }
+            
+            if (overrides.ContainsKey("comment"))
+            {
+                taskCreateParams.Add("comment", overrides["comment"]);
+            }
 
             var task = new GenericViewSet<Task>(
                 tokens,

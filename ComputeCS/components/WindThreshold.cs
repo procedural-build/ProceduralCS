@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using ComputeCS.types;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -58,7 +57,7 @@ namespace ComputeCS.Components
                 Compute.UploadEPWFile(tokens, inputData.Url, parentTask.UID, epwFile);
             }
 
-            var _thresholds = thresholds.Select(threshold => new WindThresholds.Threshold().FromJson(threshold))
+            var _thresholds = thresholds.Select(threshold => new Thresholds.WindThreshold().FromJson(threshold))
                 .ToList();
             
             var epwName = Path.GetFileName(epwFile);
@@ -179,21 +178,15 @@ namespace ComputeCS.Components
             return data;
         }
 
-        private static List<List<double>> ReadThresholdData(string file)
+        public static List<List<double>> ReadThresholdData(string file, int skip=1)
         {
-            var data = new List<List<double>>();
             var lines = File.ReadAllLines(file);
-            foreach (var line in lines)
-            {
-                data.Add(line.Split(',').Skip(1).Select(x => double.Parse(x)).ToList());
-            }
-
-            return data;
+            return lines.Select(line => line.Split(',').Skip(skip).Select(double.Parse).ToList()).ToList();
         }
 
         public static Dictionary<string, Dictionary<string, List<int>>> LawsonsCriteria(
             Dictionary<string, Dictionary<string, object>> data,
-            List<WindThresholds.Threshold> thresholds
+            List<Thresholds.WindThreshold> thresholds
         )
         {
             var newData = new Dictionary<string, Dictionary<string, object>>();
@@ -223,7 +216,7 @@ namespace ComputeCS.Components
             Dictionary<string, object> patchValues,
             string patchKey,
             Dictionary<string, Dictionary<string, List<int>>> output,
-            List<WindThresholds.Threshold> thresholds
+            List<Thresholds.WindThreshold> thresholds
         )
         {
             var seasons = ThresholdSeasons();
