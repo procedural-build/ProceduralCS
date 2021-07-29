@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Exceptions;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
@@ -147,6 +148,10 @@ namespace ComputeGH.CFD
                             {
                                 StringCache.setCache(cacheKey + "create", "true");
                             }
+                        }
+                        catch (NoObjectFoundException)
+                        {
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         catch (Exception e)
                         {

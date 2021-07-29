@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ComputeCS.Exceptions;
 using ComputeCS.types;
 using NLog;
 
@@ -74,6 +75,10 @@ namespace ComputeCS
                 }
 
                 Logger.Error($"Got error: {err.Message} while trying to create task");
+                if (err.Message == "No object found.")
+                {
+                    throw new NoObjectFoundException($"No task with name: {queryParams["name"]} found");
+                }
                 return new Task {ErrorMessages = new List<string> {err.Message}};
             }
         }
@@ -131,6 +136,10 @@ namespace ComputeCS
             
             if (task.ErrorMessages != null)
             {
+                if (task.ErrorMessages.First() == "No object found.")
+                {
+                    throw new NoObjectFoundException($"No task with name: {taskName} found");
+                }
                 throw new Exception(task.ErrorMessages.First());
             }
 

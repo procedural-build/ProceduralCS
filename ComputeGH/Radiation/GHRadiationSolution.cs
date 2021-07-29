@@ -107,6 +107,7 @@ namespace ComputeGH.Radiation
 
 
             if (!DA.GetData(0, ref inputJson)) return;
+            if (inputJson == "error") return;
             DA.GetData(1, ref cpus);
             DA.GetData(2, ref method);
             //DA.GetData(3, ref caseType);

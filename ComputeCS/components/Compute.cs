@@ -253,14 +253,6 @@ namespace ComputeCS.Components
 
                 // Create Solar Radiation Task
                 solution.Method = "solar_radiation";
-                /*if (solution.Overrides == null)
-                {
-                    solution.Overrides = new RadiationSolutionOverrides {SunOnly = true};
-                }
-                else
-                {
-                    solution.Overrides.SunOnly = true;
-                }*/
                 
                 var solarRadiationTask = RadianceCompute.CreateRadianceTask(
                     tokens,
@@ -274,7 +266,6 @@ namespace ComputeCS.Components
                 );
                 inputData.SubTasks.Add(solarRadiationTask);
                 actionTask = rayTracingTask;
-                solution.Overrides.SunOnly = null;
                 solution.Method = "mean_radiant_temperature";
             }
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Exceptions;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
@@ -95,11 +96,17 @@ namespace ComputeCS.Grasshopper
                         {
                             try
                             {
-                                TimeEstimate = Compute.GetTaskEstimates(inputJson);    
-                            } 
-                            catch (Exception e){}
-                            
+                                TimeEstimate = Compute.GetTaskEstimates(inputJson);
+                            }
+                            catch (Exception)
+                            {
+                            }
+
                             RunOnCompute(inputJson, geometry, folder, cacheKey, compute);
+                        }
+                        catch (NoObjectFoundException)
+                        {
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         catch (Exception e)
                         {
@@ -119,7 +126,7 @@ namespace ComputeCS.Grasshopper
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
-                throw new Exception(errors);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
 
             // Read from Cache
