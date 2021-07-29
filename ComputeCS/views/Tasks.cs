@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ComputeCS.Exceptions;
 using ComputeCS.types;
 using NLog;
 
@@ -74,8 +75,75 @@ namespace ComputeCS
                 }
 
                 Logger.Error($"Got error: {err.Message} while trying to create task");
+                if (err.Message == "No object found.")
+                {
+                    throw new NoObjectFoundException($"No task with name: {queryParams["name"]} found");
+                }
                 return new Task {ErrorMessages = new List<string> {err.Message}};
             }
+        }
+        
+        public static Task CreateParent(
+            AuthTokens tokens,
+            string url,
+            string path,
+            string taskName,
+            Dictionary<string, object> overrides,
+            bool create
+        )
+        {
+            var taskQueryParams = new Dictionary<string, object>
+            {
+                {"name", taskName}
+            };
+            if (overrides.ContainsKey("parent"))
+            {
+                taskQueryParams.Add("parent", overrides["parent"]);
+            }
+            
+            var taskCreateParams = new Dictionary<string, object>
+            {
+                {
+                    "config", new Dictionary<string, string>
+                    {
+                        {"case_dir", "foam"},
+                        {
+                            "task_type", "parent"
+                        }
+                    }
+                }
+            };
+
+            if (overrides.ContainsKey("copy_from"))
+            {
+                taskCreateParams.Add("copy_from", overrides["copy_from"]);
+            }
+            
+            if (overrides.ContainsKey("comment"))
+            {
+                taskCreateParams.Add("comment", overrides["comment"]);
+            }
+
+            var task = new GenericViewSet<Task>(
+                tokens,
+                url,
+                path
+            ).GetOrCreate(
+                taskQueryParams,
+                taskCreateParams,
+                create
+            );
+            
+            if (task.ErrorMessages != null)
+            {
+                if (task.ErrorMessages.First() == "No object found.")
+                {
+                    throw new NoObjectFoundException($"No task with name: {taskName} found");
+                }
+                throw new Exception(task.ErrorMessages.First());
+            }
+
+            return task;
         }
     }
 }

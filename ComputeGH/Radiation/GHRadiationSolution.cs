@@ -11,7 +11,7 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadiationSolution : GH_Component
+    public class GHRadiationSolution : PB_Component
     {
         public GHRadiationSolution()
             : base("Radiation Solution", "Radiation Solution",
@@ -48,6 +48,9 @@ namespace ComputeGH.Radiation
                 "    \"limit_ray_weight\": 0.0002,\n" +
                 "    \"samples\": 1000,\n" +
                 "    \"reinhart_divisions\": 1,\n" +
+                "    \"keep_tmp\": false\n" +
+                "    \"suppress_warnings\": false\n" +
+                "    \"sun_only\": false\n" +
                 "    \"keep\": {\n" +
                 "        \"all\": false,\n" +
                 "        \"view\": false,\n" +
@@ -104,6 +107,7 @@ namespace ComputeGH.Radiation
 
 
             if (!DA.GetData(0, ref inputJson)) return;
+            if (inputJson == "error") return;
             DA.GetData(1, ref cpus);
             DA.GetData(2, ref method);
             //DA.GetData(3, ref caseType);
@@ -111,17 +115,24 @@ namespace ComputeGH.Radiation
             if (!DA.GetData(4, ref epwFile) && (method <= 1)) return;
             DA.GetData(5, ref overrides);
 
-            var outputs = RadiationSolution.Setup(
-                inputJson,
-                ComponentUtils.ValidateCPUs(cpus),
-                Methods[method],
-                CaseTypes[caseType].ToLower(),
-                materials,
-                epwFile,
-                overrides
-            );
+            try
+            {
+                var outputs = RadiationSolution.Setup(
+                    inputJson,
+                    ComponentUtils.ValidateCPUs(cpus),
+                    Methods[method],
+                    CaseTypes[caseType].ToLower(),
+                    materials,
+                    epwFile,
+                    overrides
+                );
+                DA.SetData(0, outputs);
+            }
+            catch (Exception error)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, error.Message);
+            }
 
-            DA.SetData(0, outputs);
         }
 
         /// <summary>
@@ -134,7 +145,8 @@ namespace ComputeGH.Radiation
             "three_phase",
             "solar_radiation",
             "daylight_factor",
-            "sky_view_factor"
+            "sky_view_factor",
+            "mean_radiant_temperature"
         };
 
         private static readonly List<string> CaseTypes = new List<string>

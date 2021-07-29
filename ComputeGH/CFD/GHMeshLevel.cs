@@ -9,7 +9,7 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class CFDMeshLevel : GH_Component
+    public class CFDMeshLevel : PB_Component
     {
         public CFDMeshLevel() : base("CFD Mesh Level", "Mesh Level", "Defines a CFD Mesh Level", "Compute", "Mesh")
         {

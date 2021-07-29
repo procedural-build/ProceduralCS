@@ -6,13 +6,14 @@ using ComputeCS.Components;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
 
 namespace ComputeGH.Utils
 {
-    public class GHListFiles : GH_Component
+    public class GHListFiles : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHAnalysisMesh class.
@@ -112,23 +113,14 @@ namespace ComputeGH.Utils
                 DA.SetDataList(0, outputs);
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
         }
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
         protected override Bitmap Icon => Resources.IconFolder;
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
+
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>

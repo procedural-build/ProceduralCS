@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Exceptions;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
@@ -16,7 +17,7 @@ using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeCompute : GH_Component
+    public class ComputeCompute : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the ComputeCompute class.
@@ -24,7 +25,7 @@ namespace ComputeCS.Grasshopper
         public ComputeCompute()
             : base("Compute", "Compute",
                 "Upload and compute the CFD Case",
-                "Compute", "CFD")
+                "Compute", "General")
         {
         }
 
@@ -95,11 +96,17 @@ namespace ComputeCS.Grasshopper
                         {
                             try
                             {
-                                TimeEstimate = Compute.GetTaskEstimates(inputJson);    
-                            } 
-                            catch (Exception e){}
-                            
+                                TimeEstimate = Compute.GetTaskEstimates(inputJson);
+                            }
+                            catch (Exception)
+                            {
+                            }
+
                             RunOnCompute(inputJson, geometry, folder, cacheKey, compute);
+                        }
+                        catch (NoObjectFoundException)
+                        {
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         catch (Exception e)
                         {
@@ -115,19 +122,13 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
             // Read from Cache
             if (cachedValues != null)
             {
                 DA.SetData(0, Info(TimeEstimate));
-                var outputs = cachedValues;
-                DA.SetData(1, outputs);
+                DA.SetData(1, cachedValues);
                 Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
@@ -256,12 +257,6 @@ namespace ComputeCS.Grasshopper
 
             var files = Directory.GetFiles(folder);
             return files.Any(file => file.ToLower().EndsWith(".idf"));
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

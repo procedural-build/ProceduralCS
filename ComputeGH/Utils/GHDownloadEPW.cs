@@ -3,12 +3,13 @@ using System.Diagnostics;
 using System.Drawing;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 
 namespace ComputeGH.Utils
 {
-    public class GHDownloadEPW : GH_Component
+    public class GHDownloadEPW : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHDownloadEPW class.

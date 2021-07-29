@@ -9,7 +9,7 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class CFDRefinementRegion : GH_Component
+    public class CFDRefinementRegion : PB_Component
     {
         public CFDRefinementRegion() : base("Refinement Region", "Refinement Region", "Defines a CFD Refinement Region",
             "Compute", "Mesh")

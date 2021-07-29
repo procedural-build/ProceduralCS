@@ -7,13 +7,14 @@ using ComputeCS.Components;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class Download : GH_Component
+    public class Download : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -21,7 +22,7 @@ namespace ComputeCS.Grasshopper
         public Download()
           : base("Download", "Download",
               "Download files or folders from Compute. This component will keep polling the Compute server until the files are available. If you reload this component it will check if the files on the server matches the local files and download them if needed.",
-              "Compute", "Utils")
+              "Compute", "General")
         {
         }
 
@@ -70,6 +71,7 @@ namespace ComputeCS.Grasshopper
             var reload = false;
 
             if (!DA.GetData(0, ref input)) return;
+            if (input == "error") return;
             if (!DA.GetData(1, ref downloadPath)) return;
             if (!DA.GetData(2, ref localPath)) return;
             DA.GetData(3, ref overrides);
@@ -103,7 +105,7 @@ namespace ComputeCS.Grasshopper
             var errors = StringCache.getCache(InstanceGuid.ToString());
             if (!string.IsNullOrEmpty(errors))
             {
-                throw new Exception(errors);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
             
             Message = StringCache.getCache(cacheKey + "progress");
@@ -167,12 +169,6 @@ namespace ComputeCS.Grasshopper
                 });
                 
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

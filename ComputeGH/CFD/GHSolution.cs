@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using ComputeCS.Components;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
+using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeSolution : GH_Component
+    public class ComputeSolution : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -44,13 +47,15 @@ namespace ComputeCS.Grasshopper
                 "This should be a list of boundary conditions generated with the Compute Boundary Conditions components.",
                 GH_ParamAccess.list);
             pManager.AddIntegerParameter("Iterations", "Iterations",
-                "Number of iterations to run.",
-                GH_ParamAccess.item, 100);
+                "Number of iterations to run.\nIterations can be a list of up to two elements. " +
+                "The first element is the \"init\" iterations and the second element is the \"run\" iterations." +
+                "Most users should only input a single number for the \"init\" iterations.",
+                GH_ParamAccess.list, new List<int>{100});
             pManager.AddNumberParameter("Number of Angles", "Number of Angles",
                 "Number of Angles. Only used for Virtual Wind Tunnel. Default is 16\n" +
                 "If a single number is given then the component will interpret it as the number of angles that should be ran.\n" +
                 "If a list of numbers is given then that is the angles that will be run.",
-                GH_ParamAccess.list, 16);
+                GH_ParamAccess.tree, 16);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
                 "{\n" +
@@ -102,9 +107,9 @@ namespace ComputeCS.Grasshopper
             var caseType = 0;
             var boundaryConditions = new List<string>();
 
-            var iterations = 100;
+            var iterations = new List<int>();
 
-            var numberOfAngles = new List<double>();
+            var numberOfAngles = new GH_Structure<GH_Number>();
             string overrides = null;
 
 
@@ -113,10 +118,9 @@ namespace ComputeCS.Grasshopper
             DA.GetData(2, ref solver);
             DA.GetData(3, ref caseType);
             if (!DA.GetDataList(4, boundaryConditions)) return;
-            DA.GetData(5, ref iterations);
-            DA.GetDataList(6, numberOfAngles);
+            DA.GetDataList(5, iterations);
+            DA.GetDataTree(6, out numberOfAngles);
             DA.GetData(7, ref overrides);
-            var _iterations = $"{{'init': {iterations}}}";
 
             var outputs = CFDSolution.Setup(
                 inputJson,
@@ -124,8 +128,8 @@ namespace ComputeCS.Grasshopper
                 _solvers[solver],
                 _caseTypes[caseType],
                 boundaryConditions,
-                _iterations,
-                numberOfAngles,
+                ConvertIterations(iterations),
+                ConvertAnglesToList(numberOfAngles),
                 overrides
             );
 
@@ -133,6 +137,16 @@ namespace ComputeCS.Grasshopper
             DA.SetData(0, outputs);
         }
 
+        private static List<List<double>> ConvertAnglesToList(GH_Structure<GH_Number> angles)
+        {
+            return angles.Branches.Select(branch => branch.Select(elem => elem.Value).ToList()).ToList();
+        }
+
+        private static string ConvertIterations(List<int> iterations)
+        {
+            return iterations.Count == 2 ? $"{{'init': {iterations[0]}, 'run': {iterations[1]}}}" : $"{{'init': {iterations[0]}}}";
+        }
+        
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>

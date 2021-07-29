@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
@@ -8,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace ComputeCS.Grasshopper
 {
-    public class cfdBoundaryCondition : GH_Component
+    public class cfdBoundaryCondition : PB_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 

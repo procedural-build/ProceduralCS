@@ -55,46 +55,19 @@ namespace ComputeCS.Components
                 throw new Exception(project.ErrorMessages.First());
             }
 
-            try
-            {
-                var taskQueryParams = new Dictionary<string, object>
-                {
-                    {"name", taskName}
-                };
-                if (overrideDict.ContainsKey("copy_from"))
-                {
-                    queryParams.Add("copy_from", overrideDict["copy_from"]);
-                }
-
-                var task = new GenericViewSet<Task>(
-                    tokens,
-                    inputData.Url,
-                    $"/api/project/{project.UID}/task/"
-                ).GetOrCreate(
-                    taskQueryParams,
-                    new Dictionary<string, object>
-                    {
-                        {
-                            "config", new Dictionary<string, string>
-                            {
-                                {"case_dir", "foam"},
-                                {
-                                    "task_type", "parent"
-                                } // This is optional - task types of "parent" will not execute jobs
-                            }
-                        }
-                    },
-                    create
-                );
-                inputData.Task = task;
-            }
-            catch (Exception)
-            {
-            }
-            // We could have a function here that makes life easier to
-            // merge the outputs with the provided inputs
-
             inputData.Project = project;
+
+            var parentTask = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/", taskName,
+                overrideDict, create);
+            inputData.Task = parentTask;
+
+            if (overrideDict.ContainsKey("nest_with"))
+            {
+                var nestedParent = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
+                    (string) overrideDict["nest_with"],
+                    new Dictionary<string, object> {{"parent", parentTask.UID}}, create);
+                inputData.Task = nestedParent;
+            }
 
             return inputData.ToJson();
         }

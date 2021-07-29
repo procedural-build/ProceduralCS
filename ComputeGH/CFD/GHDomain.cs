@@ -12,7 +12,7 @@ using Rhino.Geometry;
 
 namespace ComputeCS.Grasshopper
 {
-    public class CFDDomain : GH_Component
+    public class CFDDomain : PB_Component
     {
         public CFDDomain() : base("CFD Domain", "Domain", "Create a CFD Domain", "Compute", "Mesh")
         {

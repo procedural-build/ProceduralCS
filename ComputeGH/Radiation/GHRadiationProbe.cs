@@ -15,7 +15,7 @@ using Rhino;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadiationProbe : GH_Component
+    public class GHRadiationProbe : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbe class.
@@ -164,12 +164,6 @@ namespace ComputeGH.Radiation
                     Message = "Task Created";
                 }
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

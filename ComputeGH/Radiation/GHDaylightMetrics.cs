@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Exceptions;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
@@ -14,7 +15,7 @@ using Rhino;
 
 namespace ComputeGH.Radiation
 {
-    public class GHDaylightMetrics : GH_Component
+    public class GHDaylightMetrics : PB_Component
     {
         public GHDaylightMetrics() : base("Daylight Metrics", "Daylight Metrics",
             "Create a task to compute Daylight Metrics, such as cDA, sDA, DA or UDI", "Compute", "Radiation")
@@ -36,7 +37,8 @@ namespace ComputeGH.Radiation
                 "    \"threshold\": 500,\n" +
                 "    \"work_hours\": [8, 16],\n" +
                 "    \"work_days\": [0, 5],\n" +
-                "    \"selected_hours\": []\n" +
+                "    \"selected_hours\": [],\n" +
+                "    \"file_extension\": \".res\"\n" +
                 " }\n" +
                 "Here shown with the defaults.\n" +
                 "\"selected_hours\" is a list of true/false values that represents whether or not that hour should be included in the calculation.\n" +
@@ -105,6 +107,7 @@ namespace ComputeGH.Radiation
             var cpus = 1;
 
             if (!DA.GetData(0, ref inputJson)) return;
+            if (inputJson == "error") return;
             if (!DA.GetData(1, ref preset_))
             {
                 return;
@@ -148,6 +151,10 @@ namespace ComputeGH.Radiation
                                 StringCache.setCache(cacheKey + "create", "true");
                             }
                         }
+                        catch (NoObjectFoundException)
+                        {
+                            StringCache.setCache(cacheKey + "create", "");
+                        }
                         catch (Exception e)
                         {
                             StringCache.setCache(InstanceGuid.ToString(), e.Message);
@@ -162,12 +169,7 @@ namespace ComputeGH.Radiation
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
             // Read from Cache
             if (cachedValues != null)
@@ -188,13 +190,8 @@ namespace ComputeGH.Radiation
             "spatial_daylight_autonomy",
             "continuous_daylight_autonomy",
             "useful_daylight_illuminances",
-            "statistics"
+            "statistics",
+            "seasonal_statistics"
         };
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
     }
 }

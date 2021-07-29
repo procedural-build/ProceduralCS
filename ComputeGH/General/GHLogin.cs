@@ -5,13 +5,14 @@ using System.Threading;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeLogin : GH_Component
+    public class ComputeLogin : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -19,7 +20,7 @@ namespace ComputeCS.Grasshopper
         public ComputeLogin()
             : base("Compute Login", "Login",
                 "Login to Procedural Compute",
-                "Compute", "Utils")
+                "Compute", "General")
         {
         }
 
@@ -134,12 +135,6 @@ namespace ComputeCS.Grasshopper
                 DA.SetData(0, output.ToJson());
             }
             
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

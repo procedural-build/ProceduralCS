@@ -7,6 +7,7 @@ using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
@@ -15,7 +16,7 @@ namespace ComputeCS.Grasshopper
 {
     public delegate void ExpireSolutionDelegate(bool recompute);
 
-    public class ComputeProjectTask : GH_Component
+    public class ComputeProjectTask : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -23,7 +24,7 @@ namespace ComputeCS.Grasshopper
         public ComputeProjectTask()
             : base("Get or Create Project and Task", "Project and Task",
                 "Get or Create a project and/or a parent Task on Procedural Compute",
-                "Compute", "Utils")
+                "Compute", "General")
         {
         }
 
@@ -39,7 +40,17 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("TaskName", "TaskName", "Task Name", GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Takes overrides in JSON format: \n" +
-                "{\n    \"company\": companyId,\n    \"copy_from\": [\n        {\n            \"task\": taskId,\n            \"files\": [fileName1, fileName2]\n        }\n    ]\n}",
+                "{\n" +
+                "    \"company\": companyId,\n" +
+                "    \"copy_from\": [\n" +
+                "        {\n" +
+                "            \"task\": taskId,\n" +
+                "            \"files\": [fileName1, fileName2]\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"nest_with\": parentNameToNestWith,\n" +
+                "    \"comment\": commentHTMLFormattedText\n" +
+                "}",
                 GH_ParamAccess.item);
             pManager.AddBooleanParameter("Create", "Create",
                 "Whether to create a new project/task, if they doesn't exist", GH_ParamAccess.item, false);
@@ -81,11 +92,11 @@ namespace ComputeCS.Grasshopper
             ValidateName(projectName);
 
             // Get Cache to see if we already did this
-            var cacheKey = projectName + taskName;
+            var cacheKey = projectName + taskName + overrides;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null || create == true)
+            if (cachedValues == null || create)
             {
                 var queueName = "ProjectAndTask" + cacheKey;
 
@@ -154,12 +165,6 @@ namespace ComputeCS.Grasshopper
 
                 AddRuntimeMessage(messageLevel, errors);
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         private void ValidateName(string name)

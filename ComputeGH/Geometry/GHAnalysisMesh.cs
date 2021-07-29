@@ -16,7 +16,7 @@ using Rhino.Geometry;
 
 namespace ComputeGH.Utils
 {
-    public class GHAnalysisMesh : GH_Component
+    public class GHAnalysisMesh : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHAnalysisMesh class.
@@ -24,7 +24,7 @@ namespace ComputeGH.Utils
         public GHAnalysisMesh()
             : base("AnalysisMesh", "AnalysisMesh",
                 "Create a mesh from a surface, which can be used for analyses",
-                "Compute", "Utils")
+                "Compute", "Geometry")
         {
         }
 

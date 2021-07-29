@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Drawing;
 using ComputeCS.Components;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeMesh : GH_Component
+    public class ComputeMesh : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.

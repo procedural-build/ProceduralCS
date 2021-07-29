@@ -213,110 +213,72 @@ namespace ComputeCS.Components
             if (create)
             {
                 UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry", "radianceGeom");
-                if (solution.Method == "three_phase")
+                switch (solution.Method)
                 {
-                    UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
-                    UploadBSDFFile(tokens, inputData.Url, parentTask.UID, solution.Materials);
+                    case "three_phase":
+                        UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
+                        UploadBSDFFile(tokens, inputData.Url, parentTask.UID, solution.Materials);
+                        break;
+                    case "solar_radiation":
+                    case "mean_radiant_temperature":
+                        UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
+                        break;
                 }
-                if (solution.Method == "solar_radiation")
-                {
-                    UploadEPWFile(tokens, inputData.Url, parentTask.UID, solution.EPWFile);
-                }
-                
             }
 
-            var actionTaskQueryParams = new Dictionary<string, object>
-            {
-                {"name", "Actions"},
-                {"parent", parentTask.UID},
-                {"project", project.UID}
-            };
-            if (probeTask != null)
-            {
-                actionTaskQueryParams.Add("dependent_on", probeTask.UID);
-            }
-
-            var actionTaskConfig = new Dictionary<string, object>
-            {
-                {"task_type", "magpy"},
-                {"cmd", "radiance.io.tasks.write_rad"},
-                {"materials", inputData.RadiationSolution.Materials.Select(material => material.ToDict()).ToList()},
-                {"case_dir", caseDir},
-                {"method", solution.Method},
-            };
-            if (solution.Overrides != null && solution.Overrides.ReinhartDivisions > 1)
-            {
-                actionTaskConfig.Add("reinhart_divisions", solution.Overrides.ReinhartDivisions);
-            }
-            
-            // Tasks to Handle MagPy Celery Actions
-            // First Action to create Mesh Files
-            var actionTask = Tasks.GetCreateOrUpdateTask(
-                tokens,
-                inputData.Url,
-                $"/api/task/",
-                actionTaskQueryParams,
-                new Dictionary<string, object>
-                {
-                    {
-                        "config", actionTaskConfig
-                    }
-                },
-                create
-            );
-            if (actionTask.ErrorMessages != null && actionTask.ErrorMessages.Count > 0)
-            {
-                if (actionTask.ErrorMessages.First() == "No object found.")
-                {
-                    return null;
-                }
-                throw new Exception(actionTask.ErrorMessages.First());
-            }
-
-            var taskConfig = new Dictionary<string, object>
-            {
-                {"task_type", "radiance"},
-                {"cmd", solution.Method},
-                {"case_type", solution.CaseType},
-                {"cpus", solution.CPUs},
-                {"case_dir", caseDir},
-                {"probes", solution.Probes},
-            };
-            if (solution.Overrides != null)
-            {
-                taskConfig.Add("overrides", solution.Overrides.ToDict());
-            }
-
-            if (!string.IsNullOrEmpty(solution.EPWFile))
-            {
-                taskConfig.Add("epw_file", Path.GetFileName(solution.EPWFile));
-            }
-            var createParams = new Dictionary<string, object>
-            {
-                {
-                    "config", taskConfig
-                }
-            };
-            var radianceTask = Tasks.GetCreateOrUpdateTask(
-                tokens,
-                inputData.Url,
-                $"/api/task/",
-                new Dictionary<string, object>
-                {
-                    {"name", Utils.SnakeCaseToHumanCase(solution.Method)},
-                    {"parent", parentTask.UID},
-                    {"dependent_on", actionTask.UID},
-                    {"project", project.UID}
-                },
-                createParams,
-                create
-            );
-            if (radianceTask.ErrorMessages != null && radianceTask.ErrorMessages.Count > 0)
-            {
-                throw new Exception(radianceTask.ErrorMessages.First());
-            }
-            
+            // Create Action Task
+            var actionTask = RadianceCompute.CreateRadianceActionTask(tokens, inputData.Url, parentTask, probeTask,
+                project, solution, caseDir, create);
             inputData.SubTasks.Add(actionTask);
+
+            if (solution.Method == "mean_radiant_temperature")
+            {
+                var rayTracingTask = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
+                    "Ray Tracing",
+                    new Dictionary<string, object>{{"parent", parentTask.UID}}, create);
+
+                // Create Sky View Task
+                solution.Method = "sky_view_factor";
+                var skyViewTask = RadianceCompute.CreateRadianceTask(
+                    tokens,
+                    inputData.Url,
+                    rayTracingTask,
+                    actionTask,
+                    project,
+                    solution,
+                    caseDir,
+                    create
+                );
+                inputData.SubTasks.Add(skyViewTask);
+
+                // Create Solar Radiation Task
+                solution.Method = "solar_radiation";
+                
+                var solarRadiationTask = RadianceCompute.CreateRadianceTask(
+                    tokens,
+                    inputData.Url,
+                    rayTracingTask,
+                    actionTask,
+                    project,
+                    solution,
+                    caseDir,
+                    create
+                );
+                inputData.SubTasks.Add(solarRadiationTask);
+                actionTask = rayTracingTask;
+                solution.Method = "mean_radiant_temperature";
+            }
+
+            var radianceTask = RadianceCompute.CreateRadianceTask(
+                tokens,
+                inputData.Url,
+                parentTask,
+                actionTask,
+                project,
+                solution,
+                "results",
+                create
+            );
             inputData.SubTasks.Add(radianceTask);
 
             return inputData.ToJson();
@@ -337,9 +299,10 @@ namespace ComputeCS.Components
         )
         {
             var nCPUs = 1;
-            cpus.ForEach(cpu => nCPUs = nCPUs * cpu);
+            cpus.ForEach(cpu => nCPUs *= cpu);
             var commands = new List<string>
             {
+                "remove_processor_directories",
                 "blockMesh",
                 "snappyHexMesh -overwrite"
             };
@@ -734,7 +697,7 @@ namespace ComputeCS.Components
         public static Task GetProbeTask(
             List<Task> subTasks,
             string dependentName = ""
-            )
+        )
         {
             foreach (var subTask in subTasks)
             {
@@ -756,7 +719,7 @@ namespace ComputeCS.Components
 
             return null;
         }
-        
+
         public static void UploadBSDFFile(
             AuthTokens tokens,
             string url,
@@ -775,8 +738,9 @@ namespace ComputeCS.Components
                         bsdfIndex++;
                         continue;
                     }
+
                     var bsdfFileContent = File.ReadAllBytes(bsdfPath);
-                    
+
                     var uploadTask = new GenericViewSet<Dictionary<string, object>>(
                         tokens,
                         url,
@@ -819,6 +783,7 @@ namespace ComputeCS.Components
                     memStream.Write(
                         $"{JsonConvert.SerializeObject(schedule)}");
                 }
+
                 var scheduleContent = stream.ToArray();
                 var scheduleName = $"{material.Name.Replace("*", "")}_{scheduleIndex}.json";
                 if (material.Overrides.Schedules == null)
@@ -849,6 +814,4 @@ namespace ComputeCS.Components
             material.Overrides.ScheduleValues = null;
         }
     }
-    
-
 }

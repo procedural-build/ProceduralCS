@@ -85,9 +85,9 @@ namespace ComputeCS
             return Base64Decode(token);
         }
 
-        public static Dictionary<string, string> DecodeToken(string token)
+        public static Dictionary<string, object> DecodeToken(string token)
         {
-            return JsonConvert.DeserializeObject<Dictionary<string, string>>(DecodeTokenToJson(token));
+            return JsonConvert.DeserializeObject<Dictionary<string, object>>(DecodeTokenToJson(token));
         }
 
         private bool IsTokenExpired()

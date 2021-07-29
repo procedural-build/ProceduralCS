@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using ComputeCS.types;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
@@ -10,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadianceMaterial : GH_Component
+    public class GHRadianceMaterial : PB_Component
     {
         public GHRadianceMaterial() : base("Radiance Material", "Material",
             "Define and apply a Radiance material to the construction", "Compute", "Radiation")

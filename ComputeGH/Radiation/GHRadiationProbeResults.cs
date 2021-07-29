@@ -7,6 +7,7 @@ using ComputeCS.Components;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
@@ -16,7 +17,7 @@ using Rhino.Geometry;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadiationProbeResults : GH_Component
+    public class GHRadiationProbeResults : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbeResults class.
@@ -103,12 +104,7 @@ namespace ComputeGH.Radiation
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
             if (info != null)
             {
@@ -122,13 +118,6 @@ namespace ComputeGH.Radiation
 
             Message = StringCache.getCache(cacheKey + "progress");
         }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
-
 
         private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, IEnumerable<object>>> data)
         {

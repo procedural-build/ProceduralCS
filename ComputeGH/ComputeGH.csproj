@@ -102,21 +102,30 @@
   <ItemGroup>
     <Compile Include="CFD\GHBoundaryConditions.cs" />
     <Compile Include="CFD\GHDomain.cs" />
-    <Compile Include="CFD\GHGetNames.cs" />
     <Compile Include="CFD\GHMeshLevel.cs" />
     <Compile Include="CFD\GHProbe.cs" />
+    <Compile Include="CFD\GHProbeResults.cs" />
     <Compile Include="CFD\GHRefinementRegion.cs" />
-    <Compile Include="CFD\GHSetNames.cs" />
     <Compile Include="CFD\GHThresholdResults.cs" />
     <Compile Include="CFD\GHWindThresholds.cs" />
     <Compile Include="CFD\GHsetSet.cs" />
     <Compile Include="ComputeGHInfo.cs" />
-    <Compile Include="CFD\GHCompute.cs" />
+    <Compile Include="General\GHCompute.cs" />
+    <Compile Include="General\GHDownload.cs" />
+    <Compile Include="General\GHLogin.cs" />
+    <Compile Include="General\GHProjectTask.cs" />
+    <Compile Include="Geometry\GHAnalysisMesh.cs" />
+    <Compile Include="Geometry\GHGetNames.cs" />
+    <Compile Include="Geometry\GHLegend.cs" />
+    <Compile Include="Geometry\GHRecolorMesh.cs" />
+    <Compile Include="Geometry\GHSetNames.cs" />
+    <Compile Include="Geometry\GHSliceDomain.cs" />
     <Compile Include="GrasshopperUtils\Async.cs" />
     <Compile Include="GrasshopperUtils\ComponentUtils.cs" />
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />
+    <Compile Include="GrasshopperUtils\PB_Component.cs" />
     <Compile Include="GrasshopperUtils\Types.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -128,20 +137,14 @@
     <Compile Include="Radiation\GHRadiationProbe.cs" />
     <Compile Include="Radiation\GHRadiationProbeResults.cs" />
     <Compile Include="Radiation\GHRadiationSolution.cs" />
-    <Compile Include="Utils\GHAnalysisMesh.cs" />
-    <Compile Include="Utils\GHDownload.cs" />
+    <Compile Include="Radiation\GHOutdoorComfortResults.cs" />
+    <Compile Include="Radiation\GHOutdoorComfort.cs" />
     <Compile Include="Utils\GHDownloadEPW.cs" />
-    <Compile Include="Utils\GHLegend.cs" />
     <Compile Include="Utils\GHListFiles.cs" />
     <Compile Include="Utils\GHListTasks.cs" />
-    <Compile Include="Utils\GHLogin.cs" />
     <Compile Include="CFD\GHMesh.cs" />
-    <Compile Include="Utils\GHProbeResults.cs" />
-    <Compile Include="Utils\GHProjectTask.cs" />
     <Compile Include="CFD\GHSolution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\GHRecolorMesh.cs" />
-    <Compile Include="Utils\GHSliceDomain.cs" />
     <Compile Include="Utils\GHUploadFile.cs" />
   </ItemGroup>
   <ItemGroup>

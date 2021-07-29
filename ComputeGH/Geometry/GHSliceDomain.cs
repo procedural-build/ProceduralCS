@@ -8,7 +8,7 @@ using Rhino.Geometry;
 
 namespace ComputeGH.Utils
 {
-    public class GHSliceDomain : GH_Component
+    public class GHSliceDomain : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHAnalysisMesh class.
@@ -16,7 +16,7 @@ namespace ComputeGH.Utils
         public GHSliceDomain()
           : base("SliceDomain", "SliceDomain",
               "Create an analysis mesh by slicing a domain box",
-              "Compute", "Utils")
+              "Compute", "Geometry")
         {
         }
 

@@ -16,7 +16,7 @@ using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHProbe : GH_Component
+    public class GHProbe : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbe class.
@@ -179,12 +179,7 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (errors != null)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
-            }
+            HandleErrors();
 
             // Read from Cache
             string outputs = null;
@@ -217,12 +212,6 @@ namespace ComputeCS.Grasshopper
                     $"{name} contains illegal characters. A name cannot be a number"
                 );
             }
-        }
-        
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

@@ -15,7 +15,7 @@ namespace ComputeCS.Components
             string caseType,
             List<string> boundaryConditions,
             string iterations,
-            List<double> numberOfAngles,
+            List<List<double>> numberOfAngles,
             string overrides = null,
             List<string> files = null
         )
@@ -24,28 +24,25 @@ namespace ComputeCS.Components
 
             // Merge the list of dictionaries to one big dict
             var bcs_ = new List<Dictionary<string, object>>();
-            foreach (string bc in boundaryConditions) { bcs_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(bc)); }
+            foreach (var bc in boundaryConditions) { bcs_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(bc)); }
             
             var bcs = bcs_.SelectMany(x => x).GroupBy(d => d.Key).ToDictionary(x => x.Key, y => y.First().Value);
 
             // Convert iterations from json to dict
-            var iterations_ = JsonConvert.DeserializeObject<Dictionary<string, int>>(iterations);
+            var _iterations = JsonConvert.DeserializeObject<Dictionary<string, int>>(iterations);
 
             // Convert overrides to dict
-            Dictionary<string, object> overrides_ = null;
+            Dictionary<string, object> _overrides = null;
             if (overrides != null)
             {
-                overrides_ = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
+                _overrides = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides);
             }
+            
             // Convert overrides to dict
-            var files_ = new List<Dictionary<string, object>>();
+            var _files = new List<Dictionary<string, object>>();
             if (files != null)
             {
-                foreach (var file in files)
-                {
-                    files_.Add(JsonConvert.DeserializeObject<Dictionary<string, object>>(file));    
-                }
-                
+                _files.AddRange(files.Select(file => JsonConvert.DeserializeObject<Dictionary<string, object>>(file)));
             }
             
             var solution = new types.CFDSolution
@@ -54,28 +51,40 @@ namespace ComputeCS.Components
                 Solver = solver,
                 CaseType = caseType,
                 BoundaryConditions = bcs,
-                Iterations = iterations_,
-                Angles = caseType == "VirtualWindTunnel"? GetAngleListFromNumber(numberOfAngles): null,
-                Overrides = overrides_,
-                Files = files_
+                Iterations = _iterations,
+                Angles = caseType == "VirtualWindTunnel"? GetAngleListFromNumber(numberOfAngles, _overrides): null,
+                Overrides = _overrides,
+                Files = _files
             };
 
             inputData.CFDSolution = solution;
             return inputData.ToJson();
         }
 
-        private static List<double> GetAngleListFromNumber(
-            List<double> angles
+        private static List<object> GetAngleListFromNumber(
+            List<List<double>> angles,
+            Dictionary<string, object> overrides
         )
         {
-            if (angles.Count == 1)
+            if (overrides != null && overrides.ContainsKey("single_angle") && (bool) overrides["single_angle"])
             {
-                var numberOfAngles = (int)angles.First();
-                return Enumerable.Range(0, numberOfAngles).Select(index => (double)index * 360 / numberOfAngles).ToList();
+                return new List<object> {angles.First().First()};
+            }
+            
+            switch (angles.Count)
+            {
+                case 1 when angles.First().Count == 1:
+                {
+                    var numberOfAngles = (int)angles.First().First();
+                    return Enumerable.Range(0, numberOfAngles).Select(index => (object)(index * 360 / numberOfAngles)).ToList();
+                }
+                case 1:
+                    return angles.First().Select(angle => (object)angle).ToList();
             }
 
-            return angles;
+            return angles.Select(angle => (object)angle).ToList();
 
         }
+        
     }
 }
