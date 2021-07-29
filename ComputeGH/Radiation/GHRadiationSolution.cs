@@ -11,7 +11,7 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadiationSolution : GH_Component
+    public class GHRadiationSolution : PB_Component
     {
         public GHRadiationSolution()
             : base("Radiation Solution", "Radiation Solution",

@@ -8,13 +8,14 @@ using ComputeCS.Components;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
 
 namespace ComputeGH.Utils
 {
-    public class GHListTasks : GH_Component
+    public class GHListTasks : PB_Component
     {
                 /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -110,16 +111,7 @@ namespace ComputeGH.Utils
                 }
             }
 
-            // Read from Cache
-            if (cachedValues != null)
-            {
-                var outputs = cachedValues.Split(';');
-                if (outputs.Length > 1)
-                {
-                    outputs = outputs.OrderBy(task => task).ToArray();
-                }
-                DA.SetDataList(0, outputs);
-            }
+            HandleErrors();
 
             // Handle Errors
             var errors = StringCache.getCache(InstanceGuid.ToString());
@@ -132,12 +124,6 @@ namespace ComputeGH.Utils
 
                 throw new Exception(errors);
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

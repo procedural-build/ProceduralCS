@@ -12,7 +12,7 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeSolution : GH_Component
+    public class ComputeSolution : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.

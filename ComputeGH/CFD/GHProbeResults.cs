@@ -6,6 +6,7 @@ using ComputeCS.Components;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
@@ -19,7 +20,7 @@ using Mesh = Rhino.Geometry.Mesh;
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHProbeResults : GH_Component
+    public class GHProbeResults : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHProbeResults class.
@@ -175,12 +176,7 @@ namespace ComputeCS.Grasshopper
                 RemoveUnusedOutputs(outputs);
             }
             
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
             if (probePoints != null)
             {
@@ -214,12 +210,6 @@ namespace ComputeCS.Grasshopper
             }
 
             Message = StringCache.getCache(cacheKey + "progress");
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         private DataTree<object> CorrectMesh(

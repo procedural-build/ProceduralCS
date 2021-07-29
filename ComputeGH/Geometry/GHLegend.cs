@@ -9,7 +9,7 @@ using Rhino.Geometry;
 
 namespace ComputeGH.Utils
 {
-    public class GHLegend : GH_Component
+    public class GHLegend : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHAnalysisMesh class.

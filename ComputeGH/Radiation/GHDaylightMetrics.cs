@@ -15,7 +15,7 @@ using Rhino;
 
 namespace ComputeGH.Radiation
 {
-    public class GHDaylightMetrics : GH_Component
+    public class GHDaylightMetrics : PB_Component
     {
         public GHDaylightMetrics() : base("Daylight Metrics", "Daylight Metrics",
             "Create a task to compute Daylight Metrics, such as cDA, sDA, DA or UDI", "Compute", "Radiation")
@@ -169,12 +169,7 @@ namespace ComputeGH.Radiation
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
             // Read from Cache
             if (cachedValues != null)
@@ -198,11 +193,5 @@ namespace ComputeGH.Radiation
             "statistics",
             "seasonal_statistics"
         };
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
     }
 }

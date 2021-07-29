@@ -7,6 +7,7 @@ using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
@@ -15,7 +16,7 @@ namespace ComputeCS.Grasshopper
 {
     public delegate void ExpireSolutionDelegate(bool recompute);
 
-    public class ComputeProjectTask : GH_Component
+    public class ComputeProjectTask : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -164,12 +165,6 @@ namespace ComputeCS.Grasshopper
 
                 AddRuntimeMessage(messageLevel, errors);
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         private void ValidateName(string name)

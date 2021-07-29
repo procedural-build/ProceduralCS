@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using ComputeCS.types;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
 namespace ComputeGH.Grasshopper
 {
-    public class CFDsetSet : GH_Component
+    public class CFDsetSet : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.

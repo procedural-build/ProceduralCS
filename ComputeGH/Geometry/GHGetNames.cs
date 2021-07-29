@@ -8,7 +8,7 @@ using Grasshopper.Kernel.Types;
 
 namespace ComputeGH.Grasshopper
 {
-    public class GetNames : GH_Component
+    public class GetNames : PB_Component
     {
         public GetNames() : base("Get Names", "Get Names", "Get the Compute Name of Meshes", "Compute", "Geometry")
         {

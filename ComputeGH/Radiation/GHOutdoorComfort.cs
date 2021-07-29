@@ -14,7 +14,7 @@ using Rhino;
 
 namespace ComputeGH.CFD
 {
-    public class GHOutdoorComfort : GH_Component
+    public class GHOutdoorComfort : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the WindThresholds class.
@@ -168,12 +168,7 @@ namespace ComputeGH.CFD
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
-            }
+           HandleErrors();
 
             // Read from Cache
             if (cachedValues != null)
@@ -196,12 +191,6 @@ namespace ComputeGH.CFD
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid => new Guid("95f3fb3f-02aa-4a61-a952-c69e1c9d1653");
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
         
         private static readonly List<string> Presets = new List<string>
         {

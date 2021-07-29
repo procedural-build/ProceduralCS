@@ -14,7 +14,7 @@ using Rhino;
 
 namespace ComputeGH.CFD
 {
-    public class GHWindThresholds : GH_Component
+    public class GHWindThresholds : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the WindThresholds class.
@@ -159,19 +159,12 @@ namespace ComputeGH.CFD
                 }
             }
 
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
-            }
+            HandleErrors();
 
             // Read from Cache
-            string outputs = null;
             if (cachedValues != null)
             {
-                outputs = cachedValues;
-                DA.SetData(0, outputs);
+                DA.SetData(0, cachedValues);
                 Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
@@ -189,11 +182,5 @@ namespace ComputeGH.CFD
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid => new Guid("235182ea-f739-4bea-be24-907de80e58fa");
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
     }
 }

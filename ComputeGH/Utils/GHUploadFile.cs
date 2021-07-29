@@ -2,13 +2,14 @@
 using System.Drawing;
 using ComputeCS.Components;
 using ComputeCS.utils.Cache;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHUploadFile : GH_Component
+    public class GHUploadFile : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -97,12 +98,7 @@ namespace ComputeCS.Grasshopper
             }
 
 
-            // Handle Errors
-            var errors = StringCache.getCache(this.InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
-            {
-                throw new Exception(errors);
-            }
+            HandleErrors();
 
             // Read from Cache
             if (cachedValues != null)
@@ -114,12 +110,6 @@ namespace ComputeCS.Grasshopper
                     Message = "File Uploaded";
                 }
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

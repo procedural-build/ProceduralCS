@@ -7,13 +7,14 @@ using ComputeCS.Components;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public class Download : GH_Component
+    public class Download : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the computeLogin class.
@@ -168,12 +169,6 @@ namespace ComputeCS.Grasshopper
                 });
                 
             }
-        }
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
 
         /// <summary>

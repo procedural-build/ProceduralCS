@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.GUI.Gradient;
 using Grasshopper.Kernel;
@@ -10,7 +11,7 @@ using Grasshopper3D = Grasshopper;
 
 namespace ComputeCS.Grasshopper
 {
-    public class GHRecolorMesh : GH_Component
+    public class GHRecolorMesh : PB_Component
     {
         /// <summary>
         /// Initializes a new instance of the GHRecolorMesh class.
