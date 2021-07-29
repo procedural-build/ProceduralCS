@@ -18,7 +18,7 @@ namespace ComputeGH.Grasshopper.Utils
         }
         //public override GH_Exposure Exposure => GH_Exposure.hidden;
         
-        public override bool Obsolete => true;
+        //public override bool Obsolete => true;
         
         public void HandleErrors()
         {
