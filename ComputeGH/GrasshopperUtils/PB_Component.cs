@@ -16,7 +16,7 @@ namespace ComputeGH.Grasshopper.Utils
             var delegated = new ExpireSolutionDelegate(ExpireSolution);
             RhinoApp.InvokeOnUiThread(delegated, recompute);
         }
-        public override GH_Exposure Exposure => GH_Exposure.hidden;
+        //public override GH_Exposure Exposure => GH_Exposure.hidden;
         
         public override bool Obsolete => true;
         
