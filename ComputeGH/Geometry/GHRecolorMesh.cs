@@ -175,9 +175,6 @@ namespace ComputeCS.Grasshopper
                 values.Add(i);
             }
 
-            colors.Reverse();
-            values.Reverse();
-
             DA.SetDataList(1, colors);
             DA.SetDataList(2, values);
         }
