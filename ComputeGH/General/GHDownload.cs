@@ -70,6 +70,7 @@ namespace ComputeCS.Grasshopper
             var reload = false;
 
             if (!DA.GetData(0, ref input)) return;
+            if (input == "error") return;
             if (!DA.GetData(1, ref downloadPath)) return;
             if (!DA.GetData(2, ref localPath)) return;
             DA.GetData(3, ref overrides);

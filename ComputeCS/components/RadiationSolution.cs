@@ -22,7 +22,7 @@ namespace ComputeCS.Components
 
             var materials_ = materials.Select(material => new RadianceMaterial().FromJson(material)).ToList();
 
-            if (!File.Exists(epwFile) && (method == "three_phase" || method == "solar_radiation"))
+            if (!File.Exists(epwFile) && (method == "three_phase" || method == "solar_radiation" || method == "mean_radiant_temperature"))
             {
                 throw new FileNotFoundException($"EPW file: {epwFile} does not exist!");
             }

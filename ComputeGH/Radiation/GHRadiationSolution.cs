@@ -114,17 +114,24 @@ namespace ComputeGH.Radiation
             if (!DA.GetData(4, ref epwFile) && (method <= 1)) return;
             DA.GetData(5, ref overrides);
 
-            var outputs = RadiationSolution.Setup(
-                inputJson,
-                ComponentUtils.ValidateCPUs(cpus),
-                Methods[method],
-                CaseTypes[caseType].ToLower(),
-                materials,
-                epwFile,
-                overrides
-            );
+            try
+            {
+                var outputs = RadiationSolution.Setup(
+                    inputJson,
+                    ComponentUtils.ValidateCPUs(cpus),
+                    Methods[method],
+                    CaseTypes[caseType].ToLower(),
+                    materials,
+                    epwFile,
+                    overrides
+                );
+                DA.SetData(0, outputs);
+            }
+            catch (Exception error)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, error.Message);
+            }
 
-            DA.SetData(0, outputs);
         }
 
         /// <summary>

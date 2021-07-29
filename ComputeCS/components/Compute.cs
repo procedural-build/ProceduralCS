@@ -253,14 +253,14 @@ namespace ComputeCS.Components
 
                 // Create Solar Radiation Task
                 solution.Method = "solar_radiation";
-                if (solution.Overrides == null)
+                /*if (solution.Overrides == null)
                 {
                     solution.Overrides = new RadiationSolutionOverrides {SunOnly = true};
                 }
                 else
                 {
                     solution.Overrides.SunOnly = true;
-                }
+                }*/
                 
                 var solarRadiationTask = RadianceCompute.CreateRadianceTask(
                     tokens,
@@ -311,6 +311,7 @@ namespace ComputeCS.Components
             cpus.ForEach(cpu => nCPUs *= cpu);
             var commands = new List<string>
             {
+                "remove_processor_directories",
                 "blockMesh",
                 "snappyHexMesh -overwrite"
             };
