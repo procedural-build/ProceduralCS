@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
 using ComputeCS.types;
@@ -45,9 +46,11 @@ namespace ComputeCS.Grasshopper
                 "\n}",
                 GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Reload", "Reload", "Redownload the content from Compute", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Clear", "Clear", "Delete all files downloaded into the local path", GH_ParamAccess.item);
             
             pManager[3].Optional = true;
             pManager[4].Optional = true;
+            pManager[5].Optional = true;
         }
 
         /// <summary>
@@ -68,6 +71,7 @@ namespace ComputeCS.Grasshopper
             string downloadPath = null;
             string localPath = null;
             var overrides = "";
+            var clear = false;
             var reload = false;
 
             if (!DA.GetData(0, ref input)) return;
@@ -76,12 +80,15 @@ namespace ComputeCS.Grasshopper
             if (!DA.GetData(2, ref localPath)) return;
             DA.GetData(3, ref overrides);
             DA.GetData(4, ref reload);
+            DA.GetData(5, ref clear);
 
             // Get Cache to see if we already did this
             var cacheKey = input + downloadPath;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
+            ClearLocalFolder(localPath, clear, cacheKey);
+            
             if (cachedValues == null || reload)
             {
                 PollDownloadContent(input, downloadPath, localPath, overrides, reload, cacheKey);
@@ -112,6 +119,24 @@ namespace ComputeCS.Grasshopper
 
         }
 
+        private void ClearLocalFolder(string localPath, bool clear, string cacheKey)
+        {
+            if (!Directory.Exists(localPath)) return;
+            if (!clear) return;
+            
+            var directoryInfo = new DirectoryInfo(localPath);
+            foreach (var file in directoryInfo.EnumerateFiles())
+            {
+                file.Delete(); 
+            }
+            foreach (var dir in directoryInfo.EnumerateDirectories())
+            {
+                dir.Delete(true); 
+            }
+            
+            StringCache.setCache(cacheKey + "progress", "Cleared Folder");
+            
+        }
         private void PollDownloadContent(
             string inputJson,
             string downloadPath,
