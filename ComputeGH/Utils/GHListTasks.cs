@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Exceptions;
 using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
@@ -98,6 +99,10 @@ namespace ComputeGH.Utils
                             StringCache.setCache(cacheKey, cachedValues);
                             StringCache.setCache(this.InstanceGuid.ToString(), "");
                         }
+                        catch (NoObjectFoundException)
+                        {
+                            StringCache.setCache(cacheKey + "create", "");
+                        }
                         catch (Exception e)
                         {
                             StringCache.setCache(InstanceGuid.ToString(), e.Message);
@@ -112,17 +117,16 @@ namespace ComputeGH.Utils
             }
 
             HandleErrors();
-
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (!string.IsNullOrEmpty(errors))
+            
+            // Read from Cache
+            if (cachedValues != null)
             {
-                if (errors.Contains("No object found"))
+                var outputs = cachedValues.Split(';');
+                if (outputs.Length > 1)
                 {
-                    errors = "Could not find the desired project. Click create to create a new project.";
+                    outputs = outputs.OrderBy(task => task).ToArray();
                 }
-
-                throw new Exception(errors);
+                DA.SetDataList(0, outputs);
             }
         }
 
