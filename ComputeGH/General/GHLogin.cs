@@ -31,9 +31,10 @@ namespace ComputeCS.Grasshopper
         {
             pManager.AddTextParameter("Username", "Username", "Username", GH_ParamAccess.item);
             pManager.AddTextParameter("Password", "Password", "Password", GH_ParamAccess.item);
-            pManager.AddTextParameter("Compute URL", "URL", "URL for Compute", GH_ParamAccess.item);
+            pManager.AddTextParameter("Compute URL", "URL", "URL for Compute", GH_ParamAccess.item, "https://compute.procedural.build");
             pManager.AddBooleanParameter("Retry", "Retry", "Force retry to connect to Compute", GH_ParamAccess.item);
 
+            pManager[2].Optional = true;
             pManager[3].Optional = true;
         }
 
@@ -53,12 +54,12 @@ namespace ComputeCS.Grasshopper
         {
             string username = null;
             string password = null;
-            string url = null;
+            var url = "https://compute.procedural.build";
             var retry = false;
 
             if (!DA.GetData(0, ref username)) return;
             if (!DA.GetData(1, ref password)) return;
-            if (!DA.GetData(2, ref url)) return;
+            DA.GetData(2, ref url);
             DA.GetData(3, ref retry);
 
             var client = new ComputeClient(url);

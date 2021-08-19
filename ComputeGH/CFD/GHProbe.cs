@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using ComputeCS.Components;
+using ComputeCS.Exceptions;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
@@ -41,6 +42,9 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list);
             pManager.AddTextParameter("Fields", "Fields", "Choose which fields to probe. Default is U",
                 GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "Mesh",
+                "Input your analysis mesh here, if you wish to visualize your results in the browser",
+                GH_ParamAccess.tree);
             pManager.AddIntegerParameter("CPUs", "CPUs",
                 "CPUs to use. Valid choices are:\n1, 2, 4, 8, 16, 18, 24, 36, 48, 64, 72, 96. \nIn most cases it is not advised to use more CPUs than 1, as the time it takes to decompose and reconstruct the case will exceed the speed-up gained by multiprocessing the probing.",
                 GH_ParamAccess.item, 1);
@@ -70,6 +74,7 @@ namespace ComputeCS.Grasshopper
             pManager[6].Optional = true;
             pManager[7].Optional = true;
             pManager[8].Optional = true;
+            pManager[9].Optional = true;
         }
 
         /// <summary>
@@ -90,6 +95,7 @@ namespace ComputeCS.Grasshopper
             var points = new GH_Structure<GH_Point>();
             var names = new List<string>();
             var fields = new List<string>();
+            var mesh = new GH_Structure<GH_Mesh>();
             var cpus = 1;
             var dependentOn = "VirtualWindTunnel";
             var caseDir = "VWT";
@@ -102,7 +108,7 @@ namespace ComputeCS.Grasshopper
             {
                 for (var i = 0; i < points.Branches.Count; i++)
                 {
-                    names.Add($"set{i.ToString()}");    
+                    names.Add($"set{i.ToString()}");
                 }
             }
             else
@@ -118,11 +124,12 @@ namespace ComputeCS.Grasshopper
                 fields.Add("U");
             }
 
-            DA.GetData(4, ref cpus);
-            DA.GetData(5, ref dependentOn);
-            DA.GetData(6, ref caseDir);
-            DA.GetData(7, ref overrides);
-            DA.GetData(8, ref create);
+            DA.GetDataTree(4, out mesh);
+            DA.GetData(5, ref cpus);
+            DA.GetData(6, ref dependentOn);
+            DA.GetData(7, ref caseDir);
+            DA.GetData(8, ref overrides);
+            DA.GetData(9, ref create);
 
             var convertedPoints = Geometry.ConvertPointsToList(points);
             caseDir = caseDir.TrimEnd('/');
@@ -146,12 +153,14 @@ namespace ComputeCS.Grasshopper
                     {
                         try
                         {
+                            var meshFile = Export.MeshToObj(mesh, names);
                             var results = Probe.ProbePoints(
                                 inputJson,
                                 convertedPoints,
                                 fields,
                                 names,
                                 ComponentUtils.ValidateCPUs(cpus),
+                                meshFile,
                                 dependentOn,
                                 caseDir,
                                 overrides,
@@ -163,6 +172,10 @@ namespace ComputeCS.Grasshopper
                             {
                                 StringCache.setCache(cacheKey + "create", "true");
                             }
+                        }
+                        catch (NoObjectFoundException)
+                        {
+                            StringCache.setCache(cacheKey + "create", "");
                         }
                         catch (Exception e)
                         {
@@ -180,14 +193,12 @@ namespace ComputeCS.Grasshopper
             }
 
             HandleErrors();
+            Message = "";
 
-            // Read from Cache
-            string outputs = null;
             if (cachedValues != null)
             {
-                outputs = cachedValues;
-                DA.SetData(0, outputs);
-                Message = "";
+                DA.SetData(0, cachedValues);
+
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
                     Message = "Task Created";

@@ -38,13 +38,14 @@ namespace ComputeCS.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
-            pManager.AddMeshParameter("Mesh", "Mesh", "Original mesh from where the probe points is generated",
-                GH_ParamAccess.tree);
+            pManager.AddTextParameter("Mesh Path", "MeshPath", "The path to the analysis mesh from where the probe points are generated",
+                GH_ParamAccess.item);
             pManager.AddTextParameter("Overrides", "Overrides",
                 "Optional overrides to apply to loading the results.\n" +
                 "The overrides lets you exclude or include files from the folder, that you want to download.\n" +
                 "If you want to exclude all files that ends with '.txt', then you can do that with: {\"exclude\": [\".txt\"]}\n" +
-                "Distance from mesh face center to result point. Used for reconstructing the mesh." +
+                "Distance from mesh face center to result point. Used for reconstructing the mesh.\n" +
+                "Outputs let you specify consistent outputs from this components, as the outputs are dynamic they created at load time. You can avoid that with this override.\n" +
                 "The overrides takes a JSON formatted string as follows:\n" +
                 "{\n" +
                 "  \"exclude\": List[string],\n" +
@@ -79,19 +80,19 @@ namespace ComputeCS.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string folder = null;
-            var meshes = new GH_Structure<GH_Mesh>();
+            string meshPath = null;
             var refresh = false;
             var _overrides = "";
 
             if (!DA.GetData(0, ref folder)) return;
-            DA.GetDataTree(1, out meshes);
+            DA.GetData(1, ref meshPath);
             DA.GetData(2, ref _overrides);
             DA.GetData(3, ref refresh);
 
             var overrides = new ProbeOverrides().FromJson(_overrides) ?? new ProbeOverrides{Exclude = null, Include = null, Distance = 0.1, Outputs = null};
 
             // Get Cache to see if we already did this
-            var cacheKey = folder + _overrides;
+            var cacheKey = folder + meshPath + _overrides;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
@@ -126,11 +127,13 @@ namespace ComputeCS.Grasshopper
                                 );
                             probePoints = ConvertPointsToDataTree(points);
 
-                            if (meshes.Any() && points.Any())
+                            loadedMeshes = Import.LoadMeshFromPath(meshPath, overrides.Exclude, overrides.Include);
+
+                            if (loadedMeshes.Any() && points.Any())
                             {
                                 try
                                 {
-                                    correctedMesh = CorrectMesh(meshes, points, overrides.Distance ?? 0.1);
+                                    correctedMesh = CorrectMesh(loadedMeshes, points, overrides.Distance ?? 0.1);
                                 }
                                 catch (InvalidOperationException error)
                                 {
@@ -213,26 +216,27 @@ namespace ComputeCS.Grasshopper
         }
 
         private DataTree<object> CorrectMesh(
-            GH_Structure<GH_Mesh> meshes,
+            Dictionary<string, Mesh> meshes,
             Dictionary<string, List<List<double>>> points,
             double distance
         )
         {
 
             var newMeshes = new DataTree<object>();
-            var patches = points.Keys.ToList();
             var j = 0;
-            foreach (var branch in meshes.Branches)
+            foreach (var key in meshes.Keys)
             {
-                var patchPoints = points[patches[j]];
-                var GHPoints = patchPoints.Select(point => new Point3d(point[0], point[1], point[2])).ToList();
+                if (!points.ContainsKey(key)) continue;
+                
+                var patchPoints = points[key];
+                var ghPoints = patchPoints.Select(point => new Point3d(point[0], point[1], point[2])).ToList();
                 var mesh = new Mesh();
 
                 // Check mesh normal. If the normal direction is fx Z, check that the points and mesh have the same value. If not throw an error. 
-                GH_Convert.ToMesh(branch.First(), ref mesh, GH_Conversion.Primary);
+                GH_Convert.ToMesh(meshes[key], ref mesh, GH_Conversion.Primary);
                 var faceCenters = Enumerable.Range(0, mesh.Faces.Count())
                     .Select(index => mesh.Faces.GetFaceCenter(index)).ToList();
-                var faceIndices = RTree.Point3dClosestPoints(faceCenters, GHPoints, distance);
+                var faceIndices = RTree.Point3dClosestPoints(faceCenters, ghPoints, distance);
 
                 var newMesh = new Mesh();
                 newMesh.Vertices.AddVertices(mesh.Vertices);
@@ -438,5 +442,6 @@ namespace ComputeCS.Grasshopper
         private DataTree<object> correctedMesh;
         private DataTree<object> info;
         private List<string> resultKeys;
+        private Dictionary<string, Mesh> loadedMeshes;
     }
 }

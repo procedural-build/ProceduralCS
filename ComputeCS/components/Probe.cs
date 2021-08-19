@@ -18,6 +18,7 @@ namespace ComputeCS.Components
             List<string> fields,
             List<string> names,
             List<int> cpus,
+            Dictionary<string, byte[]> meshFiles,
             string dependentOn = "VirtualWindTunnel",
             string caseDir = "VWT/",
             string overrides = "",
@@ -53,6 +54,7 @@ namespace ComputeCS.Components
             if (create)
             {
                 UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
+                UploadMeshFile(tokens, inputData.Url, parentTask.UID, meshFiles, "geometry");
             }
 
             var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,

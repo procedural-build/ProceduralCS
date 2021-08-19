@@ -143,5 +143,11 @@ namespace ComputeGH.Grasshopper.Utils
 
             return stream.ToArray();
         }
+        
+        public static void MeshToObjFile(List<GH_Mesh> meshes, string filePath)
+        {
+            var objBytes = ObjObject(meshes);
+            File.WriteAllBytes(filePath, objBytes);
+        }
     }
 }

@@ -117,7 +117,9 @@
     <Compile Include="Geometry\GHAnalysisMesh.cs" />
     <Compile Include="Geometry\GHGetNames.cs" />
     <Compile Include="Geometry\GHLegend.cs" />
+    <Compile Include="Geometry\GHLoadMesh.cs" />
     <Compile Include="Geometry\GHRecolorMesh.cs" />
+    <Compile Include="Geometry\GHSaveMesh.cs" />
     <Compile Include="Geometry\GHSetNames.cs" />
     <Compile Include="Geometry\GHSliceDomain.cs" />
     <Compile Include="GrasshopperUtils\Async.cs" />
@@ -125,6 +127,7 @@
     <Compile Include="GrasshopperUtils\Domain.cs" />
     <Compile Include="GrasshopperUtils\Export.cs" />
     <Compile Include="GrasshopperUtils\Geometry.cs" />
+    <Compile Include="GrasshopperUtils\Import.cs" />
     <Compile Include="GrasshopperUtils\PB_Component.cs" />
     <Compile Include="GrasshopperUtils\Types.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
