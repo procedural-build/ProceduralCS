@@ -62,7 +62,10 @@ namespace ComputeCS.Grasshopper
                 "    \"setup\": [...],\n" +
                 "    \"fields\": [...],\n" +
                 "    \"presets\": [...],\n" +
-                "    \"caseFiles\": [...]\n" +
+                "    \"caseFiles\": [...],\n" +
+                "    \"single_angle\": bool,\n" +
+                "    \"keep_mesh\": bool,\n" +
+                "    \"mesh_independence\": {...}\n" +
                 "}",
                 GH_ParamAccess.item);
 
@@ -72,8 +75,8 @@ namespace ComputeCS.Grasshopper
             pManager[6].Optional = true;
             pManager[7].Optional = true;
 
-            AddNamedValues(pManager[2] as Param_Integer, _solvers);
-            AddNamedValues(pManager[3] as Param_Integer, _caseTypes);
+            AddNamedValues(pManager[2] as Param_Integer, Solvers);
+            AddNamedValues(pManager[3] as Param_Integer, CaseTypes);
         }
 
         private static void AddNamedValues(Param_Integer param, List<string> values)
@@ -125,8 +128,8 @@ namespace ComputeCS.Grasshopper
             var outputs = CFDSolution.Setup(
                 inputJson,
                 ComponentUtils.ValidateCPUs(cpus),
-                _solvers[solver],
-                _caseTypes[caseType],
+                Solvers[solver],
+                CaseTypes[caseType],
                 boundaryConditions,
                 ConvertIterations(iterations),
                 ConvertAnglesToList(numberOfAngles),
@@ -139,7 +142,7 @@ namespace ComputeCS.Grasshopper
 
         private static List<List<double>> ConvertAnglesToList(GH_Structure<GH_Number> angles)
         {
-            return angles.Branches.Select(branch => branch.Select(elem => elem.Value).ToList()).ToList();
+            return angles.Branches.First().First() == null ? null : angles.Branches.Select(branch => branch.Select(elem => elem.Value).ToList()).ToList();
         }
 
         private static string ConvertIterations(List<int> iterations)
@@ -152,7 +155,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override Bitmap Icon => Resources.IconSolver;
 
-        private static List<string> _solvers = new List<string>
+        private static readonly List<string> Solvers = new List<string>
         {
             "simpleFoam",
             "potentialFoam",
@@ -164,9 +167,9 @@ namespace ComputeCS.Grasshopper
             "buoyantBoussinesqPimpleFoam"
         };
 
-        private static readonly List<string> _caseTypes = new List<string>
+        private static readonly List<string> CaseTypes = new List<string>
         {
-            "SimpleCase", "VirtualWindTunnel", "MeshOnly"
+            "SimpleCase", "VirtualWindTunnel", "MeshOnly", "MeshIndependenceStudy"
         };
 
         /// <summary>

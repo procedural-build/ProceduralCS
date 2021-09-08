@@ -65,7 +65,7 @@ namespace ComputeCS.Components
             };
             
             // First Action to create Mesh Files
-            var metricTask = Tasks.GetCreateOrUpdateTask(
+            var metricTask = TaskViews.GetCreateOrUpdateTask(
                 tokens,
                 inputData.Url,
                 $"/api/task/",
@@ -75,15 +75,7 @@ namespace ComputeCS.Components
             );
             if (metricTask.ErrorMessages != null && metricTask.ErrorMessages.Count > 0)
             {
-                if (create == false && metricTask.ErrorMessages.First() == "No object found.")
-                {
-                    // pass
-                }
-                else
-                {
-                    throw new Exception(metricTask.ErrorMessages.First());    
-                }
-                
+                throw new Exception(metricTask.ErrorMessages.First());    
             }
             
             inputData.SubTasks.Add(metricTask);

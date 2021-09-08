@@ -16,7 +16,7 @@ namespace ComputeCS.types
         public Task Parent;
         public Dictionary<string, object> MetaJson;
         public string Project;
-        public Task DependentOn;
+        public List<Task> DependentOn;
         public List<string> ErrorMessages = null;
     }
 

@@ -45,7 +45,7 @@ namespace ComputeCS.Components
             
             // Tasks to Handle MagPy Celery Actions
             // First Action to create Mesh Files
-            var actionTask = Tasks.GetCreateOrUpdateTask(
+            var actionTask = TaskViews.GetCreateOrUpdateTask(
                 tokens,
                 url,
                 $"/api/task/",
@@ -105,7 +105,7 @@ namespace ComputeCS.Components
                     "config", taskConfig
                 }
             };
-            var radianceTask = Tasks.GetCreateOrUpdateTask(
+            var radianceTask = TaskViews.GetCreateOrUpdateTask(
                 tokens,
                 url,
                 $"/api/task/",
