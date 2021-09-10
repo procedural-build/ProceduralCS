@@ -89,7 +89,7 @@ namespace ComputeCS.Tasks
             };
             if (!string.IsNullOrEmpty(dependentOnId))
             {
-                queryParams.Add("dependent_on", dependentOnId);
+                createParams.Add("dependent_on", dependentOnId);
             }
             var cfdTask = new GenericViewSet<Task>(
                 tokens,

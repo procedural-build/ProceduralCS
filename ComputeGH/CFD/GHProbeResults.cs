@@ -127,9 +127,13 @@ namespace ComputeCS.Grasshopper
                                 );
                             probePoints = ConvertPointsToDataTree(points);
 
-                            loadedMeshes = Import.LoadMeshFromPath(meshPath, overrides.Exclude, overrides.Include);
+                            if (!string.IsNullOrEmpty(meshPath))
+                            {
+                                loadedMeshes = Import.LoadMeshFromPath(meshPath, overrides.Exclude, overrides.Include);    
+                            }
+                            
 
-                            if (loadedMeshes.Any() && points.Any())
+                            if (loadedMeshes != null && loadedMeshes.Any() && points != null && points.Any())
                             {
                                 try
                                 {
