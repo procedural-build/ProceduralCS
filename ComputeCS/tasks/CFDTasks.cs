@@ -14,23 +14,30 @@ namespace ComputeCS.Tasks
             CFDSolution solution,
             bool create)
         {
+            var config = new Dictionary<string, object>
+            {
+                {"task_type", "cfd"},
+                {"cmd", "pipeline"},
+                {
+                    "commands", new List<string>
+                    {
+                        solution.Solver,
+                        "reconstructPar -noZero"
+                    }
+                },
+                {"cpus", solution.CPUs},
+                {"iterations", solution.Iterations}
+            };
+            
+            if (solution.Overrides != null && solution.Overrides.ContainsKey("webhook"))
+            {
+                config.Add("webhook", solution.Overrides["webhook"]);
+            }
+            
             var createParams = new Dictionary<string, object>
             {
                 {
-                    "config", new Dictionary<string, object>
-                    {
-                        {"task_type", "cfd"},
-                        {"cmd", "pipeline"},
-                        {
-                            "commands", new List<string>
-                            {
-                                solution.Solver,
-                                "reconstructPar -noZero"
-                            }
-                        },
-                        {"cpus", solution.CPUs},
-                        {"iterations", solution.Iterations}
-                    }
+                    "config", config
                 }
             };
 
@@ -57,10 +64,20 @@ namespace ComputeCS.Tasks
                 {"solver", solution.Solver}
             };
 
-            if (solution.Overrides != null && solution.Overrides.ContainsKey("copy_folder"))
+            if (solution.Overrides != null)
             {
-                config.Add("overrides", new Dictionary<string, object>{{"copy_folder", solution.Overrides["copy_folder"]}});
+                if (solution.Overrides.ContainsKey("copy_folder"))
+                {
+                    config.Add("overrides",
+                        new Dictionary<string, object> {{"copy_folder", solution.Overrides["copy_folder"]}});
+                }
+
+                if (solution.Overrides.ContainsKey("webhook"))
+                {
+                    config.Add("webhook", solution.Overrides["webhook"]);
+                }
             }
+
             var createParams = new Dictionary<string, object>
             {
                 {

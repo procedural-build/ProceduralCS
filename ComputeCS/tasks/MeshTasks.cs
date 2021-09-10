@@ -48,6 +48,19 @@ namespace ComputeCS.Tasks
                 commands.Add("!setSet -batch zones.setSet");
             }
 
+            var config = new Dictionary<string, object>
+            {
+                {"task_type", "cfd"},
+                {"cmd", "pipeline"},
+                {"commands", commands},
+                {"cpus", cpus},
+            };
+            
+            if (overrides != null && overrides.ContainsKey("webhook"))
+            {
+                config.Add("webhook", overrides["webhook"]);
+            }
+
             try
             {
                 var meshTask = new GenericViewSet<Task>(
@@ -64,13 +77,7 @@ namespace ComputeCS.Tasks
                     new Dictionary<string, object>
                     {
                         {
-                            "config", new Dictionary<string, object>
-                            {
-                                {"task_type", "cfd"},
-                                {"cmd", "pipeline"},
-                                {"commands", commands},
-                                {"cpus", cpus},
-                            }
+                            "config", config
                         }
                     },
                     create

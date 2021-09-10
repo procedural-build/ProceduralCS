@@ -65,7 +65,8 @@ namespace ComputeCS.Grasshopper
                 "    \"caseFiles\": [...],\n" +
                 "    \"single_angle\": bool,\n" +
                 "    \"keep_mesh\": bool,\n" +
-                "    \"mesh_independence\": {...}\n" +
+                "    \"mesh_independence\": {...},\n" +
+                "    \"webhook\": \"url\"\n" +
                 "}",
                 GH_ParamAccess.item);
 
