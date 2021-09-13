@@ -15,7 +15,7 @@ using Grasshopper.Kernel.Parameters;
 using ComputeGH.Grasshopper.Utils;
 
 
-namespace ComputeCS.Grasshopper
+namespace ComputeGH.Radiation
 {
     public class GHOutdoorComfortResults : PB_Component
     {

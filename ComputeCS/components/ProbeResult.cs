@@ -49,6 +49,11 @@ namespace ComputeCS.Components
                     patchName = string.Join("_", names.Take(names.Length - 1));
                 }
             }
+            else if (filePath.EndsWith((".cp")))
+            {
+                patchName = Path.GetFileName(filePath).Replace(".cp", "");
+                fieldName = "cp";
+            }
             else
             {
                 fieldName = Path.GetFileName(filePath);
@@ -71,6 +76,11 @@ namespace ComputeCS.Components
                 return new Dictionary<string, object> {{"xy", ReadXYProbeData(lines)}};
             }
             
+            if (file.EndsWith(".cp"))
+            {
+                return ReadPressureCoefficientData(lines);
+            }
+            
             if (lines[0].StartsWith("# Probe"))
             {
                 return ReadFunctionProbeData(lines);
@@ -80,6 +90,26 @@ namespace ComputeCS.Components
 
         }
 
+        public static Dictionary<string, object> ReadPressureCoefficientData(string[] lines)
+        {
+            var data = new Dictionary<string, object>();
+            var windDirection = new string[] { };
+            var windDirectionCounter = 0;
+            
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("# Wind Direction"))
+                {
+                    windDirection = line.Replace("# Wind Direction: ", "").Split(',');
+                }
+                if (line.StartsWith("#")) continue;
+
+                var row = line.Split(',').Select(double.Parse).ToList();
+                data.Add(windDirection[windDirectionCounter], row);
+                windDirectionCounter++;
+            }
+            return data;
+        }
         public static Dictionary<string, object> ReadFunctionProbeData(string[] lines)
         {
             var data = new Dictionary<string, object>();
@@ -138,6 +168,10 @@ namespace ComputeCS.Components
             if (!files.Any())
             {
                 files = Directory.GetFiles(folder).Where(file => Path.GetExtension(file) == "");
+            }
+            if (!files.Any())
+            {
+                files = Directory.GetFiles(folder).Where(file => Path.GetExtension(file) == ".cp");
             }
 
             if (excludes != null && excludes.Count > 0)
@@ -247,6 +281,11 @@ namespace ComputeCS.Components
             Dictionary<string, List<List<double>>> data
         )
         {
+            if (file.EndsWith(".cp"))
+            {
+                return data;
+            }
+            
             Logger.Debug($"Getting probe points from {file}");
             var names = FileNameToNames(file);
             var patchName = names["patch"];

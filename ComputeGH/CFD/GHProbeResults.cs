@@ -133,17 +133,25 @@ namespace ComputeCS.Grasshopper
                             }
                             
 
-                            if (loadedMeshes != null && loadedMeshes.Any() && points != null && points.Any())
+                            if (loadedMeshes != null && loadedMeshes.Any())
                             {
-                                try
+                                if (points != null && points.Any())
                                 {
-                                    correctedMesh = CorrectMesh(loadedMeshes, points, overrides.Distance ?? 0.1);
+                                    try
+                                    {
+                                        correctedMesh = CorrectMesh(loadedMeshes, points, overrides.Distance ?? 0.1);
+                                    }
+                                    catch (InvalidOperationException error)
+                                    {
+                                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                                            $"Could not construct new mesh. Got error: {error.Message}");
+                                    }
                                 }
-                                catch (InvalidOperationException error)
+                                else
                                 {
-                                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                                        $"Could not construct new mesh. Got error: {error.Message}");
+                                    correctedMesh = CorrectMesh(loadedMeshes);
                                 }
+
                             }
 
                             probeResults = new Dictionary<string, DataTree<object>>();
@@ -220,6 +228,28 @@ namespace ComputeCS.Grasshopper
         }
 
         private DataTree<object> CorrectMesh(
+            Dictionary<string, Mesh> meshes
+        )
+        {
+
+            var newMeshes = new DataTree<object>();
+            var j = 0;
+            foreach (var key in meshes.Keys)
+            {
+                var newMesh = new Mesh();
+
+                // Check mesh normal. If the normal direction is fx Z, check that the points and mesh have the same value. If not throw an error. 
+                GH_Convert.ToMesh(meshes[key], ref newMesh, GH_Conversion.Primary);
+
+                var path = new GH_Path(j);
+                newMeshes.Add(newMesh, path);
+                j++;
+            }
+
+            return newMeshes;
+        }
+        
+        private DataTree<object> CorrectMesh(
             Dictionary<string, Mesh> meshes,
             Dictionary<string, List<List<double>>> points,
             double distance
@@ -275,7 +305,16 @@ namespace ComputeCS.Grasshopper
                 foreach (var fieldKey in data[patchKey].Keys)
                 {
                     var path = new GH_Path(new int[] {patchCounter, angleCounter});
-                    var data_ = (List<object>) data[patchKey][fieldKey];
+                    var data_ = new List<object>();
+                    try
+                    {
+                        data_ = (List<object>) data[patchKey][fieldKey];
+                    }
+                    catch (Exception)
+                    {
+                        data_ = ((List<double>)data[patchKey][fieldKey]).Select(elem => (object)elem).ToList();
+                    }
+                    
                     if (data_.Count < 1)
                     {
                         output.Add(null, path);
