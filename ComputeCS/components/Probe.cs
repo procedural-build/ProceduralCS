@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using ComputeCS.Tasks;
 using ComputeCS.types;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NLog;
 
 namespace ComputeCS.Components
@@ -29,17 +27,22 @@ namespace ComputeCS.Components
             var tokens = inputData.Auth;
             var parentTask = inputData.Task;
             var subTasks = inputData.SubTasks;
-            var simulationTask = TaskUtils.GetDependentTask(subTasks, dependentOn,
+            var simulationTask = Tasks.Utils.GetDependentTask(subTasks, dependentOn,
                 inputData.Url, tokens, parentTask.UID);
             var project = inputData.Project;
-
-            if (parentTask == null)
+            var probeConfig = new ProbeConfig
+            {
+                Overrides = JsonConvert.DeserializeObject<Dictionary<string, object>>(overrides),
+                Fields = fields,
+                SampleSets = GenerateSampleSet(names)
+            };
+            inputData.ProbeConfig = probeConfig;
+            
+            if (parentTask.UID == null)
             {
                 Logger.Info("Did not find any parent task.");
                 return null;
             }
-
-            var sampleSets = GenerateSampleSet(names);
 
             var taskQueryParams = new Dictionary<string, object>
             {
@@ -53,22 +56,29 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
-                UploadMeshFile(tokens, inputData.Url, parentTask.UID, meshFiles, "geometry");
+                Upload.UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, caseDir);
+                Upload.UploadMeshFile(tokens, inputData.Url, parentTask.UID, meshFiles, "geometry");
             }
 
-            var task = CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir, cpus,
-                sampleSets, fields, overrides, create);
-            if (inputData.SubTasks != null)
+            if (inputData.SubTasks == null)
             {
-                inputData.SubTasks.Add(task);
+                inputData.SubTasks = new List<Task>();
+            }
+            
+            if (inputData.CFDSolution.CaseType.ToLower() == "meshindependencestudy" || (probeConfig.Overrides != null && probeConfig.Overrides.ContainsKey("mesh_independence_study") && (bool)probeConfig.Overrides["mesh_independence_study"]))
+            {
+                probeConfig.MeshIndependenceStudy = true;
+                var tasks = Tasks.Probe.CreateMeshIndependenceProbeTask(inputData, cpus, probeConfig.SampleSets, fields, probeConfig.Overrides, create);
+                inputData.SubTasks.AddRange(tasks);
             }
             else
             {
-                inputData.SubTasks = new List<Task> {task};
+                var task = Tasks.Probe.CreateProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
+                    cpus,
+                    probeConfig.SampleSets, fields, probeConfig.Overrides, create: create);
+                inputData.SubTasks.Add(task);
             }
-
-            Logger.Info($"Created probe task: {task.UID}");
+            
             return inputData.ToJson();
         }
 
@@ -97,90 +107,7 @@ namespace ComputeCS.Components
             Logger.Debug($"Generated sample set: {sampleSets}");
             return sampleSets;
         }
-
-        public static void UploadPointsFiles(
-            AuthTokens tokens,
-            string url,
-            string taskId,
-            List<string> names,
-            List<List<List<double>>> points,
-            string caseDir,
-            string fileExtension = "pts"
-        )
-        {
-            var index = 0;
-            foreach (var name in names)
-            {
-                Logger.Info($"Uploading probes from set {name} to the server");
-                new GenericViewSet<Dictionary<string, object>>(
-                    tokens,
-                    url,
-                    $"/api/task/{taskId}/file/{caseDir}/{name}.{fileExtension}"
-                ).Update(
-                    null,
-                    new Dictionary<string, object>
-                    {
-                        {"file", points[index]}
-                    }
-                );
-                index++;
-            }
-        }
-
-        public static Task CreateProbeTask(
-            AuthTokens tokens,
-            string url,
-            string projectId,
-            Dictionary<string, object> taskQueryParams,
-            string caseDir,
-            List<int> cpus,
-            List<Dictionary<string, object>> sampleSets,
-            List<string> fields,
-            string overrides,
-            bool create
-        )
-        {
-            var commands = new List<string> {"write_sample_set"};
-            var nCPUs = 1;
-            cpus.ForEach(cpu => nCPUs *= cpu);
-            commands.Add(nCPUs > 1 ? "!postProcess -func internalCloud" : "postProcess -func internalCloud");
-
-            var config = new Dictionary<string, object>
-            {
-                {"task_type", "cfd"},
-                {"cmd", "pipeline"},
-                {"commands", commands},
-                {"case_dir", caseDir},
-                {"cpus", cpus},
-                {"sets", sampleSets},
-                {"fields", fields},
-            };
-            if (!string.IsNullOrEmpty(overrides))
-            {
-                var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(overrides);
-                config.Add("overrides", json);
-            }
-
-            var createParams = new Dictionary<string, object>
-            {
-                {
-                    "config", config
-                }
-            };
-
-            taskQueryParams.Add("project", projectId);
-
-            var task = Tasks.GetCreateOrUpdateTask(
-                tokens,
-                url,
-                $"/api/task/",
-                taskQueryParams,
-                createParams,
-                create
-            );
-
-            return task;
-        }
+        
 
         public static string RadiationProbes(
             string inputJson,
@@ -213,12 +140,12 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, uploadDir);
-                UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, normals, uploadDir, "nls");
-                UploadMeshFile(tokens, inputData.Url, parentTask.UID, meshFiles, uploadDir);
+                Upload.UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, points, uploadDir);
+                Upload.UploadPointsFiles(tokens, inputData.Url, parentTask.UID, names, normals, uploadDir, "nls");
+                Upload.UploadMeshFile(tokens, inputData.Url, parentTask.UID, meshFiles, uploadDir);
             }
 
-            var task = CreateRadiationProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
+            var task = Tasks.Probe.CreateRadiationProbeTask(tokens, inputData.Url, project.UID, taskQueryParams, caseDir,
                 sampleSets, create);
 
             inputData.SubTasks = new List<Task> {task};
@@ -232,80 +159,6 @@ namespace ComputeCS.Components
 
             return inputData.ToJson();
         }
-
-        public static void UploadMeshFile(
-            AuthTokens tokens,
-            string url,
-            string taskId,
-            Dictionary<string, byte[]> meshFiles,
-            string caseDir = "geometry"
-        )
-        {
-            foreach (var name in meshFiles.Keys)
-            {
-                Logger.Info($"Uploading mesh: {name} to the server");
-                var upload = new GenericViewSet<Dictionary<string, object>>(
-                    tokens,
-                    url,
-                    $"/api/task/{taskId}/file/{caseDir}/{name}.obj"
-                ).Update(
-                    null,
-                    new Dictionary<string, object>
-                    {
-                        {"file", meshFiles[name]}
-                    }
-                );
-                if (upload.ContainsKey("errors"))
-                {
-                    Logger.Error(upload["error"]);
-                    throw new Exception($"Got error while uploading mesh to server: {upload["error"]}");
-                }
-
-                Logger.Debug($"Uploaded {caseDir}/{name}.obj to server");
-            }
-        }
-
-        public static Task CreateRadiationProbeTask(
-            AuthTokens tokens,
-            string url,
-            string projectId,
-            Dictionary<string, object> taskQueryParams,
-            string caseDir,
-            List<Dictionary<string, object>> sampleSets,
-            bool create
-        )
-        {
-            var config = new Dictionary<string, object>
-            {
-                {"task_type", "magpy"},
-                {"cmd", "radiance.io.tasks.write_radiation_samples_set"},
-                {"case_dir", caseDir},
-                {"sets", sampleSets},
-            };
-
-            var createParams = new Dictionary<string, object>
-            {
-                {"config", config},
-                {"status", "pending"}
-            };
-
-            taskQueryParams.Add("project", projectId);
-
-            var task = Tasks.GetCreateOrUpdateTask(
-                tokens,
-                url,
-                $"/api/task/",
-                taskQueryParams,
-                createParams,
-                create
-            );
-
-            if (task.ErrorMessages != null)
-            {
-                throw new Exception(task.ErrorMessages.First());
-            }
-
-            return task;
-        }
+        
     }
 }

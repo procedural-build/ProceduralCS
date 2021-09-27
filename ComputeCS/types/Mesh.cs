@@ -15,13 +15,18 @@ namespace ComputeCS.types
         public int CellEstimate;
     }
 
-    public class BaseMesh
+    public class BaseMesh : ICloneable
     {
         public string Type;
         public double CellSize;
         public Dictionary<string, object> BoundingBox;
         public Dictionary<string, string> Parameters;
         public List<setSetRegion> setSetRegions;
+
+        public object Clone()
+        {
+            return MemberwiseClone();
+        }
     }
 
     public class SnappyHexMesh : SerializeBase<SnappyHexMesh>

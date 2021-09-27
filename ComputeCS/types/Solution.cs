@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace ComputeCS.types
 {
-    public class CFDSolution
+    public class CFDSolution : ICloneable
     {
         [JsonProperty("cpus")] public List<int> CPUs;
         public string Solver;
@@ -13,6 +14,11 @@ namespace ComputeCS.types
         public List<object> Angles;
         public Dictionary<string, object> Overrides;
         public List<Dictionary<string, object>> Files;
+        
+        public object Clone()
+        {
+            return MemberwiseClone();
+        }
     }
 
     public class RadiationSolution

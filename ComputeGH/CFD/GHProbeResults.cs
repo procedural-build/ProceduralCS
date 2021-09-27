@@ -56,6 +56,7 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
 
+            pManager[0].Optional = true;
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
@@ -84,19 +85,26 @@ namespace ComputeCS.Grasshopper
             var refresh = false;
             var _overrides = "";
 
-            if (!DA.GetData(0, ref folder)) return;
+            DA.GetData(0, ref folder);
             DA.GetData(1, ref meshPath);
             DA.GetData(2, ref _overrides);
             DA.GetData(3, ref refresh);
 
-            var overrides = new ProbeOverrides().FromJson(_overrides) ?? new ProbeOverrides{Exclude = null, Include = null, Distance = 0.1, Outputs = null};
+            var overrides = new ProbeResultOverrides().FromJson(_overrides) ?? new ProbeResultOverrides{Exclude = null, Include = null, Distance = 0.1, Outputs = null};
 
+            AddOverrideOutputs(overrides);
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Please provide a valid string to the Folder input.");
+            }
+            
             // Get Cache to see if we already did this
             var cacheKey = folder + meshPath + _overrides;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null || refresh)
+            if (!string.IsNullOrEmpty(folder) && (cachedValues == null || refresh))
             {
                 const string queueName = "probeResults";
                 StringCache.setCache(InstanceGuid.ToString(), "");
@@ -127,19 +135,31 @@ namespace ComputeCS.Grasshopper
                                 );
                             probePoints = ConvertPointsToDataTree(points);
 
-                            loadedMeshes = Import.LoadMeshFromPath(meshPath, overrides.Exclude, overrides.Include);
-
-                            if (loadedMeshes.Any() && points.Any())
+                            if (!string.IsNullOrEmpty(meshPath))
                             {
-                                try
+                                loadedMeshes = Import.LoadMeshFromPath(meshPath, overrides.Exclude, overrides.Include);    
+                            }
+                            
+
+                            if (loadedMeshes != null && loadedMeshes.Any())
+                            {
+                                if (points != null && points.Any())
                                 {
-                                    correctedMesh = CorrectMesh(loadedMeshes, points, overrides.Distance ?? 0.1);
+                                    try
+                                    {
+                                        correctedMesh = CorrectMesh(loadedMeshes, points, overrides.Distance ?? 0.1);
+                                    }
+                                    catch (InvalidOperationException error)
+                                    {
+                                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                                            $"Could not construct new mesh. Got error: {error.Message}");
+                                    }
                                 }
-                                catch (InvalidOperationException error)
+                                else
                                 {
-                                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                                        $"Could not construct new mesh. Got error: {error.Message}");
+                                    correctedMesh = CorrectMesh(loadedMeshes);
                                 }
+
                             }
 
                             probeResults = new Dictionary<string, DataTree<object>>();
@@ -167,18 +187,7 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
-            if (overrides.Outputs != null && overrides.Outputs.Any())
-            {
-                foreach (var output in overrides.Outputs)
-                {
-                    AddOutput(output);
-                }
-
-                var outputs = new List<string> {"Info", "Points", "Mesh"};
-                outputs.AddRange(overrides.Outputs);
-                RemoveUnusedOutputs(outputs);
-            }
-            
+           
             HandleErrors();
 
             if (probePoints != null)
@@ -215,6 +224,28 @@ namespace ComputeCS.Grasshopper
             Message = StringCache.getCache(cacheKey + "progress");
         }
 
+        private DataTree<object> CorrectMesh(
+            Dictionary<string, Mesh> meshes
+        )
+        {
+
+            var newMeshes = new DataTree<object>();
+            var j = 0;
+            foreach (var key in meshes.Keys)
+            {
+                var newMesh = new Mesh();
+
+                // Check mesh normal. If the normal direction is fx Z, check that the points and mesh have the same value. If not throw an error. 
+                GH_Convert.ToMesh(meshes[key], ref newMesh, GH_Conversion.Primary);
+
+                var path = new GH_Path(j);
+                newMeshes.Add(newMesh, path);
+                j++;
+            }
+
+            return newMeshes;
+        }
+        
         private DataTree<object> CorrectMesh(
             Dictionary<string, Mesh> meshes,
             Dictionary<string, List<List<double>>> points,
@@ -260,6 +291,19 @@ namespace ComputeCS.Grasshopper
             return newMeshes;
         }
 
+        private void AddOverrideOutputs(ProbeResultOverrides overrides)
+        {
+            if (overrides.Outputs == null || !overrides.Outputs.Any()) return;
+            
+            foreach (var output in overrides.Outputs)
+            {
+                AddOutput(output);
+            }
+
+            var outputs = new List<string> {"Info", "Points", "Mesh"};
+            outputs.AddRange(overrides.Outputs);
+            RemoveUnusedOutputs(outputs);
+        }
         private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, object>> data)
         {
             var patchCounter = 0;
@@ -271,7 +315,16 @@ namespace ComputeCS.Grasshopper
                 foreach (var fieldKey in data[patchKey].Keys)
                 {
                     var path = new GH_Path(new int[] {patchCounter, angleCounter});
-                    var data_ = (List<object>) data[patchKey][fieldKey];
+                    var data_ = new List<object>();
+                    try
+                    {
+                        data_ = (List<object>) data[patchKey][fieldKey];
+                    }
+                    catch (Exception)
+                    {
+                        data_ = ((List<double>)data[patchKey][fieldKey]).Select(elem => (object)elem).ToList();
+                    }
+                    
                     if (data_.Count < 1)
                     {
                         output.Add(null, path);

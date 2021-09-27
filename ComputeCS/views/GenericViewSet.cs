@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ComputeCS.Exceptions;
 using ComputeCS.types;
 using Newtonsoft.Json;
 using NLog;
@@ -98,6 +99,10 @@ namespace ComputeCS
                 }
                 
                 Logger.Error($"Could not get or create {typeof(ObjectType)}. Got error: {err.Message}");
+                if (err.Message == "No object found.")
+                {
+                    throw new NoObjectFoundException($"No task with name: {JsonConvert.SerializeObject(queryParams)} found");
+                }
                 return JsonConvert.DeserializeObject<ObjectType>("{\"error_messages\":[\"" + err.Message + "\"]}",
                     RESTClient.JsonSettings);
             }

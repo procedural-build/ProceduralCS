@@ -57,13 +57,13 @@ namespace ComputeCS.Components
 
             inputData.Project = project;
 
-            var parentTask = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/", taskName,
+            var parentTask = Tasks.Utils.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/", taskName,
                 overrideDict, create);
             inputData.Task = parentTask;
 
             if (overrideDict.ContainsKey("nest_with"))
             {
-                var nestedParent = Tasks.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
+                var nestedParent = Tasks.Utils.CreateParent(tokens, inputData.Url, $"/api/project/{project.UID}/task/",
                     (string) overrideDict["nest_with"],
                     new Dictionary<string, object> {{"parent", parentTask.UID}}, create);
                 inputData.Task = nestedParent;

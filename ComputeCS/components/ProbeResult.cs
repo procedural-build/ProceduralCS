@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NLog;
 
 namespace ComputeCS.Components
@@ -20,7 +21,7 @@ namespace ComputeCS.Components
             if (File.Exists(folder))
             {
                 Logger.Info($"{folder} is a file");
-                var dataPath = FolderToDataPath(Directory.GetParent(folder).FullName);
+                var dataPath = FolderToDataPath(Directory.GetParent(folder)?.FullName);
                 return GetDataFromFile(folder, data, dataPath);
             }
             var subFolders = Directory.GetDirectories(folder)
@@ -35,12 +36,28 @@ namespace ComputeCS.Components
 
         public static Dictionary<string, string> FileNameToNames(string filePath)
         {
-            var names = Path.GetFileName(filePath).Replace(".xy", "").Split('_');
-            var fieldName = names[names.Length - 1];
-            var patchName = names[0];
-            if (names.Length > 2)
+            string fieldName;
+            string patchName;
+            
+            if (filePath.EndsWith((".xy")))
             {
-                patchName = string.Join("_", names.Take(names.Length - 1));
+                var names = Path.GetFileName(filePath).Replace(".xy", "").Split('_');
+                fieldName = names[names.Length - 1];
+                patchName = names[0];
+                if (names.Length > 2)
+                {
+                    patchName = string.Join("_", names.Take(names.Length - 1));
+                }
+            }
+            else if (filePath.EndsWith((".cp")))
+            {
+                patchName = Path.GetFileName(filePath).Replace(".cp", "");
+                fieldName = "cp";
+            }
+            else
+            {
+                fieldName = Path.GetFileName(filePath);
+                patchName = Directory.GetParent(filePath)?.Name;
             }
 
             return new Dictionary<string, string>
@@ -50,10 +67,73 @@ namespace ComputeCS.Components
             };
         }
 
-        public static List<object> ReadProbeData(string file)
+        public static Dictionary<string, object> ReadProbeData(string file)
+        {
+            
+            var lines = File.ReadAllLines(file);
+            if (file.EndsWith(".xy"))
+            {
+                return new Dictionary<string, object> {{"xy", ReadXYProbeData(lines)}};
+            }
+            
+            if (file.EndsWith(".cp"))
+            {
+                return ReadPressureCoefficientData(lines);
+            }
+            
+            if (lines[0].StartsWith("# Probe"))
+            {
+                return ReadFunctionProbeData(lines);
+            }
+
+            return new Dictionary<string, object>();
+
+        }
+
+        public static Dictionary<string, object> ReadPressureCoefficientData(string[] lines)
+        {
+            var data = new Dictionary<string, object>();
+            var windDirection = new string[] { };
+            var windDirectionCounter = 0;
+            
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("# Wind Direction"))
+                {
+                    windDirection = line.Replace("# Wind Direction: ", "").Split(',');
+                }
+                if (line.StartsWith("#")) continue;
+
+                var row = line.Split(',').Select(double.Parse).ToList();
+                data.Add(windDirection[windDirectionCounter], row);
+                windDirectionCounter++;
+            }
+            return data;
+        }
+        public static Dictionary<string, object> ReadFunctionProbeData(string[] lines)
+        {
+            var data = new Dictionary<string, object>();
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("#")) continue;
+
+                var matches = Regex.Matches(line, @"\(?\((.*?)\)");
+                var time = Regex.Match(line, @"\d+");
+                var row = new List<object>();
+                foreach (var match in matches)
+                {
+                    row.Add(match.ToString().Trim(new char[]{'(', ')'}).Split(' ').Select(value => double.Parse(value)).ToList());
+                    
+                }
+
+                data.Add(time.ToString(), row);
+            }
+            return data;
+        }
+        
+        public static List<object> ReadXYProbeData(string[] lines)
         {
             var data = new List<object>();
-            var lines = File.ReadAllLines(file);
             foreach (var line in lines)
             {
                 var test = line.Split(' ').ToList();
@@ -72,10 +152,9 @@ namespace ComputeCS.Components
                     data.Add(data_);
                 }
             }
-
             return data;
         }
-
+        
         public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> GetDataFromFolder(
             string folder,
             Dictionary<string, Dictionary<string, Dictionary<string, object>>> data,
@@ -86,6 +165,15 @@ namespace ComputeCS.Components
             var dataPath = FolderToDataPath(folder);
 
             var files = Directory.GetFiles(folder).Where(file => file.EndsWith(".xy"));
+            if (!files.Any())
+            {
+                files = Directory.GetFiles(folder).Where(file => Path.GetExtension(file) == "");
+            }
+            if (!files.Any())
+            {
+                files = Directory.GetFiles(folder).Where(file => Path.GetExtension(file) == ".cp");
+            }
+
             if (excludes != null && excludes.Count > 0)
             {
                 files = files.Where(file => !excludes.Any(file.Contains)).ToArray();
@@ -96,6 +184,7 @@ namespace ComputeCS.Components
             }
 
             return files.Aggregate(data, (current, file) => GetDataFromFile(file, current, dataPath));
+            
         }
 
         public static Dictionary<string, Dictionary<string, Dictionary<string, object>>> GetDataFromFile(
@@ -121,7 +210,19 @@ namespace ComputeCS.Components
                 data[fieldName].Add(patchName, new Dictionary<string, object>());
             }
 
-            data[fieldName][patchName].Add(dataPath, values);
+            if (values.ContainsKey("xy"))
+            {
+                data[fieldName][patchName].Add(dataPath, values["xy"]);   
+            }
+            else
+            {
+                foreach (var timeKey in values.Keys)
+                {
+                    data[fieldName][patchName].Add(timeKey, values[timeKey]);     
+                }
+                  
+            }
+            
 
             return data;
         }
@@ -158,6 +259,11 @@ namespace ComputeCS.Components
             )
         {
             var files = Directory.GetFiles(folder).Where(file => file.EndsWith(".xy"));
+            if (!files.Any())
+            {
+                files = Directory.GetFiles(folder).Where(file => Path.GetExtension(file) == "");
+            }
+            
             if (excludes != null && excludes.Count > 0)
             {
                 files = files.Where(file => !excludes.Any(file.Contains)).ToArray();
@@ -175,6 +281,11 @@ namespace ComputeCS.Components
             Dictionary<string, List<List<double>>> data
         )
         {
+            if (file.EndsWith(".cp"))
+            {
+                return data;
+            }
+            
             Logger.Debug($"Getting probe points from {file}");
             var names = FileNameToNames(file);
             var patchName = names["patch"];
@@ -189,8 +300,24 @@ namespace ComputeCS.Components
 
         public static List<List<double>> ReadPoints(string file)
         {
-            var data = new List<List<double>>();
             var lines = File.ReadAllLines(file);
+            if (file.EndsWith(".xy"))
+            {
+                return ReadXYPoints(lines);
+            }
+            
+            if (lines[0].StartsWith("# Probe"))
+            {
+                return ReadFunctionPoints(lines);
+            }
+
+            return  new List<List<double>>();
+
+        }
+
+        public static List<List<double>> ReadXYPoints(string[] lines)
+        {
+            var data = new List<List<double>>();
             foreach (var line in lines)
             {
                 data.Add(line.Split('\t').Take(3).Select(x => double.Parse(x)).ToList());
@@ -198,24 +325,20 @@ namespace ComputeCS.Components
 
             return data;
         }
-
-        public static Dictionary<string, Dictionary<string, object>> GetPointData(
-            string file,
-            Dictionary<string, Dictionary<string, object>> data,
-            string patchName
-        )
+        
+        public static List<List<double>> ReadFunctionPoints(string[] lines)
         {
-            if (!data.ContainsKey("Points"))
+            var data = new List<List<double>>();
+            foreach (var line in lines)
             {
-                data.Add("Points", new Dictionary<string, object>());
-            }
+                if (!line.StartsWith("# Probe")) continue;
 
-            if (!data["Points"].ContainsKey(patchName))
-            {
-                data["Points"].Add(patchName, ReadPoints(file));
-            }
+                var _data = Regex.Replace(line, @"# Probe \d \(", "");
 
+                data.Add(_data.Trim(')').Split(' ').Select(value => double.Parse(value)).ToList());
+            }
             return data;
         }
+        
     }
 }

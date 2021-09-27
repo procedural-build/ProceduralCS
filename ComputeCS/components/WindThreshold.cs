@@ -27,7 +27,7 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
             var subTasks = inputData.SubTasks;
             var postProcessTask =
-                TaskUtils.GetDependentTask(subTasks, dependentOn, inputData.Url, tokens, parentTask.UID);
+                Tasks.Utils.GetDependentTask(subTasks, dependentOn, inputData.Url, tokens, parentTask.UID);
             var project = inputData.Project;
 
             if (parentTask?.UID == null)
@@ -54,7 +54,7 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                Compute.UploadEPWFile(tokens, inputData.Url, parentTask.UID, epwFile);
+                Tasks.Upload.UploadEPWFile(tokens, inputData.Url, parentTask.UID, epwFile);
             }
 
             var _thresholds = thresholds.Select(threshold => new Thresholds.WindThreshold().FromJson(threshold))
@@ -78,7 +78,7 @@ namespace ComputeCS.Components
                 }
             };
 
-            var task = Tasks.GetCreateOrUpdateTask(tokens, inputData.Url, "/api/task/", taskQueryParams,
+            var task = TaskViews.GetCreateOrUpdateTask(tokens, inputData.Url, "/api/task/", taskQueryParams,
                 taskCreateParams, create);
 
             if (task.ErrorMessages != null)
@@ -98,59 +98,6 @@ namespace ComputeCS.Components
             Logger.Info($"Created Wind Threshold task: {task.UID}");
 
             return inputData.ToJson();
-        }
-
-        private static Task GetPostProcessTask(
-            List<Task> subTasks,
-            string dependentName = ""
-        )
-        {
-            if (subTasks == null)
-            {
-                return null;
-            }
-
-            foreach (var subTask in subTasks)
-            {
-                if (string.IsNullOrEmpty(subTask.UID))
-                {
-                    continue;
-                }
-
-                if (dependentName == subTask.Name)
-                {
-                    return subTask;
-                }
-
-                if (subTask.Name == "Probe")
-                {
-                    return subTask;
-                }
-
-                if (subTask.Config == null)
-                {
-                    continue;
-                }
-
-                if (subTask.Config.ContainsKey("commands"))
-                {
-                    // Have to do this conversion to be able to compare the strings
-                    try
-                    {
-                        if (((JArray) subTask.Config["commands"]).ToObject<List<string>>()
-                            .Any(cmd => cmd.StartsWith("postProcess")))
-                        {
-                            return subTask;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.Write(e.Message);
-                    }
-                }
-            }
-
-            return null;
         }
 
         public static Dictionary<string, Dictionary<string, object>> ReadThresholdResults(
@@ -268,7 +215,7 @@ namespace ComputeCS.Components
         private static List<string> ReadThresholdFileTypes(string folder)
         {
             var allFiles = Directory.GetFiles(Path.Combine(folder, "0")).ToList();
-            return allFiles.Select(file => Path.GetFileName(file)).ToList();
+            return allFiles.Select(Path.GetFileName).ToList();
         }
 
         public static List<string> ThresholdSeasons()

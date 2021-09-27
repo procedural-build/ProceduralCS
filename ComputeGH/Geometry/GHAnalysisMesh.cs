@@ -163,13 +163,7 @@ namespace ComputeGH.Utils
             "z",
             "normal",
         };
-
-        private void ExpireSolutionThreadSafe(bool recompute = false)
-        {
-            var delegated = new ExpireSolutionDelegate(ExpireSolution);
-            RhinoApp.InvokeOnUiThread(delegated, recompute);
-        }
-
+        
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>

@@ -26,7 +26,7 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
             var subTasks = inputData.SubTasks;
             var postProcessTask =
-                TaskUtils.GetDependentTask(subTasks, dependentOn, inputData.Url, tokens, parentTask.UID);
+                Tasks.Utils.GetDependentTask(subTasks, dependentOn, inputData.Url, tokens, parentTask.UID);
             var project = inputData.Project;
 
             if (parentTask?.UID == null)
@@ -55,7 +55,7 @@ namespace ComputeCS.Components
 
             if (create)
             {
-                Compute.UploadEPWFile(tokens, inputData.Url, parentTask.UID, epwFile);
+                Tasks.Upload.UploadEPWFile(tokens, inputData.Url, parentTask.UID, epwFile);
             }
 
 
@@ -80,7 +80,7 @@ namespace ComputeCS.Components
                 }
             };
 
-            var task = Tasks.GetCreateOrUpdateTask(tokens, inputData.Url, "/api/task/", taskQueryParams,
+            var task = TaskViews.GetCreateOrUpdateTask(tokens, inputData.Url, "/api/task/", taskQueryParams,
                 taskCreateParams, create);
 
             if (task.ErrorMessages != null)

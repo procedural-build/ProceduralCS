@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Activities;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -13,7 +12,6 @@ using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
@@ -135,7 +133,7 @@ namespace ComputeCS.Grasshopper
             caseDir = caseDir.TrimEnd('/');
 
             // Get Cache to see if we already did this
-            var cacheKey = string.Join("", points) + string.Join("", fields) + string.Join("", names);
+            var cacheKey = inputJson + string.Join("", points) + string.Join("", fields) + string.Join("", names);
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 

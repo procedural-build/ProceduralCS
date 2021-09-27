@@ -123,13 +123,15 @@ namespace ComputeCS.Grasshopper
             }
 
             HandleErrors();
-
+            
+            Message = "";
+            
             // Read from Cache
             if (cachedValues != null)
             {
                 DA.SetData(0, Info(TimeEstimate));
                 DA.SetData(1, cachedValues);
-                Message = "";
+                
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
                     Message = "Tasks Created";

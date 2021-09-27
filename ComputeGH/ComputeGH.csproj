@@ -102,6 +102,7 @@
   <ItemGroup>
     <Compile Include="CFD\GHBoundaryConditions.cs" />
     <Compile Include="CFD\GHDomain.cs" />
+    <Compile Include="CFD\GHFacadePressure.cs" />
     <Compile Include="CFD\GHMeshLevel.cs" />
     <Compile Include="CFD\GHProbe.cs" />
     <Compile Include="CFD\GHProbeResults.cs" />
