@@ -56,6 +56,7 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
 
+            pManager[0].Optional = true;
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
@@ -84,19 +85,26 @@ namespace ComputeCS.Grasshopper
             var refresh = false;
             var _overrides = "";
 
-            if (!DA.GetData(0, ref folder)) return;
+            DA.GetData(0, ref folder);
             DA.GetData(1, ref meshPath);
             DA.GetData(2, ref _overrides);
             DA.GetData(3, ref refresh);
 
             var overrides = new ProbeResultOverrides().FromJson(_overrides) ?? new ProbeResultOverrides{Exclude = null, Include = null, Distance = 0.1, Outputs = null};
 
+            AddOverrideOutputs(overrides);
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Please provide a valid string to the Folder input.");
+            }
+            
             // Get Cache to see if we already did this
             var cacheKey = folder + meshPath + _overrides;
             var cachedValues = StringCache.getCache(cacheKey);
             DA.DisableGapLogic();
 
-            if (cachedValues == null || refresh)
+            if (!string.IsNullOrEmpty(folder) && (cachedValues == null || refresh))
             {
                 const string queueName = "probeResults";
                 StringCache.setCache(InstanceGuid.ToString(), "");
@@ -179,18 +187,7 @@ namespace ComputeCS.Grasshopper
                 }
             }
 
-            if (overrides.Outputs != null && overrides.Outputs.Any())
-            {
-                foreach (var output in overrides.Outputs)
-                {
-                    AddOutput(output);
-                }
-
-                var outputs = new List<string> {"Info", "Points", "Mesh"};
-                outputs.AddRange(overrides.Outputs);
-                RemoveUnusedOutputs(outputs);
-            }
-            
+           
             HandleErrors();
 
             if (probePoints != null)
@@ -294,6 +291,19 @@ namespace ComputeCS.Grasshopper
             return newMeshes;
         }
 
+        private void AddOverrideOutputs(ProbeResultOverrides overrides)
+        {
+            if (overrides.Outputs == null || !overrides.Outputs.Any()) return;
+            
+            foreach (var output in overrides.Outputs)
+            {
+                AddOutput(output);
+            }
+
+            var outputs = new List<string> {"Info", "Points", "Mesh"};
+            outputs.AddRange(overrides.Outputs);
+            RemoveUnusedOutputs(outputs);
+        }
         private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, object>> data)
         {
             var patchCounter = 0;
