@@ -65,7 +65,7 @@ namespace ComputeCS.Components
                 inputData.SubTasks = new List<Task>();
             }
             
-            if (inputData.CFDSolution.CaseType.ToLower() == "meshindependencestudy" || (probeConfig.Overrides != null && probeConfig.Overrides.ContainsKey("mesh_independence_study") && (bool)probeConfig.Overrides["mesh_independence_study"]))
+            if (inputData.CFDSolution?.CaseType.ToLower() == "meshindependencestudy" || (probeConfig.Overrides != null && probeConfig.Overrides.ContainsKey("mesh_independence_study") && (bool)probeConfig.Overrides["mesh_independence_study"]))
             {
                 probeConfig.MeshIndependenceStudy = true;
                 var tasks = Tasks.Probe.CreateMeshIndependenceProbeTask(inputData, cpus, probeConfig.SampleSets, fields, probeConfig.Overrides, create);
