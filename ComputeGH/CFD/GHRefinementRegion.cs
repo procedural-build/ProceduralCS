@@ -56,7 +56,7 @@ namespace ComputeCS.Grasshopper
             DA.GetData(2, ref minLevel);
             DA.GetData(2, ref maxLevel);
 
-            var refLevels = $"(( {minLevel} {maxLevel}))";
+            var refLevels = $"(( {minLevel} {maxLevel} ))";
 
             // Get a list of object references in the Rhino model
             foreach (var mesh in meshes)

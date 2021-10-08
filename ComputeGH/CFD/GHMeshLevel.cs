@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using ComputeCS.types;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
@@ -11,16 +12,24 @@ namespace ComputeCS.Grasshopper
 {
     public class CFDMeshLevel : PB_Component
     {
-        public CFDMeshLevel() : base("CFD Mesh Level", "Mesh Level", "Defines a CFD Mesh Level", "Compute", "Mesh")
+        public CFDMeshLevel() : base("CFD Mesh Level", "Mesh Level",
+            "Defines a CFD Mesh Level for the resolution on the surface of the meshes.", "Compute", "Mesh")
         {
         }
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Meshes", "Meshes", "Meshes to apply mesh level to.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Min Level", "Min Level", "Minimum Mesh Level. Usually you only need to set this. ", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Max Level", "Max Level", "Maximum Mesh Level. If this is not explicitly set, then it will be the same as Min Level.", GH_ParamAccess.item, 0);
+            pManager.AddIntegerParameter("Mesh Levels", "Levels",
+                "Surface Mesh Level. Set the mesh level on the surface of the meshes. " +
+                "The first number provided will be the Min Level and the second will be the Max Level. " +
+                "If only one number is provided then Min and Max will be set as the same.",
+                GH_ParamAccess.list);
+            pManager.AddNumberParameter("Mesh Resolution", "Resolution",
+                "Resolution of the meshes in meters. This input is used only if Levels doesn't have a input.",
+                GH_ParamAccess.item);
 
+            pManager[1].Optional = true;
             pManager[2].Optional = true;
         }
 
@@ -35,38 +44,39 @@ namespace ComputeCS.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var ghObjs = new List<IGH_GeometricGoo>();
-            var minLevel = 2;
-            var maxLevel = 2;
+            var meshes = new List<GH_Mesh>();
+            var meshLevels = new List<int>();
+            double? resolution = null;
 
-            if (!DA.GetDataList(0, ghObjs))
+            if (!DA.GetDataList(0, meshes)) return;
+
+            DA.GetDataList(1, meshLevels);
+            DA.GetData(2, ref resolution);
+
+
+            if (meshLevels.Count == 0 && resolution == null)
             {
-                return;
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Please provide a Mesh Level or a Resolution");
             }
 
-            if (!DA.GetData(1, ref minLevel))
-            {
-                return;
-            }
+            meshes = meshes.Select(mesh => SetMeshLevel(mesh, meshLevels, resolution)).ToList();
 
-            if (!DA.GetData(2, ref maxLevel))
-            {
-                return;
-            }
+            DA.SetDataList(0, meshes);
+        }
 
-            if (maxLevel < minLevel)
+        private static GH_Mesh SetMeshLevel(GH_Mesh mesh, List<int> meshLevels, double? resolution)
+        {
+            var levelDetails = new MeshLevelDetails
             {
-                maxLevel = minLevel;
-            }
-
-            // Get a list of object references in the Rhino model
-            for (var i = 0; i < ghObjs.Count(); i++)
-            {
-                Geometry.setUserString(ghObjs[i], "ComputeMeshMinLevel", minLevel.ToString());
-                Geometry.setUserString(ghObjs[i], "ComputeMeshMaxLevel", maxLevel.ToString());
-            }
-
-            DA.SetDataList(0, ghObjs);
+                Resolution = resolution,
+                Levels = meshLevels.Count > 0? new MeshLevels {Min = meshLevels.First(), Max = meshLevels.Last()}: null
+            };
+            Geometry.setUserString(
+                mesh,
+                "ComputeMeshLevels",
+                levelDetails.ToJson()
+            );
+            return mesh;
         }
     }
 }

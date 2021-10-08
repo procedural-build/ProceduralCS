@@ -24,16 +24,16 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.list);
             pManager.AddIntegerParameter("Domain Type", "Domain Type",
                 "Domain type. Choose between: 0: 3D domain, 1: 2D domain.", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Cell Size", "Cell Size", "Cell Size", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("z0", "z0", "Base z=0", GH_ParamAccess.item, true);
+            pManager.AddNumberParameter("Cell Size", "Cell Size", "Base Cell Size throughout the domain.", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Align Bottom", "Align Bottom", "Sets whether the bottom of the domain should align with the bottom of the geometry or the domain should have the same center as the geometry.", GH_ParamAccess.item, true);
             pManager.AddBooleanParameter("Center XY", "Center XY", "centerXY", GH_ParamAccess.item, true);
             pManager.AddBooleanParameter("Square", "Square", "Whether the domain should be square or not.",
                 GH_ParamAccess.item, true);
             pManager.AddNumberParameter("XY Scale", "XY Scale", "Scale in the X and Y directions", GH_ParamAccess.item,
-                1.25);
+                3);
             pManager.AddNumberParameter("XY Offset", "XY Offset", "Offset in the X and Y directions",
                 GH_ParamAccess.item, 1.0);
-            pManager.AddNumberParameter("Z Scale", "Z Scale", "Scale in the Z direction", GH_ParamAccess.item, 2.0);
+            pManager.AddNumberParameter("Z Scale", "Z Scale", "Scale in the Z direction. Recommended value is 5m", GH_ParamAccess.item, 5.0);
             pManager.AddPlaneParameter("Plane", "Plane",
                 "Plane for creating a 2D domain. Is not used if you create a 3D Domain", GH_ParamAccess.item);
 
@@ -97,6 +97,11 @@ namespace ComputeCS.Grasshopper
                 return;
             }
 
+            if (cellSize <= 0)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Cell Size has to be larger that 0. Given Cell Size was: {cellSize}");
+            }
+
             DA.GetData(3, ref z0);
             DA.GetData(4, ref centerXY);
             DA.GetData(5, ref square);
@@ -108,19 +113,19 @@ namespace ComputeCS.Grasshopper
             // Create Bounding Box
             var bbs = geometry.Select(element => element.Boundingbox).ToList();
 
-            var bb = Domain.getMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
+            var boundingBox = Domain.GetMultiBoundingBox(bbs, cellSize, z0, centerXY, xyScale, xyOffset, zScale, square);
             if (domainType == 1)
             {
-                bb = Domain.Create2DDomain(bb, plane, cellSize);
+                boundingBox = Domain.Create2DDomain(boundingBox, plane, cellSize);
             }
 
             // Construct Surface Dict
 
-            var surfaces = GetSurfaces(geometry);
+            var surfaces = GetSurfaces(geometry, cellSize);
 
-            var refinementRegions = GetRefinementRegions(geometry);
+            var refinementRegions = GetRefinementRegions(geometry, cellSize);
 
-            var locationInMesh = Domain.GetLocationInMesh(new Box(bb));
+            var locationInMesh = Domain.GetLocationInMesh(new Box(boundingBox));
             var cellEstimation = Convert.ToInt32(Domain.EstimateCellCount(geometry, cellSize, xyScale, zScale));
             var outputs = new Inputs
             {
@@ -135,13 +140,13 @@ namespace ComputeCS.Grasshopper
                             {
                                 "min", new List<double>
                                 {
-                                    bb.Min.X, bb.Min.Y, bb.Min.Z
+                                    boundingBox.Min.X, boundingBox.Min.Y, boundingBox.Min.Z
                                 }
                             },
                             {
                                 "max", new List<double>
                                 {
-                                    bb.Max.X, bb.Max.Y, bb.Max.Z
+                                    boundingBox.Max.X, boundingBox.Max.Y, boundingBox.Max.Z
                                 }
                             }
                         },
@@ -171,18 +176,32 @@ namespace ComputeCS.Grasshopper
             };
 
             DA.SetData(0, outputs.ToJson());
-            DA.SetData(1,
-                $"Estimated number of cells: {cellEstimation}\nThis is only an estimation and will probably be correct within a +/-10% margin.");
-            DA.SetData(2, bb);
+            DA.SetData(1, GetInfoText(cellEstimation, cellSize, surfaces.Keys.Select(key => surfaces[key].Levels.Min)));
+            DA.SetData(2, boundingBox);
             DA.SetDataList(3, geometry);
         }
 
+        private static string GetInfoText(int cellEstimation, double baseCellSize, IEnumerable<int> meshLevels)
+        {
+            var text = $"Estimated number of cells: {cellEstimation}\n" +
+                       $"This is only an estimation and will probably be correct within a +/-10% margin.\n\n" +
+                       $"Base Cell Size is {baseCellSize}m\n";
+            var levels = meshLevels.GroupBy(level => level);
+            foreach (var level in levels)
+            {
+                var resolution = baseCellSize / Math.Pow(2, level.Key);
+                text += $"* There is {level.Count()} meshes with mesh level {level.Key}. They will have a surface resolution of {resolution}m\n";    
+            }
+            
+            return text;
+        }
+        
         private static readonly List<string> DomainTypes = new List<string>
         {
             "3D", "2D"
         };
 
-        private static List<RefinementRegion> GetRefinementRegions(List<IGH_GeometricGoo> meshes)
+        private static List<RefinementRegion> GetRefinementRegions(List<IGH_GeometricGoo> meshes, double cellSize)
         {
             var refinementRegions = new List<RefinementRegion>();
             foreach (var mesh in meshes)
@@ -194,11 +213,13 @@ namespace ComputeCS.Grasshopper
                     continue;
                 }
 
+                var detail = new RefinementDetails().FromJson(refinementDetails);
+                detail.CellSize = cellSize;
                 refinementRegions.Add(
                     new RefinementRegion
                     {
                         Name = regionName,
-                        Details = new RefinementDetails().FromJson(refinementDetails)
+                        Details = detail
                     }
                 );
             }
@@ -206,31 +227,23 @@ namespace ComputeCS.Grasshopper
             return refinementRegions;
         }
 
-        private static Dictionary<string, object> GetSurfaces(List<IGH_GeometricGoo> meshes)
+        private static Dictionary<string, MeshLevelDetails> GetSurfaces(List<IGH_GeometricGoo> meshes, double cellSize)
         {
-            var surfaces = new Dictionary<string, object>();
+            var surfaces = new Dictionary<string, MeshLevelDetails>();
             foreach (var mesh in meshes)
             {
                 var surfaceName = Geometry.getUserString(mesh, "ComputeName");
-                var minLevel = Geometry.getUserString(mesh, "ComputeMeshMinLevel");
-                var maxLevel = Geometry.getUserString(mesh, "ComputeMeshMaxLevel");
+                var meshLevels = Geometry.getUserString(mesh, "ComputeMeshLevels");
 
-                if (surfaceName == null || minLevel == null)
+                if (string.IsNullOrEmpty(surfaceName) || string.IsNullOrEmpty(meshLevels))
                 {
                     continue;
                 }
 
+                var meshLevel = new MeshLevelDetails().FromJson(meshLevels);
+                meshLevel.CellSize = cellSize;
                 surfaces.Add(
-                    surfaceName, new Dictionary<string, object>
-                    {
-                        {
-                            "level", new Dictionary<string, string>
-                            {
-                                {"min", minLevel},
-                                {"max", maxLevel},
-                            }
-                        }
-                    }
+                    surfaceName, meshLevel
                 );
             }
 

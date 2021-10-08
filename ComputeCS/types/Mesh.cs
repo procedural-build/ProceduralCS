@@ -33,7 +33,7 @@ namespace ComputeCS.types
     {
         public SnappyHexMeshOverrides Overrides;
         public Dictionary<string, object> DefaultSurface;
-        public Dictionary<string, object> Surfaces;
+        public Dictionary<string, MeshLevelDetails> Surfaces;
 
         [JsonProperty("refinementRegions")] public List<RefinementRegion> RefinementRegions;
     }
@@ -48,7 +48,48 @@ namespace ComputeCS.types
     public class RefinementDetails : SerializeBase<RefinementDetails>
     {
         public string Mode;
-        public string Levels;
+
+        public string Levels
+        {
+            get => GetLevels();
+            set => levels = value;
+        }
+        public double? Resolution;
+        public double? CellSize; 
+        private string levels;
+
+        private string GetLevels()
+        {
+            if (!string.IsNullOrEmpty(levels) || !(CellSize > 0) || !(Resolution > 0)) return levels;
+            var level = (int) (Math.Log10((double) CellSize / (double) Resolution) / Math.Log10(2));
+            return $"(( {level} {level} ))";
+        }
+    }
+    
+    public class MeshLevelDetails : SerializeBase<MeshLevelDetails>
+    {
+        public double? Resolution;
+        public double? CellSize;
+        public MeshLevels Levels        
+        {
+            get => GetLevels();
+            set => levels = value;
+        }
+        
+        private MeshLevels levels;
+
+        private MeshLevels GetLevels()
+        {
+            if (levels != null || !(CellSize > 0) || !(Resolution > 0)) return levels;
+            var level = (int) (Math.Log10((double) CellSize / (double) Resolution) / Math.Log10(2));
+            return new MeshLevels {Min = level, Max = level};
+        }
+    }
+
+    public class MeshLevels : SerializeBase<MeshLevels>
+    {
+        public int Min;
+        public int Max;
     }
 
     public class setSetRegion : SerializeBase<setSetRegion>

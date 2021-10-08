@@ -61,6 +61,9 @@
     <Reference Include="Rhino.UI, Version=6.20.19322.20360, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
       <HintPath>..\packages\RhinoCommon.6.20.19322.20361\lib\net45\Rhino.UI.dll</HintPath>
     </Reference>
+    <Reference Include="RhinoCommon, Version=6.20.19322.20360, Culture=neutral, PublicKeyToken=552281e97c755530">
+      <HintPath>..\packages\RhinoCommon.6.20.19322.20361\lib\net45\RhinoCommon.dll</HintPath>
+    </Reference>
     <Reference Include="RhinoCommon, Version=6.20.19322.20360, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
       <HintPath>..\packages\RhinoCommon.6.20.19322.20361\lib\net45\RhinoCommon.dll</HintPath>
     </Reference>
@@ -106,6 +109,7 @@
     <Compile Include="CFD\GHMeshLevel.cs" />
     <Compile Include="CFD\GHProbe.cs" />
     <Compile Include="CFD\GHProbeResults.cs" />
+    <Compile Include="CFD\GHRadialRefinement.cs" />
     <Compile Include="CFD\GHRefinementRegion.cs" />
     <Compile Include="CFD\GHThresholdResults.cs" />
     <Compile Include="CFD\GHWindThresholds.cs" />

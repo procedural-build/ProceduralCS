@@ -8,127 +8,144 @@ namespace ComputeGH.Grasshopper.Utils
 {
     public static class Domain
     {
-        public static BoundingBox getMultiBoundingBox(List<BoundingBox> x)
+        public static BoundingBox GetMultiBoundingBox(List<BoundingBox> boundingBoxes)
         {
-            Point3d pmin = x[0].Min;
-            Point3d pmax = x[0].Max;
-            foreach (BoundingBox bb in x)
+            var pointMin = boundingBoxes[0].Min;
+            var pointMax = boundingBoxes[0].Max;
+            foreach (var bb in boundingBoxes)
             {
-                if (bb.Min.X < pmin.X)
+                if (bb.Min.X < pointMin.X)
                 {
-                    pmin.X = bb.Min.X;
+                    pointMin.X = bb.Min.X;
                 }
-                if (bb.Min.Y < pmin.Y)
+
+                if (bb.Min.Y < pointMin.Y)
                 {
-                    pmin.Y = bb.Min.Y;
+                    pointMin.Y = bb.Min.Y;
                 }
-                if (bb.Min.Z < pmin.Z)
+
+                if (bb.Min.Z < pointMin.Z)
                 {
-                    pmin.Z = bb.Min.Z;
+                    pointMin.Z = bb.Min.Z;
                 }
-                if (bb.Max.X > pmax.X)
+
+                if (bb.Max.X > pointMax.X)
                 {
-                    pmax.X = bb.Max.X;
+                    pointMax.X = bb.Max.X;
                 }
-                if (bb.Max.Y > pmax.Y)
+
+                if (bb.Max.Y > pointMax.Y)
                 {
-                    pmax.Y = bb.Max.Y;
+                    pointMax.Y = bb.Max.Y;
                 }
-                if (bb.Max.Z > pmax.Z)
+
+                if (bb.Max.Z > pointMax.Z)
                 {
-                    pmax.Z = bb.Max.Z;
+                    pointMax.Z = bb.Max.Z;
                 }
             }
-            BoundingBox A = new BoundingBox(pmin, pmax);
-            return A;
+
+            return new BoundingBox(pointMin, pointMax);
         }
 
-        public static BoundingBox getMultiBoundingBox(List<BoundingBox> x, bool z0)
+        public static BoundingBox GetMultiBoundingBox(List<BoundingBox> boundingBoxes, bool z0)
         {
-            BoundingBox A = getMultiBoundingBox(x);
-            Point3d pmin = A.Min;
-            if (z0 == true)
+            var multiBoundingBox = GetMultiBoundingBox(boundingBoxes);
+            var pointMin = multiBoundingBox.Min;
+            if (z0)
             {
-                pmin.Z = 0;
+                pointMin.Z = 0;
             }
-            A = new BoundingBox(pmin, A.Max);
-            return A;
+
+            multiBoundingBox = new BoundingBox(pointMin, multiBoundingBox.Max);
+            return multiBoundingBox;
         }
 
-        public static BoundingBox getMultiBoundingBox(List<BoundingBox> x, bool z0, bool centerXY)
+        public static BoundingBox GetMultiBoundingBox(List<BoundingBox> boundingBoxes, bool z0, bool centerXY)
         {
-            BoundingBox A = getMultiBoundingBox(x, z0);
-            if (centerXY)
-            {
-                double dx = Math.Max(Math.Abs(A.Max.X), Math.Abs(A.Min.X));
-                double dy = Math.Max(Math.Abs(A.Max.Y), Math.Abs(A.Min.Y));
-                Point3d pmin = new Point3d(-1 * dx, -1 * dy, A.Min.Z);
-                Point3d pmax = new Point3d(dx, dy, A.Max.Z);
-                A = new BoundingBox(pmin, pmax);
-            }
-            return A;
+            var multiBoundingBox = GetMultiBoundingBox(boundingBoxes, z0);
+
+            if (!centerXY) return multiBoundingBox;
+
+            var domainX = Math.Max(Math.Abs(multiBoundingBox.Max.X), Math.Abs(multiBoundingBox.Min.X));
+            var domainY = Math.Max(Math.Abs(multiBoundingBox.Max.Y), Math.Abs(multiBoundingBox.Min.Y));
+            var pointMin = new Point3d(-1 * domainX, -1 * domainY, multiBoundingBox.Min.Z);
+            var pointMax = new Point3d(domainX, domainY, multiBoundingBox.Max.Z);
+            multiBoundingBox = new BoundingBox(pointMin, pointMax);
+
+            return multiBoundingBox;
         }
 
-        public static BoundingBox getMultiBoundingBox(List<BoundingBox> x, double cellSize, bool z0, bool centerXY, double xyScale, double xyOffset, double zScale, bool square)
+        public static BoundingBox GetMultiBoundingBox(List<BoundingBox> x, double cellSize, bool z0, bool centerXY,
+            double xyScale, double xyOffset, double zScale, bool square)
         {
             Point3d pmin;
             Point3d pmax;
-            BoundingBox A = getMultiBoundingBox(x, z0, centerXY);
+            var multiBoundingBox = GetMultiBoundingBox(x, z0, centerXY);
 
             if (xyScale > 0)
             {
-                A.Transform(Transform.Scale(new Plane(A.Center, Vector3d.ZAxis), xyScale, xyScale, 1.0));
+                multiBoundingBox.Transform(Transform.Scale(new Plane(multiBoundingBox.Center, Vector3d.ZAxis), xyScale,
+                    xyScale, 1.0));
             }
 
             if (xyOffset > 0)
             {
-                pmin = A.Min;
-                pmax = A.Max;
-                pmin.X = pmin.X - xyOffset;
-                pmin.Y = pmin.Y - xyOffset;
-                pmax.X = pmax.X + xyOffset;
-                pmax.Y = pmax.Y + xyOffset;
-                A = new BoundingBox(pmin, pmax);
+                pmin = multiBoundingBox.Min;
+                pmax = multiBoundingBox.Max;
+                pmin.X -= xyOffset;
+                pmin.Y -= xyOffset;
+                pmax.X += xyOffset;
+                pmax.Y += xyOffset;
+                multiBoundingBox = new BoundingBox(pmin, pmax);
             }
 
             if (square)
             {
-                double maxl = Math.Max(Math.Abs(A.Max.X - A.Min.X), Math.Abs(A.Max.Y - A.Min.Y));
-                pmin = new Point3d(A.Center.X - (maxl / 2), A.Center.Y - (maxl / 2), A.Min.Z);
-                pmax = new Point3d(A.Center.X + (maxl / 2), A.Center.Y + (maxl / 2), A.Max.Z);
-                A = new BoundingBox(pmin, pmax);
+                var maxl = Math.Max(Math.Abs(multiBoundingBox.Max.X - multiBoundingBox.Min.X),
+                    Math.Abs(multiBoundingBox.Max.Y - multiBoundingBox.Min.Y));
+                pmin = new Point3d(multiBoundingBox.Center.X - (maxl / 2), multiBoundingBox.Center.Y - (maxl / 2),
+                    multiBoundingBox.Min.Z);
+                pmax = new Point3d(multiBoundingBox.Center.X + (maxl / 2), multiBoundingBox.Center.Y + (maxl / 2),
+                    multiBoundingBox.Max.Z);
+                multiBoundingBox = new BoundingBox(pmin, pmax);
             }
 
             if (zScale > 0)
             {
-
-                Point3d aflat = new Point3d(A.Center.X, A.Center.Y, z0 ? A.Min.Z : A.Center.Z);
-                A.Transform(Transform.Scale(new Plane(aflat, Vector3d.ZAxis), 1, 1, zScale));
+                var boundingBoxCenter = new Point3d(multiBoundingBox.Center.X, multiBoundingBox.Center.Y,
+                    z0 ? multiBoundingBox.Min.Z : multiBoundingBox.Center.Z);
+                multiBoundingBox.Transform(Transform.Scale(new Plane(boundingBoxCenter, Vector3d.ZAxis), 1, 1, zScale));
             }
 
             // Do the rounding to the nearest cellSize
-            double dx = Math.Abs(A.Max.X - A.Min.X);
-            double dy = Math.Abs(A.Max.Y - A.Min.Y);
-            double dz = Math.Abs(A.Max.Z - A.Min.Z);
-            int nx = (int)(dx / cellSize) + 1;
-            int ny = (int)(dy / cellSize) + 1;
-            int nz = (int)(dz / cellSize) + 1;
-            dx = nx * cellSize;
-            dy = ny * cellSize;
-            dz = nz * cellSize;
+            var domainSizeX = Math.Abs(multiBoundingBox.Max.X - multiBoundingBox.Min.X);
+            var domainSizeY = Math.Abs(multiBoundingBox.Max.Y - multiBoundingBox.Min.Y);
+            var domainSizeZ = Math.Abs(multiBoundingBox.Max.Z - multiBoundingBox.Min.Z);
+            var nx = (int) (domainSizeX / cellSize) + 1;
+            var ny = (int) (domainSizeY / cellSize) + 1;
+            var nz = (int) (domainSizeZ / cellSize) + 1;
+            domainSizeX = nx * cellSize;
+            domainSizeY = ny * cellSize;
+            domainSizeZ = nz * cellSize;
             if (z0)
             {
-                pmin = new Point3d(A.Center.X - (dx / 2), A.Center.Y - (dy / 2), A.Min.Z);
-                pmax = new Point3d(A.Center.X + (dx / 2), A.Center.Y + (dy / 2), A.Min.Z + dz);
+                pmin = new Point3d(multiBoundingBox.Center.X - (domainSizeX / 2),
+                    multiBoundingBox.Center.Y - (domainSizeY / 2), multiBoundingBox.Min.Z);
+                pmax = new Point3d(multiBoundingBox.Center.X + (domainSizeX / 2),
+                    multiBoundingBox.Center.Y + (domainSizeY / 2), multiBoundingBox.Min.Z + domainSizeZ);
             }
             else
             {
-                pmin = new Point3d(A.Center.X - (dx / 2), A.Center.Y - (dy / 2), A.Center.Z - (dz / 2));
-                pmax = new Point3d(A.Center.X + (dx / 2), A.Center.Y + (dy / 2), A.Center.Z + (dz / 2));
+                pmin = new Point3d(multiBoundingBox.Center.X - (domainSizeX / 2),
+                    multiBoundingBox.Center.Y - (domainSizeY / 2), multiBoundingBox.Center.Z - (domainSizeZ / 2));
+                pmax = new Point3d(multiBoundingBox.Center.X + (domainSizeX / 2),
+                    multiBoundingBox.Center.Y + (domainSizeY / 2), multiBoundingBox.Center.Z + (domainSizeZ / 2));
             }
-            A = new BoundingBox(pmin, pmax);
 
-            return A;
+            multiBoundingBox = new BoundingBox(pmin, pmax);
+
+            return multiBoundingBox;
         }
 
         public static Point3d GetLocationInMesh(Box boundingBox)
@@ -182,13 +199,13 @@ namespace ComputeGH.Grasshopper.Utils
             };
 
             return box.BoundingBox;
-
         }
-        
+
         /// <summary>
         /// This estimation is based on an equation provided by Alexander Jacobson
         /// </summary>
-        public static double EstimateCellCount(List<IGH_GeometricGoo> geometry, double cellSize, double xyScale, double zScale)
+        public static double EstimateCellCount(List<IGH_GeometricGoo> geometry, double cellSize, double xyScale,
+            double zScale)
         {
             var boundingBox = new BoundingBox();
             var refinementRegionCount = 0.0;
@@ -201,7 +218,8 @@ namespace ComputeGH.Grasshopper.Utils
             }
 
             var box = new Box(boundingBox);
-            var hexMeshCount = (box.X.Length * box.Y.Length * box.Z.Length * Math.Pow(xyScale, 2) * zScale) / Math.Pow(cellSize, 3);
+            var hexMeshCount = (box.X.Length * box.Y.Length * box.Z.Length * Math.Pow(xyScale, 2) * zScale) /
+                               Math.Pow(cellSize, 3);
             return hexMeshCount + refinementRegionCount + surfaceAreaCount;
         }
 
@@ -209,30 +227,33 @@ namespace ComputeGH.Grasshopper.Utils
         {
             var regionName = Geometry.getUserString(geo, "ComputeName");
             var refinementDetails = Geometry.getUserString(geo, "ComputeRefinementRegion");
-            if (regionName == null || refinementDetails == null)
+            if (string.IsNullOrEmpty(regionName) || string.IsNullOrEmpty(refinementDetails))
             {
                 return 0.0;
             }
 
             var details = new RefinementDetails().FromJson(refinementDetails);
+            details.CellSize = baseCellSize;
             var cellSize = baseCellSize / Math.Pow(2, int.Parse(details.Levels.Split(' ')[1]));
             var mesh = new Mesh();
             geo.CastTo(out mesh);
 
             return mesh.Volume() / Math.Pow(cellSize, 3);
         }
-        
+
         public static double EstimateSurfaceAreaCells(IGH_GeometricGoo geo, double baseCellSize)
         {
             var surfaceName = Geometry.getUserString(geo, "ComputeName");
-            var minLevel = Geometry.getUserString(geo, "ComputeMeshMinLevel");
-            var maxLevel = Geometry.getUserString(geo, "ComputeMeshMaxLevel");
-
-            if (surfaceName == null || minLevel == null)
+            var levels = Geometry.getUserString(geo, "ComputeMeshLevels");
+            
+            if (string.IsNullOrEmpty(surfaceName) || string.IsNullOrEmpty(levels))
             {
-                return 0.0;;
+                return 0.0;
             }
-            var cellSize = baseCellSize / Math.Pow(2, double.Parse(minLevel));
+
+            var meshLevel = new MeshLevelDetails().FromJson(levels);
+            meshLevel.CellSize = baseCellSize;
+            var cellSize = baseCellSize / Math.Pow(2, meshLevel.Levels.Min);
             var mesh = new Mesh();
             geo.CastTo(out mesh);
             var area = AreaMassProperties.Compute(mesh).Area;
