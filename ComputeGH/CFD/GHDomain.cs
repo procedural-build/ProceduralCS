@@ -176,7 +176,7 @@ namespace ComputeCS.Grasshopper
             };
 
             DA.SetData(0, outputs.ToJson());
-            DA.SetData(1, GetInfoText(cellEstimation, cellSize, surfaces.Keys.Select(key => surfaces[key].Levels.Min)));
+            DA.SetData(1, GetInfoText(cellEstimation, cellSize, surfaces.Keys.Select(key => surfaces[key].Level.Min)));
             DA.SetData(2, boundingBox);
             DA.SetDataList(3, geometry);
         }

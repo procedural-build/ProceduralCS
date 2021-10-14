@@ -69,7 +69,7 @@ namespace ComputeCS.Grasshopper
             var levelDetails = new MeshLevelDetails
             {
                 Resolution = resolution,
-                Levels = meshLevels.Count > 0? new MeshLevels {Min = meshLevels.First(), Max = meshLevels.Last()}: null
+                Level = meshLevels.Count > 0? new MeshLevels {Min = meshLevels.First(), Max = meshLevels.Last()}: null
             };
             Geometry.setUserString(
                 mesh,

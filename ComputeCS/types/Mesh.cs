@@ -70,19 +70,19 @@ namespace ComputeCS.types
     {
         public double? Resolution;
         public double? CellSize;
-        public MeshLevels Levels        
+        public MeshLevels Level     
         {
-            get => GetLevels();
-            set => levels = value;
+            get => GetLevel();
+            set => level = value;
         }
         
-        private MeshLevels levels;
+        private MeshLevels level;
 
-        private MeshLevels GetLevels()
+        private MeshLevels GetLevel()
         {
-            if (levels != null || !(CellSize > 0) || !(Resolution > 0)) return levels;
-            var level = (int) (Math.Log10((double) CellSize / (double) Resolution) / Math.Log10(2));
-            return new MeshLevels {Min = level, Max = level};
+            if (level != null || !(CellSize > 0) || !(Resolution > 0)) return level;
+            var _level = (int) (Math.Log10((double) CellSize / (double) Resolution) / Math.Log10(2));
+            return new MeshLevels {Min = _level, Max = _level};
         }
     }
 

@@ -253,7 +253,7 @@ namespace ComputeGH.Grasshopper.Utils
 
             var meshLevel = new MeshLevelDetails().FromJson(levels);
             meshLevel.CellSize = baseCellSize;
-            var cellSize = baseCellSize / Math.Pow(2, meshLevel.Levels.Min);
+            var cellSize = baseCellSize / Math.Pow(2, meshLevel.Level.Min);
             var mesh = new Mesh();
             geo.CastTo(out mesh);
             var area = AreaMassProperties.Compute(mesh).Area;
