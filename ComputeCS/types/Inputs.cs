@@ -13,6 +13,7 @@ namespace ComputeCS.types
         public CFDMesh Mesh;
         public CFDSolution CFDSolution;
         public RadiationSolution RadiationSolution;
+        public EnergySolution EnergySolution;
         public ProbeConfig ProbeConfig;
     }
 }

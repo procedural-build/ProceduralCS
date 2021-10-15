@@ -186,8 +186,24 @@ namespace ComputeCS.Grasshopper
                 StringCache.setCache(cacheKey + "create", "true");
             }
         }
+        
+        private void RunEnergyPlus(string inputJson, List<GH_Mesh> geometry, string cacheKey, bool compute)
+        {
+            var geometryFile = Export.STLObject(geometry);
+            var results = Compute.Create(
+                inputJson,
+                geometryFile,
+                compute
+            );
+            StringCache.setCache(cacheKey, results);
+            StringCache.setCache(InstanceGuid.ToString(), "");
+            if (compute)
+            {
+                StringCache.setCache(cacheKey + "create", "true");
+            }
+        }
 
-        private void RunEnergyPlus(string inputJson, string folder, string cacheKey, bool compute)
+        private void RunHoneybeeEnergyPlus(string inputJson, string folder, string cacheKey, bool compute)
         {
             var results = Compute.CreateEnergyPlus(
                 inputJson,
@@ -222,7 +238,7 @@ namespace ComputeCS.Grasshopper
         {
             if (FolderContainsEnergyPlus(folder))
             {
-                RunEnergyPlus(inputJson, folder, cacheKey, compute);
+                RunHoneybeeEnergyPlus(inputJson, folder, cacheKey, compute);
             }
 
             else if (FolderContainsRadiance(folder))
@@ -232,6 +248,10 @@ namespace ComputeCS.Grasshopper
             else if (inputJson.Contains("radiation_solution"))
             {
                 RunRadiance(inputJson, geometry, cacheKey, compute);
+            }
+            else if (inputJson.Contains("energy_solution"))
+            {
+                RunEnergyPlus(inputJson, geometry, cacheKey, compute);
             }
             else
             {

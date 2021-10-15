@@ -70,4 +70,15 @@ namespace ComputeCS.types
     {
         public string Results;
     }
+    
+    public class EnergySolution
+    {
+        public List<EnergyPlusBuilding> Buildings;
+        public List<EnergyPlusZone> Zones;
+        public List<EnergyPlusLoad> Loads;
+        public List<EnergyPlusConstruction> Constructions;
+        public List<EnergyPlusMaterial> Materials;
+        [JsonProperty("epw_file")] public string EPWFile;
+        public Dictionary<string, object> Overrides;
+    }
 }

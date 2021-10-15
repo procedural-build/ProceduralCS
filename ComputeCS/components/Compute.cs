@@ -212,7 +212,62 @@ namespace ComputeCS.Components
 
             return inputData.ToJson();
         }
+        
+        /// <summary>
+        /// This method is used for creating EnergyPlus cases on Compute
+        /// </summary>
+        public static string Create(
+            string inputJson,
+            byte[] geometryFile,
+            bool create
+        )
+        {
+            var inputData = new Inputs().FromJson(inputJson);
+            var tokens = inputData.Auth;
+            var parentTask = inputData.Task;
+            var project = inputData.Project;
+            var solution = inputData.EnergySolution;
+            const string caseDir = "objects";
 
+            if (parentTask == null)
+            {
+                return null;
+            }
+
+            if (project == null)
+            {
+                return null;
+            }
+
+            if (create)
+            {
+                Upload.UploadGeometry(tokens, inputData.Url, parentTask.UID, geometryFile, "geometry",
+                    "energyGeom");
+            }
+
+            // Create Action Task
+            var actionTask = EnergyPlusCompute.CreateEnergyPlusActionTask(tokens, inputData.Url, parentTask,
+                project, solution, caseDir, create);
+            var tasks = new List<Task>
+            {
+                actionTask,
+            };
+
+            var energyPlusTask = EnergyPlusCompute.CreateEnergyPlusTask(
+                tokens,
+                inputData.Url,
+                parentTask,
+                actionTask,
+                project,
+                solution,
+                "results",
+                create
+            );
+            tasks.Add(energyPlusTask);
+            inputData.SubTasks = tasks;
+
+            return inputData.ToJson();
+        }
         public static string CreateEnergyPlus(string inputJson, string folder, bool compute)
         {
             var inputData = new Inputs().FromJson(inputJson);

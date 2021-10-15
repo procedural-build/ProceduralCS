@@ -27,7 +27,7 @@ namespace ComputeCS.types
             return _name + "*";
         }
     }
-
+    
     public class MaterialOverrides : SerializeBase<MaterialOverrides>
     {
         public List<double> Reals;
