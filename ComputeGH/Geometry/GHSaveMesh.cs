@@ -27,7 +27,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh to save", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh to save", GH_ParamAccess.list);
             pManager.AddTextParameter("File Path", "Path", "File path to save the mesh to", GH_ParamAccess.item);
             pManager.AddTextParameter("File Name", "Name", "File name to use for the mesh", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Save", "Save", "Save mesh", GH_ParamAccess.item);
@@ -50,14 +50,14 @@ namespace ComputeCS.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var mesh = new GH_Mesh();
+            var mesh = new List<GH_Mesh>();
             var filePath = "";
             var fileName = "";
             var save = false;
 
-            if ((!DA.GetData(0, ref mesh))) return;
+            if (!DA.GetDataList(0, mesh)) return;
 
-            if ((!DA.GetData(1, ref filePath))) return;
+            if (!DA.GetData(1, ref filePath)) return;
 
             if (!DA.GetData(2, ref fileName)) return;
 
@@ -66,7 +66,7 @@ namespace ComputeCS.Grasshopper
             if (save)
             {
                 meshPath = CreateMeshPath(filePath, fileName);
-                Export.MeshToObjFile(new List<GH_Mesh> {mesh}, meshPath);
+                Export.MeshToFile(mesh, meshPath);
             }
             DA.SetData(0, meshPath);
 
@@ -74,6 +74,8 @@ namespace ComputeCS.Grasshopper
 
         private static string CreateMeshPath(string filePath, string fileName)
         {
+            if (fileName.EndsWith(".stl")) return Path.Combine(filePath, fileName);
+            
             if (!fileName.EndsWith(".obj"))
             {
                 fileName += ".obj";

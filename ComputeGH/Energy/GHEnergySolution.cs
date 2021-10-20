@@ -82,7 +82,7 @@ namespace ComputeGH.Energy
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("cd60707b-134e-48f3-8cd4-e816fa563320");
+        public override Guid ComponentGuid => new Guid("b9f6bcfa-a002-4849-8001-b3bd882c095d");
 
         /// <summary>
         /// This is the method that actually does the work.

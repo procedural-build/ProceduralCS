@@ -144,10 +144,10 @@ namespace ComputeGH.Grasshopper.Utils
             return stream.ToArray();
         }
         
-        public static void MeshToObjFile(List<GH_Mesh> meshes, string filePath)
+        public static void MeshToFile(List<GH_Mesh> meshes, string filePath)
         {
-            var objBytes = ObjObject(meshes);
-            File.WriteAllBytes(filePath, objBytes);
+            var meshData = filePath.EndsWith(".stl") ? STLObject(meshes) : ObjObject(meshes);
+            File.WriteAllBytes(filePath, meshData);
         }
     }
 }
