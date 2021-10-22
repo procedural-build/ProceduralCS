@@ -118,6 +118,7 @@
     <Compile Include="Energy\GHEnergyPlusConstruction.cs" />
     <Compile Include="Energy\GHEnergyPlusMaterial.cs" />
     <Compile Include="Energy\GHEnergySolution.cs" />
+    <Compile Include="Energy\GHLoadIDF.cs" />
     <Compile Include="General\GHCompute.cs" />
     <Compile Include="General\GHDownload.cs" />
     <Compile Include="General\GHLogin.cs" />

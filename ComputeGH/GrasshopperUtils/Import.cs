@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using NLog;
 using Rhino.Geometry;
 
@@ -111,6 +112,110 @@ namespace ComputeGH.Grasshopper.Utils
             mesh.Compact();
             
             return mesh;
+        }
+        
+        public static Tuple<List<Mesh>, List<Mesh>, string> LoadIDFFromPath(string filePath)
+        {
+            Logger.Debug($"Loading IDF from from {filePath}");
+            var geometry = new List<Mesh>();
+            var zoneDict = new Dictionary<string, List<Mesh>>();
+            var propertiesDict = new Dictionary<string, Dictionary<string, string>>();
+            
+            var fileData = File.ReadAllLines(filePath);
+            var foundSurface = false;
+            var name = "";
+            var vertices = new List<Point3d>();
+            var face = new List<int>();
+            var faceIndex = 0;
+            var zone = "";
+            var xyz = new string[]{};
+            foreach (var line in fileData)
+            {
+                switch (foundSurface)
+                {
+                    case true when string.IsNullOrWhiteSpace(line) || string.IsNullOrEmpty(line):
+                        // Add surface data
+                        var surface = new Mesh();
+                        surface.Vertices.AddVertices(vertices);
+                        if (face.Count == 4)
+                        {
+                            surface.Faces.AddFace(face[0], face[1], face[2], face[3]);    
+                        }
+                        else
+                        {
+                            surface.Faces.AddFace(face[0], face[1], face[2]);   
+                        }
+                        geometry.Add(surface);
+                        zoneDict[zone].Add(surface);
+                        
+                        // Reset variables
+                        foundSurface = false;
+                        face = new List<int>();
+                        name = "";
+                        faceIndex = 0;
+                        zone = "";
+                        vertices = new List<Point3d>();
+                        break;
+                    case true:
+                        var parts = line.Split(new []{'!', '-'}, StringSplitOptions.RemoveEmptyEntries);
+                        var key = parts[1].Trim();
+                        var value = parts[0].Replace(",", "").Replace(";", "").Trim();
+                        if (key == "Name")
+                        {
+                            name = value;
+                            propertiesDict.Add(value, new Dictionary<string, string>());
+                        }
+                        else if (key.StartsWith("X,Y,Z"))
+                        {
+                            xyz = value.Split(',');
+                            vertices.Add(new Point3d{X=double.Parse(xyz[0]), Y=double.Parse(xyz[1]), Z=double.Parse(xyz[2])});
+                            face.Add(faceIndex);
+                            faceIndex++;
+                        }
+                        else if (key.StartsWith("Vertex"))
+                        {
+                            xyz = xyz.Append(value).ToArray();
+                            if (xyz.Length == 3)
+                            {
+                                vertices.Add(new Point3d{X=double.Parse(xyz[0]), Y=double.Parse(xyz[1]), Z=double.Parse(xyz[2])});
+                                face.Add(faceIndex);
+                                faceIndex++;
+                                xyz = new string[] { };
+                            }
+                            
+                        }
+                        else if (key == "Zone Name")
+                        {
+                            Logger.Debug($"Adding property: {key} with {value}");
+                            propertiesDict[name].Add(key, value);
+                            zone = value;
+                            if (!zoneDict.ContainsKey(zone))
+                            {
+                                zoneDict.Add(zone, new List<Mesh>());
+                            }
+                        }
+                        else
+                        {
+                            propertiesDict[name].Add(key, value);
+                        }
+                        break;
+                    case false when line.ToLower().Contains("buildingsurface:detailed"):
+                        foundSurface = true;
+                        break;
+                }
+            }
+
+            Logger.Debug("Done with file");
+            var settings = new JsonSerializerSettings {Formatting = Formatting.Indented};
+            var properties = JsonConvert.SerializeObject(propertiesDict, settings);
+            var zones = new List<Mesh>();
+            foreach (var meshes in zoneDict.Values)
+            {
+                var mesh = new Mesh();
+                mesh.Append(meshes);
+                zones.Add(mesh);
+            }
+            return new Tuple<List<Mesh>, List<Mesh>, string>(geometry, zones, properties);
         }
     }
 }
