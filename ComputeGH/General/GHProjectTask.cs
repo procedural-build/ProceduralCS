@@ -14,8 +14,6 @@ using Rhino;
 
 namespace ComputeCS.Grasshopper
 {
-    public delegate void ExpireSolutionDelegate(bool recompute);
-
     public class ComputeProjectTask : PB_Component
     {
         /// <summary>
@@ -169,7 +167,7 @@ namespace ComputeCS.Grasshopper
 
         private void ValidateName(string name)
         {
-            var illegalCharacters = new List<string> {"?", "&", "/", "%", "#", "!", "+"};
+            var illegalCharacters = new List<string> { "?", "&", "/", "%", "#", "!", "+" };
             if (illegalCharacters.Any(name.Contains))
             {
                 throw new ValidationException(

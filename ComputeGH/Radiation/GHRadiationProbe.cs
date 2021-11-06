@@ -159,11 +159,11 @@ namespace ComputeGH.Radiation
             }
 
             // Read from Cache
+            Message = "";
             if (cachedValues != null)
             {
                 var outputs = cachedValues;
                 DA.SetData(0, outputs);
-                Message = "";
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
                     Message = "Task Created";

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using ComputeCS.types;
 using Newtonsoft.Json;
 using NLog;
@@ -213,6 +214,7 @@ namespace ComputeCS.Tasks
                     }
                 );
                 index++;
+                Thread.Sleep(100);
             }
         }
         
@@ -238,13 +240,14 @@ namespace ComputeCS.Tasks
                         {"file", meshFiles[name]}
                     }
                 );
-                if (upload.ContainsKey("errors"))
+                if (upload.ContainsKey("error_messages"))
                 {
-                    Logger.Error(upload["error"]);
-                    throw new Exception($"Got error while uploading mesh to server: {upload["error"]}");
+                    Logger.Error(upload["error_messages"]);
+                    throw new Exception($"Got error while uploading mesh to server: {upload["error_messages"]}");
                 }
 
                 Logger.Debug($"Uploaded {caseDir}/{name}.obj to server");
+                Thread.Sleep(100);
             }
         }
     }
