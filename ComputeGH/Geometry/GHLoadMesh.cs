@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("File Path", "Path", "File path to load the mesh from", GH_ParamAccess.item);
+            pManager.AddTextParameter("File Path", "Path", "File path to load the mesh from", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Load", "Load", "Load mesh", GH_ParamAccess.item);
 
             pManager[1].Optional = true;
@@ -38,7 +39,7 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "Mesh", "Loaded mesh", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Loaded mesh", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -47,27 +48,27 @@ namespace ComputeCS.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var filePath = "";
+            var filePaths = new List<string>();
             var load = false;
 
 
-            if ((!DA.GetData(0, ref filePath))) return;
+            if ((!DA.GetDataList(0, filePaths))) return;
 
             DA.GetData(1, ref load);
 
             if (load)
             {
-                if (!File.Exists(filePath))
+                if (filePaths.Any(filePath => !File.Exists(filePath)))
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Could not find file {filePath}. Please provide a valid file path.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Could not find file {filePaths}. Please provide a valid file path.");
                     return;
                 }
 
-                meshes = Import.LoadMeshFromPath(filePath, null, null).First().Value;
+                meshes = filePaths.Select(filePath => Import.LoadMeshFromPath(filePath, null, null).First().Value).ToList();
             }
 
            
-            DA.SetData(0, meshes);
+            DA.SetDataList(0, meshes);
         }
 
         /// <summary>
@@ -80,6 +81,6 @@ namespace ComputeCS.Grasshopper
         /// </summary>
         public override Guid ComponentGuid => new Guid("2748f8d3-9526-4643-b1ec-b33d20e2f8b3");
 
-        private Mesh meshes;
+        private List<Mesh> meshes;
     }
 }
