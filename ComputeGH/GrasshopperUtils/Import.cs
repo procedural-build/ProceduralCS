@@ -16,22 +16,21 @@ namespace ComputeGH.Grasshopper.Utils
             string meshPath,
             List<string> exclude,
             List<string> include,
-            string fileType = "obj")
+            string fileType = "obj"
+            )
         {
             var data = new Dictionary<string, Mesh>();
-            if (File.Exists(meshPath) && meshPath.EndsWith(fileType))
-            {
-                Logger.Info($"{meshPath} is a file");
-                return LoadMeshFromFile(meshPath, data);
-            }
+            if (!File.Exists(meshPath)) return LoadMeshFromFolder(meshPath, fileType, data, exclude, include);
+            
+            Logger.Info($"{meshPath} is a file");
+            return LoadMeshFromFile(meshPath, data);
 
-            return LoadMeshFromFolder(meshPath, fileType, data, exclude, include);
         }
 
         private static Dictionary<string, Mesh> LoadMeshFromFile(
-            string filePath, 
+            string filePath,
             Dictionary<string, Mesh> data
-            )
+        )
         {
             Logger.Debug($"Loading mesh from from {filePath}");
             var name = Path.GetFileNameWithoutExtension(filePath);
@@ -45,34 +44,50 @@ namespace ComputeGH.Grasshopper.Utils
         }
 
         private static Dictionary<string, Mesh> LoadMeshFromFolder(
-            string folderPath, 
+            string folderPath,
             string fileType,
             Dictionary<string, Mesh> data,
             List<string> exclude,
             List<string> include
-            )
+        )
         {
             var files = Directory.GetFiles(folderPath).Where(file => file.EndsWith(fileType));
             if (exclude != null && exclude.Count > 0)
             {
                 files = files.Where(file => !exclude.Any(file.Contains)).ToArray();
             }
+
             if (include != null && include.Count > 0)
             {
                 files = files.Where(file => include.Any(file.Contains)).ToArray();
             }
-            
+
             return files.Aggregate(data, (current, file) => LoadMeshFromFile(file, current));
         }
 
         private static Mesh LoadMesh(string file)
         {
+            var extension = Path.GetExtension(file);
+
+            switch (extension)
+            {
+                case ".obj":
+                    return LoadObjMesh(file);
+                case ".vtk":
+                    return LoadVtkMesh(file);
+                default:
+                    throw new FileLoadException($"Could not load {file}. The only supported formats are .vtk and .obj");
+            }
+        }
+
+        private static Mesh LoadObjMesh(string file)
+        {
             var fileData = File.ReadAllLines(file);
             var mesh = new Mesh();
-            
+
             foreach (var line in fileData)
             {
-                var parts = line.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+                var parts = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length > 0)
                 {
                     switch (parts[0])
@@ -88,8 +103,8 @@ namespace ComputeGH.Grasshopper.Utils
                             var faceIndices = new List<int>();
                             for (var partIndex = 1; partIndex < parts.Length; partIndex++)
                             {
-                                var faceIndex = int.Parse(parts[partIndex].Split(new char[] {'/'},
-                                    StringSplitOptions.RemoveEmptyEntries)[0]) - 1; 
+                                var faceIndex = int.Parse(parts[partIndex].Split(new char[] { '/' },
+                                    StringSplitOptions.RemoveEmptyEntries)[0]) - 1;
                                 faceIndices.Add(faceIndex);
                             }
 
@@ -101,7 +116,56 @@ namespace ComputeGH.Grasshopper.Utils
                             {
                                 mesh.Faces.AddFace(faceIndices[0], faceIndices[1], faceIndices[2]);
                             }
+
                             break;
+                    }
+                }
+            }
+
+            mesh.Normals.ComputeNormals();
+            mesh.UnifyNormals();
+            mesh.Compact();
+
+            return mesh;
+        }
+
+        private static Mesh LoadVtkMesh(string file)
+        {
+            var lines = File.ReadAllLines(file);
+            var mesh = new Mesh();
+
+            var foundPoints = false;
+            var foundPolygons = false;
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+                else if (line.StartsWith("POINTS"))
+                {
+                    foundPoints = true;
+                }
+                else if (line.StartsWith("POLYGONS"))
+                {
+                    foundPoints = false;
+                    foundPolygons = true;
+                }
+                else if (foundPoints)
+                {
+                    var data = line.Split(' ').Select(double.Parse).ToArray();
+                    mesh.Vertices.Add(data[0], data[1], data[2]);
+                }
+                else if (foundPolygons)
+                {
+                    var data = line.Split(' ').Select(int.Parse).ToArray();
+                    if (data[0] == 4)
+                    {
+                        mesh.Faces.AddFace(data[1], data[2], data[3], data[4]);
+                    }
+                    else
+                    {
+                        mesh.Faces.AddFace(data[1], data[2], data[3]);
                     }
                 }
             }

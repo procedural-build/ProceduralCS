@@ -60,14 +60,29 @@ namespace ComputeCS.Grasshopper
             {
                 if (filePaths.Any(filePath => !File.Exists(filePath)))
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Could not find file {filePaths}. Please provide a valid file path.");
+                    errors.Add($"Could not find file {filePaths}. Please provide a valid file path.");
                     return;
                 }
 
-                meshes = filePaths.Select(filePath => Import.LoadMeshFromPath(filePath, null, null).First().Value).ToList();
+                try
+                {
+                    errors = new List<string>();
+                    meshes = filePaths.Select(filePath => Import.LoadMeshFromPath(filePath, null, null).First().Value)
+                        .ToList();
+                }
+                catch (Exception error)
+                {
+                    errors.Add(error.Message);
+                    
+                }
+                
             }
 
-           
+            if (errors != null && errors.Count > 0)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors.ToString());
+            }
+            
             DA.SetDataList(0, meshes);
         }
 
@@ -82,5 +97,6 @@ namespace ComputeCS.Grasshopper
         public override Guid ComponentGuid => new Guid("2748f8d3-9526-4643-b1ec-b33d20e2f8b3");
 
         private List<Mesh> meshes;
+        private List<string> errors;
     }
 }
