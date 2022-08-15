@@ -134,6 +134,7 @@
     <Compile Include="GrasshopperUtils\Geometry.cs" />
     <Compile Include="GrasshopperUtils\Import.cs" />
     <Compile Include="GrasshopperUtils\PB_Component.cs" />
+    <Compile Include="GrasshopperUtils\PB_TaskCapableComponent.cs" />
     <Compile Include="GrasshopperUtils\Types.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
