@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ComputeCS.Exceptions;
 using ComputeCS.types;
 using Newtonsoft.Json;
 using NLog;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ComputeCS
 {
@@ -32,7 +32,7 @@ namespace ComputeCS
         private string basePath = "";
         private string host = "";
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        
+
         public GenericViewSet(ComputeClient _client, string _host, string _basePath)
         {
             basePath = _basePath;
@@ -97,7 +97,7 @@ namespace ComputeCS
                     Logger.Debug($"Creating {typeof(ObjectType)} with create params: {createParams}");
                     return Create(createParams);
                 }
-                
+
                 Logger.Error($"Could not get or create {typeof(ObjectType)}. Got error: {err.Message}");
                 if (err.Message == "No object found.")
                 {
@@ -160,16 +160,14 @@ namespace ComputeCS
             );
         }
 
-        public string Retrieve(
+        public byte[] RetrieveObjectAsBytes(
             string objectId,
-            string path,
             Dictionary<string, object> query_params = null
         )
         {
-            Logger.Debug($"Requesting GET of {objectId} on path: {path} with query params: {query_params}");
+            Logger.Debug($"Requesting GET of {objectId} with query params: {query_params}");
             return client.Request(
                 ObjectPath(objectId),
-                path,
                 query_params,
                 httpVerb.GET
             );

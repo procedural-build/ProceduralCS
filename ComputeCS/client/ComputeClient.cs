@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using ComputeCS.types;
 using Newtonsoft.Json;
 using NLog;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace ComputeCS
 {
@@ -12,7 +12,7 @@ namespace ComputeCS
         public RESTClient http = new RESTClient();
         public AuthTokens Tokens = new AuthTokens();
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        
+
         public ComputeClient(string _host = null)
         {
             http = new RESTClient
@@ -177,15 +177,14 @@ namespace ComputeCS
             return http.Request<T>(_payload);
         }
 
-        public string Request(
+        public byte[] Request(
             string url,
-            string path,
             Dictionary<string, object> _query_params = null,
             httpVerb _method = httpVerb.GET
         )
         {
             GetAccessToken();
-            return http.Request(url, path, _query_params, _method);
+            return http.Request(url, _query_params, _method);
         }
     }
 }

@@ -93,9 +93,8 @@ namespace ComputeCS
             return JsonConvert.DeserializeObject<T>(response, JsonSettings);
         }
 
-        public string Request(
+        public byte[] Request(
             string url,
-            string path,
             Dictionary<string, object> _query_params = null,
             httpVerb _method = httpVerb.GET
         )
@@ -105,9 +104,7 @@ namespace ComputeCS
             endPoint = url;
             query_params = _query_params != null ? _query_params : new Dictionary<string, object>();
             httpMethod = _method;
-            var response = RequestToFile(path);
-
-            return response;
+            return RequestToBytes();
         }
 
         public T Request<T>(Dictionary<string, object> _payload = null)
@@ -168,35 +165,9 @@ namespace ComputeCS
             return responseString;
         }
 
-        private string WriteResponseToFile(string path)
-        {
-
-            System.Net.ServicePointManager.ServerCertificateValidationCallback
-                = ((sender, cert, chain, errors) => ValidateRemoteCertificate(sender, cert, chain, errors));
-
-            response = (HttpWebResponse)request.GetResponse();
-            var contentDisposition = System.Net.Http.Headers.ContentDispositionHeaderValue.Parse(response.Headers["Content-Disposition"]);
-            var filename = contentDisposition.FileName;
-            path = Path.Combine(path, filename);
-
-            using (Stream responseStream = response.GetResponseStream())
-            {
-                if (responseStream != null)
-                {
-                    using (var writer = File.OpenWrite(path))
-                    {
-                        responseStream.CopyTo(writer);
-                    }
-                }
-            }
-
-            return path;
-        }
-
-        public string RequestToFile(string path)
+        public byte[] RequestToBytes()
         {
             Logger.Debug("Fetching file");
-            var responseString = string.Empty;
 
             // Generate the request object
             request = (HttpWebRequest)WebRequest.Create(FullUrl);
@@ -205,7 +176,7 @@ namespace ComputeCS
             if (HasFetched(FullUrl, httpMethod.ToString()))
             {
                 Logger.Debug($"Already fetch on {FullUrl} with {httpMethod}. Returning empty string ");
-                return "";
+                return default;
             }
 
             if (token != null)
@@ -217,20 +188,40 @@ namespace ComputeCS
             // Get the response object of fallback to error message - then release resources from the request.
             try
             {
-                responseString = WriteResponseToFile(path);
+                var result = GetResponseToBytes();
                 Logger.Debug("Succesfully fetched");
+                return result;
             }
             catch (Exception ex)
             {
                 Logger.Error($"Got error while fetching: {ex.Message}");
-                responseString = ex.Message;
+                return default;
             }
             finally
             {
                 ((IDisposable)response)?.Dispose();
             }
-            Logger.Debug("Returning fetch response");
-            return responseString;
+        }
+
+        private byte[] GetResponseToBytes()
+        {
+            System.Net.ServicePointManager.ServerCertificateValidationCallback
+                = ((sender, cert, chain, errors) => ValidateRemoteCertificate(sender, cert, chain, errors));
+
+            response = (HttpWebResponse)request.GetResponse();
+
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    if (responseStream != null)
+                    {
+                        responseStream.CopyTo(memoryStream);
+                    }
+                }
+                return memoryStream.ToArray();
+            }
         }
 
         public string requestToString()
