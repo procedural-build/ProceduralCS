@@ -1,13 +1,13 @@
+using ComputeCS.utils.Cache;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using ComputeCS.utils.Cache;
-using NLog;
 
 namespace ComputeCS
 {
@@ -44,17 +44,17 @@ namespace ComputeCS
 
         private static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors policyErrors)
         {
-            bool result = cert.Subject.Contains("procedural.build");
-            Logger.Debug($"Validating Remote Certificate: {cert.Subject}");
-            return result;
+            return true; // FIXME do not set application global cerificate check in plugin
         }
 
-        public string QueryString {
+        public string QueryString
+        {
             // Serialize the dictionary of query_params
             get { return Utils.DictToQueryString(this.query_params); }
         }
 
-        public string FullUrl {
+        public string FullUrl
+        {
             // Construct the full URL from provided host, endPoint and stringified query_params
             get { return $"{host}{endPoint}{QueryString}"; }
         }
@@ -68,7 +68,8 @@ namespace ComputeCS
             Formatting = Formatting.Indented
         };
 
-        public T Request<T>() {
+        public T Request<T>()
+        {
             /* Generic request that casts the response to a type provided
             */
             var response = requestToString();
@@ -76,11 +77,12 @@ namespace ComputeCS
         }
 
         public T Request<T>(
-            string url, 
+            string url,
             Dictionary<string, object> _query_params = null,
-            httpVerb _method = httpVerb.GET, 
+            httpVerb _method = httpVerb.GET,
             Dictionary<string, object> _payload = null
-        ) {
+        )
+        {
             /* Generic request that casts the response to a type provided
             */
             endPoint = url;
@@ -108,7 +110,8 @@ namespace ComputeCS
             return response;
         }
 
-        public T Request<T>(Dictionary<string, object> _payload = null) {
+        public T Request<T>(Dictionary<string, object> _payload = null)
+        {
             /* Generic request that casts the response to a type provided
             */
             payload = _payload;
@@ -116,8 +119,9 @@ namespace ComputeCS
             return JsonConvert.DeserializeObject<T>(response, JsonSettings);
         }
 
-        private void SetPayload() {
-            
+        private void SetPayload()
+        {
+
             if (payload.ContainsKey("file"))
             {
                 Logger.Debug("Setting file payload");
@@ -144,7 +148,8 @@ namespace ComputeCS
 
         }
 
-        private string GetResponseString() {
+        private string GetResponseString()
+        {
             var responseString = string.Empty;
             ServicePointManager.ServerCertificateValidationCallback = (ValidateRemoteCertificate);
 
@@ -158,12 +163,13 @@ namespace ComputeCS
                     {
                         responseString = reader.ReadToEnd();
                     }
-                 }
+                }
             }
             return responseString;
         }
 
-        private string WriteResponseToFile(string path) {
+        private string WriteResponseToFile(string path)
+        {
 
             System.Net.ServicePointManager.ServerCertificateValidationCallback
                 = ((sender, cert, chain, errors) => ValidateRemoteCertificate(sender, cert, chain, errors));
@@ -195,13 +201,13 @@ namespace ComputeCS
             // Generate the request object
             request = (HttpWebRequest)WebRequest.Create(FullUrl);
             request.Method = httpMethod.ToString();
-            
+
             if (HasFetched(FullUrl, httpMethod.ToString()))
             {
                 Logger.Debug($"Already fetch on {FullUrl} with {httpMethod}. Returning empty string ");
                 return "";
             }
-            
+
             if (token != null)
             {
                 Logger.Debug("Setting auth headers");
@@ -221,14 +227,14 @@ namespace ComputeCS
             }
             finally
             {
-                ((IDisposable) response)?.Dispose();
+                ((IDisposable)response)?.Dispose();
             }
             Logger.Debug("Returning fetch response");
             return responseString;
         }
 
         public string requestToString()
-        {           
+        {
             var responseString = string.Empty;
 
             // Generate the request object
@@ -240,14 +246,14 @@ namespace ComputeCS
                 Logger.Debug($"Already fetch on {FullUrl} with {httpMethod}. Returning empty string ");
                 return "";
             }
-            
+
             if (token != null)
             {
                 Logger.Debug("Setting auth headers");
                 request.Headers.Add("Authorization", $"JWT {token}");
             }
 
-            if ((request.Method == "POST" || request.Method == "PUT"  || request.Method == "PATCH") && payload != null)
+            if ((request.Method == "POST" || request.Method == "PUT" || request.Method == "PATCH") && payload != null)
             {
                 Logger.Debug("Setting payload");
                 SetPayload();
@@ -266,19 +272,19 @@ namespace ComputeCS
             }
             finally
             {
-                ((IDisposable) response)?.Dispose();
+                ((IDisposable)response)?.Dispose();
             }
 
             Logger.Debug("Returning fetch response");
             return responseString;
         }
-        
+
         private static bool HasFetched(string url, string method, int timeLimit = 100)
         {
             Logger.Debug($"Checking fetch cache");
             var now = DateTime.Now;
             var cacheKey = $"{method} {url}";
-            
+
             var value = StringCache.getCache(cacheKey);
             if (!string.IsNullOrEmpty(value))
             {
