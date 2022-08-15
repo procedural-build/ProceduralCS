@@ -136,6 +136,7 @@
     <Compile Include="GrasshopperUtils\PB_Component.cs" />
     <Compile Include="GrasshopperUtils\PB_TaskCapableComponent.cs" />
     <Compile Include="GrasshopperUtils\Types.cs" />
+    <Compile Include="Params\DownloadFileParam.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -148,6 +149,7 @@
     <Compile Include="Radiation\GHRadiationSolution.cs" />
     <Compile Include="Radiation\GHOutdoorComfortResults.cs" />
     <Compile Include="Radiation\GHOutdoorComfort.cs" />
+    <Compile Include="Types\PB_DownloadFile.cs" />
     <Compile Include="Utils\GHDownloadEPW.cs" />
     <Compile Include="Utils\GHListFiles.cs" />
     <Compile Include="Utils\GHListTasks.cs" />
