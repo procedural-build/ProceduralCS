@@ -1,14 +1,13 @@
-﻿using System;
-using System.Drawing;
-using System.Linq;
-using System.Threading;
-using ComputeCS.types;
+﻿using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
-using Rhino;
+using System;
+using System.Drawing;
+using System.Linq;
+using System.Threading;
 
 namespace ComputeCS.Grasshopper
 {
@@ -135,7 +134,7 @@ namespace ComputeCS.Grasshopper
                 };
                 DA.SetData(0, output.ToJson());
             }
-            
+
         }
 
         /// <summary>

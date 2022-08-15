@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Permissions;
-using System.Text;
-using Grasshopper.Kernel.Data;
+﻿using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace ComputeGH.Grasshopper.Utils
 {
@@ -36,7 +34,7 @@ namespace ComputeGH.Grasshopper.Utils
                     mesh.FaceNormals.UnitizeFaceNormals();
 
                     MeshFace face;
-                    var verts = new int[3] {0, 0, 0};
+                    var verts = new int[3] { 0, 0, 0 };
                     memStream.Write($"solid {name}\n");
 
                     for (int f = 0; f < mesh.Faces.Count; f++)
@@ -82,7 +80,7 @@ namespace ComputeGH.Grasshopper.Utils
                 }
 
                 stls.Add(
-                    new Dictionary<string, byte[]> {{regionName, STLObject(new List<GH_Mesh>() {mesh}, true)}}
+                    new Dictionary<string, byte[]> { { regionName, STLObject(new List<GH_Mesh>() { mesh }, true) } }
                 );
             }
 
@@ -101,7 +99,7 @@ namespace ComputeGH.Grasshopper.Utils
 
             return objs;
         }
-        
+
         public static byte[] ObjObject(List<GH_Mesh> meshes)
         {
             var uniEncoding = new UnicodeEncoding();
@@ -115,14 +113,14 @@ namespace ComputeGH.Grasshopper.Utils
                         memStream.WriteLine($"v {vertex.X} {vertex.Y} {vertex.Z}");
                     }
                     memStream.WriteLine("");
-                    
+
                     foreach (var normal in mesh.Value.Normals)
                     {
                         memStream.WriteLine($"vn {normal.X} {normal.Y} {normal.Z}");
                     }
 
                     memStream.WriteLine("");
-                    
+
                     foreach (var face in mesh.Value.Faces)
                     {
                         var vertA = face.A + 1;
@@ -143,7 +141,7 @@ namespace ComputeGH.Grasshopper.Utils
 
             return stream.ToArray();
         }
-        
+
         public static void MeshToObjFile(List<GH_Mesh> meshes, string filePath)
         {
             var objBytes = ObjObject(meshes);

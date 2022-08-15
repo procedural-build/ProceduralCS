@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using ComputeGH.Grasshopper.Utils;
+﻿using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace ComputeCS.Grasshopper
 {
@@ -50,7 +50,7 @@ namespace ComputeCS.Grasshopper
             {
                 var shortFall = ghObjs.Count - names.Count;
                 var lastName = names.Last();
-                var padLen = ((int) Math.Log10(ghObjs.Count)) + 1;
+                var padLen = ((int)Math.Log10(ghObjs.Count)) + 1;
                 if (padLen < 3)
                 {
                     padLen = 3;

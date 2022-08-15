@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using ComputeGH.Grasshopper.Utils;
+﻿using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 
 namespace ComputeGH.Grasshopper
 {

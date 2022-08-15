@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using ComputeGH.Grasshopper.Utils;
+﻿using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.GUI.Gradient;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
-using Grasshopper3D = Grasshopper;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace ComputeCS.Grasshopper
 {
@@ -144,7 +143,7 @@ namespace ComputeCS.Grasshopper
             for (int i = 0; i < colorarray.Count(); i++)
             {
                 double grip =
-                    t0 + (double) i * (t1 - t0) /
+                    t0 + (double)i * (t1 - t0) /
                     (colorarray.Count() - 1); //fix 10.10.17 add t0, to rescale the gradient grip
                 gradient2.AddGrip(grip, colorarray[i]);
             }

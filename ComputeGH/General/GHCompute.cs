@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using ComputeCS.Components;
+﻿using ComputeCS.Components;
 using ComputeCS.Exceptions;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
@@ -13,7 +6,12 @@ using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using Rhino;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Threading;
 
 namespace ComputeCS.Grasshopper
 {
@@ -123,15 +121,15 @@ namespace ComputeCS.Grasshopper
             }
 
             HandleErrors();
-            
+
             Message = "";
-            
+
             // Read from Cache
             if (cachedValues != null)
             {
                 DA.SetData(0, Info(TimeEstimate));
                 DA.SetData(1, cachedValues);
-                
+
                 if (StringCache.getCache(cacheKey + "create") == "true")
                 {
                     Message = "Tasks Created";
@@ -169,7 +167,7 @@ namespace ComputeCS.Grasshopper
                 StringCache.setCache(cacheKey + "create", "true");
             }
         }
-        
+
         private void RunRadiance(string inputJson, List<GH_Mesh> geometry, string cacheKey, bool compute)
         {
             var geometryFile = Export.STLObject(geometry);

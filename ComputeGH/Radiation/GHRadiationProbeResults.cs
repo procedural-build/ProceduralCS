@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Threading;
-using ComputeCS.Components;
-using ComputeCS.Grasshopper;
+﻿using ComputeCS.Components;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
@@ -12,8 +6,11 @@ using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
-using Rhino;
-using Rhino.Geometry;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Threading;
 
 namespace ComputeGH.Radiation
 {
@@ -128,7 +125,7 @@ namespace ComputeGH.Radiation
                 var metricCounter = 0;
                 foreach (var metricKey in data[patchKey].Keys)
                 {
-                    var path = new GH_Path(new int[] {patchCounter, metricCounter});
+                    var path = new GH_Path(new int[] { patchCounter, metricCounter });
                     output.AddRange(data[patchKey][metricKey], path);
                     metricCounter++;
                 }
@@ -142,13 +139,13 @@ namespace ComputeGH.Radiation
         {
             var info = "Patch Names:\n";
             var i = 0;
-            
+
             foreach (var key in data.Keys)
             {
                 info += $"{{{i};*}} is {key}\n";
                 i++;
             }
-            
+
             var j = 0;
             info += "\nMetrics:\n";
             var output = new DataTree<object>();
@@ -159,7 +156,7 @@ namespace ComputeGH.Radiation
                 output.Add(metric, new GH_Path(1));
                 j++;
             }
-            
+
             output.Add(info, new GH_Path(0));
             return output;
         }

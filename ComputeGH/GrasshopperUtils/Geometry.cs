@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Threading;
-using ComputeCS.utils.Queue;
-using Grasshopper;
+﻿using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino;
@@ -12,6 +6,11 @@ using Rhino.Display;
 using Rhino.DocObjects;
 using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Threading;
 
 namespace ComputeGH.Grasshopper.Utils
 {
@@ -55,7 +54,7 @@ namespace ComputeGH.Grasshopper.Utils
             List<double[]> pntList = new List<double[]>(points.Count);
             foreach (Point3d p in points)
             {
-                pntList.Add(new double[3] {p.X, p.Y, p.Z});
+                pntList.Add(new double[3] { p.X, p.Y, p.Z });
             }
 
             return pntList;
@@ -108,7 +107,7 @@ namespace ComputeGH.Grasshopper.Utils
         {
             return ghObjList.Select(GetObjRef).ToList();
         }
-        
+
         public static List<string> GetObjRefStrings<T>(List<T> ghObjList) where T : IGH_GeometricGoo
         {
             return ghObjList.Select(refId => GetObjRef(refId).ObjectId.ToString()).ToList();
@@ -295,10 +294,10 @@ namespace ComputeGH.Grasshopper.Utils
                 doneEvents[index] = new ManualResetEvent(false);
                 var callBack = new ThreadedCreateAnalysisMesh
                 {
-                    gridSize = gridSize, 
-                    excludeGeometry = excludeGeometry, 
+                    gridSize = gridSize,
+                    excludeGeometry = excludeGeometry,
                     offset = offset,
-                    offsetDirection = offsetDirection, 
+                    offsetDirection = offsetDirection,
                     doneEvent = doneEvents[index]
                 };
                 ThreadPool.QueueUserWorkItem(callBack.ThreadPoolCallback);
@@ -314,7 +313,7 @@ namespace ComputeGH.Grasshopper.Utils
                 var mesh = callBack.analysisMesh;
                 var path = new GH_Path(index);
                 analysisMesh.Add(mesh, path);
-                
+
                 foreach (var normal in mesh.FaceNormals)
                 {
                     faceNormals.Add(normal, path);
@@ -353,11 +352,11 @@ namespace ComputeGH.Grasshopper.Utils
                 doneEvents[index] = new ManualResetEvent(false);
                 var callBack = new ThreadedCreateAnalysisMesh
                 {
-                    surface=surface, 
-                    gridSize = gridSize, 
-                    excludeGeometry = excludeGeometry, 
+                    surface = surface,
+                    gridSize = gridSize,
+                    excludeGeometry = excludeGeometry,
                     offset = offset,
-                    offsetDirection = offsetDirection, 
+                    offsetDirection = offsetDirection,
                     doneEvent = doneEvents[index]
                 };
                 ThreadPool.QueueUserWorkItem(callBack.ThreadPoolCallback);
@@ -373,7 +372,7 @@ namespace ComputeGH.Grasshopper.Utils
                 var mesh = callBack.analysisMesh;
                 var path = new GH_Path(index);
                 analysisMesh.Add(mesh, path);
-                
+
                 foreach (var normal in mesh.FaceNormals)
                 {
                     faceNormals.Add(normal, path);
@@ -582,18 +581,18 @@ namespace ComputeGH.Grasshopper.Utils
 
             return new Tuple<Mesh, List<Text3d>>(legend, text);
         }
-        
-                
+
+
         public static List<List<List<double>>> ConvertPointsToList(GH_Structure<GH_Point> pointTree)
         {
-            return pointTree.Branches.Select(branch => branch.Select(point => new List<double> {point.Value.X, point.Value.Y, point.Value.Z}).ToList()).ToList();
+            return pointTree.Branches.Select(branch => branch.Select(point => new List<double> { point.Value.X, point.Value.Y, point.Value.Z }).ToList()).ToList();
         }
-        
+
         public static List<List<List<double>>> ConvertPointsToList(GH_Structure<GH_Vector> pointTree)
         {
-            return pointTree.Branches.Select(branch => branch.Select(point => new List<double> {point.Value.X, point.Value.Y, point.Value.Z}).ToList()).ToList();
+            return pointTree.Branches.Select(branch => branch.Select(point => new List<double> { point.Value.X, point.Value.Y, point.Value.Z }).ToList()).ToList();
         }
-        
+
         public class ThreadedCreateAnalysisMesh
         {
             public Brep surface;

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Threading;
-using ComputeCS.Components;
+﻿using ComputeCS.Components;
 using ComputeCS.Exceptions;
-using ComputeCS.Grasshopper;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
@@ -12,7 +7,10 @@ using ComputeGH.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using Rhino;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Threading;
 
 namespace ComputeGH.Radiation
 {
@@ -81,13 +79,13 @@ namespace ComputeGH.Radiation
             {
                 for (var i = 0; i < points.Branches.Count; i++)
                 {
-                    names.Add($"set{i.ToString()}");    
+                    names.Add($"set{i.ToString()}");
                 }
             }
 
             DA.GetData(5, ref create);
 
-            
+
 
             // Get Cache to see if we already did this
             var cacheKey = string.Join("", points) + string.Join("", names) + inputJson;
@@ -155,7 +153,7 @@ namespace ComputeGH.Radiation
                 {
                     throw new Exception(errors);
                 }
-                
+
             }
 
             // Read from Cache

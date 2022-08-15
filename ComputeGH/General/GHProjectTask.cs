@@ -1,16 +1,15 @@
-﻿using System;
-using System.Activities;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Threading;
-using ComputeCS.Components;
+﻿using ComputeCS.Components;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
-using Rhino;
+using System;
+using System.Activities;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Threading;
 
 namespace ComputeCS.Grasshopper
 {

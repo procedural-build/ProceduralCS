@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using ComputeCS.Components;
+﻿using ComputeCS.Components;
 using ComputeCS.types;
 using ComputeCS.utils.Cache;
 using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
-using Rhino;
+using System;
+using System.Drawing;
+using System.IO;
+using System.Threading;
 
 namespace ComputeCS.Grasshopper
 {
@@ -35,7 +32,7 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Input", "Input", "Input from previous Compute Component", GH_ParamAccess.item);
             pManager.AddTextParameter("Download Path", "Download Path", "The path from Compute to download. You can chose both a file or a folder to download.", GH_ParamAccess.item);
             pManager.AddTextParameter("Local Path", "Local Path", "The local path where to you want the download content to be stored.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Overrides", "Overrides", 
+            pManager.AddTextParameter("Overrides", "Overrides",
                 "Optional overrides to apply to the download.\n" +
                 "The overrides lets you exclude or include files from the server in the provided path, that you want to download.\n" +
                 "If you want to exclude all files that ends with '.txt', then you can do that with: {\"exclude\": [\".txt\"]}\n" +
@@ -47,7 +44,7 @@ namespace ComputeCS.Grasshopper
                 GH_ParamAccess.item, "");
             pManager.AddBooleanParameter("Reload", "Reload", "Redownload the content from Compute", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Clear", "Clear", "Delete all files downloaded into the local path", GH_ParamAccess.item);
-            
+
             pManager[3].Optional = true;
             pManager[4].Optional = true;
             pManager[5].Optional = true;
@@ -88,7 +85,7 @@ namespace ComputeCS.Grasshopper
             DA.DisableGapLogic();
 
             ClearLocalFolder(localPath, clear, cacheKey);
-            
+
             if (cachedValues == null || reload)
             {
                 PollDownloadContent(input, downloadPath, localPath, overrides, reload, cacheKey);
@@ -98,7 +95,7 @@ namespace ComputeCS.Grasshopper
             {
                 Directory.CreateDirectory(localPath);
             }
-            
+
             if (cachedValues == "True" && Directory.Exists(localPath))
             {
                 DA.SetData(0, localPath);
@@ -114,7 +111,7 @@ namespace ComputeCS.Grasshopper
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, errors);
             }
-            
+
             Message = StringCache.getCache(cacheKey + "progress");
 
         }
@@ -123,19 +120,19 @@ namespace ComputeCS.Grasshopper
         {
             if (!Directory.Exists(localPath)) return;
             if (!clear) return;
-            
+
             var directoryInfo = new DirectoryInfo(localPath);
             foreach (var file in directoryInfo.EnumerateFiles())
             {
-                file.Delete(); 
+                file.Delete();
             }
             foreach (var dir in directoryInfo.EnumerateDirectories())
             {
-                dir.Delete(true); 
+                dir.Delete(true);
             }
-            
+
             StringCache.setCache(cacheKey + "progress", "Cleared Folder");
-            
+
         }
         private void PollDownloadContent(
             string inputJson,
@@ -161,24 +158,25 @@ namespace ComputeCS.Grasshopper
             {
                 StringCache.setCache(queueName, "true");
                 StringCache.setCache(cacheKey, null);
-                QueueManager.addToQueue(queueName, () => {
+                QueueManager.addToQueue(queueName, () =>
+                {
                     try
                     {
                         while (!downloaded)
                         {
                             StringCache.setCache(cacheKey + "progress", "Downloading...");
                             ExpireSolutionThreadSafe(true);
-                            
+
                             downloaded = DownloadContent.Download(inputJson, downloadPath, localPath, overrides);
                             StringCache.setCache(cacheKey, downloaded.ToString());
-                            
+
                             if (!downloaded)
                             {
                                 StringCache.setCache(cacheKey + "progress", "Waiting for results...");
                                 ExpireSolutionThreadSafe(true);
                                 Thread.Sleep(60000);
                             }
-                            else { StringCache.setCache(cacheKey + "progress", "Downloaded files");}
+                            else { StringCache.setCache(cacheKey + "progress", "Downloaded files"); }
                             ExpireSolutionThreadSafe(true);
                         }
 
@@ -192,7 +190,7 @@ namespace ComputeCS.Grasshopper
                     Thread.Sleep(2000);
                     StringCache.setCache(queueName, "");
                 });
-                
+
             }
         }
 
