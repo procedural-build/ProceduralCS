@@ -32,7 +32,6 @@ namespace ComputeGH.Radiation
                 GH_ParamAccess.item, 4);
             pManager.AddIntegerParameter("Method", "Method", "Select which Radiance Method to use.",
                 GH_ParamAccess.item, 0);
-            //pManager.AddIntegerParameter("Case Type", "Case Type", "Available Options: Grid, Image", GH_ParamAccess.item, 0);
             pManager.AddTextParameter("Materials", "Materials",
                 "This should be a list of materials generated with the Radiance Material components.",
                 GH_ParamAccess.list);
@@ -69,7 +68,6 @@ namespace ComputeGH.Radiation
 
 
             AddNamedValues(pManager[2] as Param_Integer, Methods);
-            //AddNamedValues(pManager[3] as Param_Integer, CaseTypes);
         }
 
         private static void AddNamedValues(Param_Integer param, List<string> values)
@@ -109,10 +107,15 @@ namespace ComputeGH.Radiation
             if (inputJson == "error") return;
             DA.GetData(1, ref cpus);
             DA.GetData(2, ref method);
-            //DA.GetData(3, ref caseType);
             if (!DA.GetDataList(3, materials)) return;
             if (!DA.GetData(4, ref epwFile) && (method <= 1)) return;
             DA.GetData(5, ref overrides);
+
+            if (Methods[method] != "daylight_factor")
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Not supported method '{Methods[method]}', use daylight_factor");
+                return;
+            }
 
             try
             {
