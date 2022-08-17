@@ -39,6 +39,6 @@ namespace ComputeGH.Grasshopper.Utils
         public abstract Task<T> CreateTask(IGH_DataAccess DA);
         public abstract void SetOutputData(IGH_DataAccess DA, T result);
 
-        protected Task<T> DefaultTask() => new Task<T>(() => default);
+        protected Task<T> DefaultTask() => Task.FromResult<T>(default);
     }
 }

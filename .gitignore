@@ -10,3 +10,4 @@ ComputeCS.sln.DotSettings.user
 *.dll
 *.gha
 *.nlog
+*.csproj.user
