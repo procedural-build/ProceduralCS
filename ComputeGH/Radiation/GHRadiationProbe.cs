@@ -1,7 +1,4 @@
 ﻿using ComputeCS.Components;
-using ComputeCS.Exceptions;
-using ComputeCS.utils.Cache;
-using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
@@ -10,11 +7,16 @@ using Grasshopper.Kernel.Types;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadiationProbe : PB_Component
+    public class RadiationProbesResult
+    {
+        public string Value { get; set; }
+        public Exception Errors { get; set; }
+    }
+    public class GHRadiationProbe : PB_TaskCapableComponent<RadiationProbesResult>
     {
         /// <summary>
         /// Initializes a new instance of the GHProbe class.
@@ -58,11 +60,7 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.item);
         }
 
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
-        protected override void SolveInstance(IGH_DataAccess DA)
+        public override Task<RadiationProbesResult> CreateTask(IGH_DataAccess DA)
         {
             string inputJson = null;
             var mesh = new GH_Structure<GH_Mesh>();
@@ -71,102 +69,42 @@ namespace ComputeGH.Radiation
             var names = new List<string>();
             var create = false;
 
-            if (!DA.GetData(0, ref inputJson)) return;
-            if (!DA.GetDataTree(1, out mesh)) return;
-            if (!DA.GetDataTree(2, out points)) return;
-            if (!DA.GetDataTree(3, out normals)) return;
+            if (!DA.GetData(0, ref inputJson)) return DefaultTask();
+            if (!DA.GetDataTree(1, out mesh)) return DefaultTask();
+            if (!DA.GetDataTree(2, out points)) return DefaultTask();
+            if (!DA.GetDataTree(3, out normals)) return DefaultTask();
             if (!DA.GetDataList(4, names))
             {
                 for (var i = 0; i < points.Branches.Count; i++)
                 {
-                    names.Add($"set{i.ToString()}");
+                    names.Add($"set{i}");
                 }
             }
-
             DA.GetData(5, ref create);
 
+            return Task.Run(() => DoProbe(inputJson, mesh, points, normals, names, create));
+        }
 
-
-            // Get Cache to see if we already did this
-            var cacheKey = string.Join("", points) + string.Join("", names) + inputJson;
-            var cachedValues = StringCache.getCache(cacheKey);
-            DA.DisableGapLogic();
-
-            if (cachedValues == null || create)
-            {
-                var queueName = "radiationProbe";
-
-                // Get queue lock
-                var queueLock = StringCache.getCache(queueName);
-                if (queueLock != "true")
-                {
-                    StringCache.setCache(queueName, "true");
-                    StringCache.setCache(cacheKey, null);
-                    QueueManager.addToQueue(queueName, () =>
-                    {
-                        try
-                        {
-                            var meshFile = Export.MeshToObj(mesh, names);
-                            var results = Probe.RadiationProbes(
-                                inputJson,
-                                Geometry.ConvertPointsToList(points),
-                                Geometry.ConvertPointsToList(normals),
-                                names,
-                                meshFile,
-                                create
-                            );
-                            cachedValues = results;
-                            StringCache.setCache(cacheKey, cachedValues);
-                            if (create)
-                            {
-                                StringCache.setCache(cacheKey + "create", "true");
-                            }
-                        }
-                        catch (NoObjectFoundException)
-                        {
-                            StringCache.setCache(cacheKey + "create", "");
-                        }
-                        catch (Exception e)
-                        {
-                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
-                            StringCache.setCache(cacheKey, "error");
-                            StringCache.setCache(cacheKey + "create", "");
-                        }
-
-
-                        ExpireSolutionThreadSafe(true);
-                        Thread.Sleep(2000);
-                        StringCache.setCache(queueName, "");
-                    });
-                }
-            }
-
-            // Handle Errors
-            var errors = StringCache.getCache(InstanceGuid.ToString());
-            if (errors != null)
-            {
-                if (errors.Contains("No object found"))
-                {
-                    Message = "No Probe Task found.";
-                }
-                else
-                {
-                    throw new Exception(errors);
-                }
-
-            }
-
-            // Read from Cache
+        public override void SetOutputData(IGH_DataAccess DA, RadiationProbesResult result)
+        {
             Message = "";
-            if (cachedValues != null)
+
+            if (result.Errors != null && result.Errors.Message.Contains("No object found"))
             {
-                var outputs = cachedValues;
-                DA.SetData(0, outputs);
-                if (StringCache.getCache(cacheKey + "create") == "true")
-                {
-                    Message = "Task Created";
-                }
+                Message = "No Probe Task found.";
+                return;
             }
+            else if (result.Errors != null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, result.Errors.Message);
+                return;
+            }
+
+            var create = false;
+            DA.GetData(5, ref create);
+            Message = create ? "Task Created" : "";
+
+            DA.SetData(0, result.Value);
         }
 
         /// <summary>
@@ -178,5 +116,36 @@ namespace ComputeGH.Radiation
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid => new Guid("ca0e9bd3-46a9-4cc7-b379-07b43d27e46a");
+
+        private RadiationProbesResult DoProbe(
+            string inputJson,
+            GH_Structure<GH_Mesh> mesh,
+            GH_Structure<GH_Point> points,
+            GH_Structure<GH_Vector> normals,
+            List<string> names,
+            bool create)
+        {
+            try
+            {
+                return new RadiationProbesResult
+                {
+                    Value = Probe.RadiationProbes(
+                        inputJson,
+                        Geometry.ConvertPointsToList(points),
+                        Geometry.ConvertPointsToList(normals),
+                        names,
+                        Export.MeshToObj(mesh, names),
+                        create
+                    )
+                };
+            }
+            catch (Exception e)
+            {
+                return new RadiationProbesResult
+                {
+                    Errors = e
+                };
+            }
+        }
     }
 }
