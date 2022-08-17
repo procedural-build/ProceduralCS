@@ -1,7 +1,7 @@
 ﻿using ComputeCS.Components;
-using ComputeCS.utils.Cache;
-using ComputeCS.utils.Queue;
+using ComputeCS.types;
 using ComputeGH.Grasshopper.Utils;
+using ComputeGH.Params;
 using ComputeGH.Properties;
 using Grasshopper;
 using Grasshopper.Kernel;
@@ -10,11 +10,17 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace ComputeGH.Radiation
 {
-    public class GHRadiationProbeResults : PB_Component
+    public class RadiationProbeResults
+    {
+        public DataTree<object> Info { get; set; }
+        public DataTree<object> ProbeResults { get; set; }
+        public Exception Errors { get; set; }
+    }
+    public class GHRadiationProbeResults : PB_TaskCapableComponent<RadiationProbeResults>
     {
         /// <summary>
         /// Initializes a new instance of the GHProbeResults class.
@@ -31,10 +37,7 @@ namespace ComputeGH.Radiation
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Folder", "Folder", "Folder path to where to results are", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Rerun", "Rerun", "Rerun this component.", GH_ParamAccess.item);
-
-            pManager[1].Optional = true;
+            pManager.AddParameter(new DownloadFileParam(), "Downloaded files", "Files", "File downloaded from Procedural compute to retrieve results from", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -45,75 +48,6 @@ namespace ComputeGH.Radiation
             pManager.AddTextParameter("Info", "Info", "Description of the outputs", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Metric", "Metric", "Result Metric",
                 GH_ParamAccess.tree);
-        }
-
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
-        protected override void SolveInstance(IGH_DataAccess DA)
-        {
-            string folder = null;
-            var refresh = false;
-
-            if (!DA.GetData(0, ref folder)) return;
-            DA.GetData(1, ref refresh);
-
-            // Get Cache to see if we already did this
-            var cacheKey = folder;
-            var cachedValues = StringCache.getCache(cacheKey);
-            DA.DisableGapLogic();
-
-            if (cachedValues == null || refresh)
-            {
-                const string queueName = "radiationProbeResults";
-                StringCache.setCache(InstanceGuid.ToString(), "");
-
-                // Get queue lock
-                var queueLock = StringCache.getCache(queueName);
-                if (queueLock != "true")
-                {
-                    StringCache.setCache(queueName, "true");
-                    StringCache.setCache(cacheKey + "progress", "Loading...");
-
-                    QueueManager.addToQueue(queueName, () =>
-                    {
-                        try
-                        {
-                            var results = RadiationProbeResult.ReadResults(folder);
-                            probeResults = ConvertToDataTree(results);
-                            info = UpdateInfo(results);
-                            StringCache.setCache(cacheKey + "progress", "Done");
-                            StringCache.setCache(cacheKey, "results");
-                        }
-                        catch (Exception e)
-                        {
-                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
-                            StringCache.setCache(cacheKey, "error");
-                            StringCache.setCache(cacheKey + "progress", "");
-                        }
-
-                        ExpireSolutionThreadSafe(true);
-                        Thread.Sleep(2000);
-                        StringCache.setCache(queueName, "");
-                    });
-                    ExpireSolutionThreadSafe(true);
-                }
-            }
-
-            HandleErrors();
-
-            if (info != null)
-            {
-                DA.SetDataTree(0, info);
-            }
-
-            if (probeResults != null)
-            {
-                DA.SetDataTree(1, probeResults);
-            }
-
-            Message = StringCache.getCache(cacheKey + "progress");
         }
 
         private static DataTree<object> ConvertToDataTree(Dictionary<string, Dictionary<string, IEnumerable<object>>> data)
@@ -161,6 +95,27 @@ namespace ComputeGH.Radiation
             return output;
         }
 
+        public override Task<RadiationProbeResults> CreateTask(IGH_DataAccess DA)
+        {
+            var files = new List<DownloadFile>();
+
+            if (!DA.GetDataList(0, files)) return DefaultTask();
+
+            return System.Threading.Tasks.Task.Run(() => GetRadiationProbeResults(files));
+        }
+
+        public override void SetOutputData(IGH_DataAccess DA, RadiationProbeResults result)
+        {
+            if (result.Errors != null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, result.Errors.Message);
+                return;
+            }
+
+            DA.SetDataTree(0, result.Info);
+            DA.SetDataTree(1, result.ProbeResults);
+        }
+
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -172,7 +127,24 @@ namespace ComputeGH.Radiation
         /// </summary>
         public override Guid ComponentGuid => new Guid("1728a9d5-868d-4e17-aede-6d346233c9d3");
 
-        private DataTree<object> info;
-        private DataTree<object> probeResults;
+        private RadiationProbeResults GetRadiationProbeResults(List<DownloadFile> files)
+        {
+            try
+            {
+                var results = RadiationProbeResult.ReadResults(files);
+                return new RadiationProbeResults
+                {
+                    ProbeResults = ConvertToDataTree(results),
+                    Info = UpdateInfo(results),
+                };
+            }
+            catch (Exception e)
+            {
+                return new RadiationProbeResults
+                {
+                    Errors = e
+                };
+            }
+        }
     }
 }
