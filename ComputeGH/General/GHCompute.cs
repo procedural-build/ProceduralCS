@@ -1,7 +1,4 @@
 ﻿using ComputeCS.Components;
-using ComputeCS.Exceptions;
-using ComputeCS.utils.Cache;
-using ComputeCS.utils.Queue;
 using ComputeGH.Grasshopper.Utils;
 using ComputeGH.Properties;
 using Grasshopper.Kernel;
@@ -11,11 +8,17 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace ComputeCS.Grasshopper
 {
-    public class ComputeCompute : PB_Component
+    public class ComputeResult
+    {
+        public Dictionary<string, double> TimeEstimate { get; set; }
+        public string Value { get; set; }
+        public Exception Errors { get; set; }
+    }
+    public class ComputeCompute : PB_TaskCapableComponent<ComputeResult>
     {
         /// <summary>
         /// Initializes a new instance of the ComputeCompute class.
@@ -54,89 +57,6 @@ namespace ComputeCS.Grasshopper
             pManager.AddTextParameter("Output", "Output", "Output", GH_ParamAccess.list);
         }
 
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
-        protected override void SolveInstance(IGH_DataAccess DA)
-        {
-            string inputJson = null;
-            var geometry = new List<GH_Mesh>();
-            var compute = false;
-            var folder = string.Empty;
-
-            if (!DA.GetData(0, ref inputJson)) return;
-            if (inputJson == "error") return;
-
-            DA.GetDataList(1, geometry);
-            DA.GetData(2, ref folder);
-
-            DA.GetData(3, ref compute);
-
-            // Get Cache to see if we already did this
-            var cacheKey = inputJson;
-            var cachedValues = StringCache.getCache(cacheKey);
-            DA.DisableGapLogic();
-
-            if (cachedValues == null || compute)
-            {
-                var queueName = "compute" + cacheKey;
-                StringCache.setCache(InstanceGuid.ToString(), "");
-
-                // Get queue lock
-                var queueLock = StringCache.getCache(queueName);
-                if (queueLock != "true")
-                {
-                    StringCache.setCache(queueName, "true");
-                    QueueManager.addToQueue(queueName, () =>
-                    {
-                        try
-                        {
-                            try
-                            {
-                                TimeEstimate = Compute.GetTaskEstimates(inputJson);
-                            }
-                            catch (Exception)
-                            {
-                            }
-
-                            RunOnCompute(inputJson, geometry, folder, cacheKey, compute);
-                        }
-                        catch (NoObjectFoundException)
-                        {
-                            StringCache.setCache(cacheKey + "create", "");
-                        }
-                        catch (Exception e)
-                        {
-                            StringCache.setCache(InstanceGuid.ToString(), e.Message);
-                            StringCache.setCache(cacheKey, "error");
-                            StringCache.setCache(cacheKey + "create", "");
-                        }
-
-                        ExpireSolutionThreadSafe(true);
-                        Thread.Sleep(2000);
-                        StringCache.setCache(queueName, "");
-                    });
-                }
-            }
-
-            HandleErrors();
-
-            Message = "";
-
-            // Read from Cache
-            if (cachedValues != null)
-            {
-                DA.SetData(0, Info(TimeEstimate));
-                DA.SetData(1, cachedValues);
-
-                if (StringCache.getCache(cacheKey + "create") == "true")
-                {
-                    Message = "Tasks Created";
-                }
-            }
-        }
-
         private static string Info(Dictionary<string, double> estimations)
         {
             if (estimations == null || estimations.Count == 0)
@@ -150,90 +70,112 @@ namespace ComputeCS.Grasshopper
             return info;
         }
 
-        private void RunCFD(string inputJson, List<GH_Mesh> geometry, string cacheKey, bool compute)
+        public override Task<ComputeResult> CreateTask(IGH_DataAccess DA)
         {
-            var geometryFile = Export.STLObject(geometry);
-            var refinementGeometry = Export.RefinementRegionsToSTL(geometry);
-            var results = Compute.Create(
-                inputJson,
-                geometryFile,
-                refinementGeometry,
-                compute
-            );
-            StringCache.setCache(cacheKey, results);
-            StringCache.setCache(InstanceGuid.ToString(), "");
-            if (compute)
+            string inputJson = null;
+            var geometry = new List<GH_Mesh>();
+            var compute = false;
+            var folder = string.Empty;
+
+            if (!DA.GetData(0, ref inputJson)) return DefaultTask();
+            if (inputJson == "error") return DefaultTask();
+
+            DA.GetDataList(1, geometry);
+            DA.GetData(2, ref folder);
+            DA.GetData(3, ref compute);
+
+            if (!string.IsNullOrEmpty(folder))
             {
-                StringCache.setCache(cacheKey + "create", "true");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "folder input is not allowed");
+                return DefaultTask();
+            }
+
+            return Task.Run(() => DoCompute(inputJson, geometry, folder, compute));
+        }
+
+        public override void SetOutputData(IGH_DataAccess DA, ComputeResult result)
+        {
+            Message = "";
+
+            if (result.Errors != null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, result.Errors.Message);
+                return;
+            }
+
+            var computes = false;
+            DA.GetData(3, ref computes);
+            Message = computes ? "Task Created" : "";
+
+            DA.SetData(0, Info(result.TimeEstimate));
+            DA.SetData(1, result.Value);
+        }
+
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// </summary>
+        protected override Bitmap Icon => Resources.IconRun;
+
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
+        public override Guid ComponentGuid => new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b");
+
+        private ComputeResult DoCompute(string inputJson, List<GH_Mesh> geometry, string folder, bool compute)
+        {
+            try
+            {
+                return new ComputeResult
+                {
+                    TimeEstimate = Compute.GetTaskEstimates(inputJson),
+                    Value = RunOnCompute(inputJson, geometry, folder, compute)
+                };
+            }
+            catch (Exception e)
+            {
+                return new ComputeResult
+                {
+                    Errors = e
+                };
             }
         }
 
-        private void RunRadiance(string inputJson, List<GH_Mesh> geometry, string cacheKey, bool compute)
-        {
-            var geometryFile = Export.STLObject(geometry);
-            var results = Compute.Create(
-                inputJson,
-                geometryFile,
-                "Probe",
-                compute
-            );
-            StringCache.setCache(cacheKey, results);
-            StringCache.setCache(InstanceGuid.ToString(), "");
-            if (compute)
-            {
-                StringCache.setCache(cacheKey + "create", "true");
-            }
-        }
-
-        private void RunEnergyPlus(string inputJson, string folder, string cacheKey, bool compute)
-        {
-            var results = Compute.CreateEnergyPlus(
-                inputJson,
-                folder,
-                compute
-            );
-            StringCache.setCache(cacheKey, results);
-            StringCache.setCache(this.InstanceGuid.ToString(), "");
-            if (compute)
-            {
-                StringCache.setCache(cacheKey + "create", "true");
-            }
-        }
-
-        private void RunHoneybeeRadiance(string inputJson, string folder, string cacheKey, bool compute)
-        {
-            var results = Compute.CreateRadiance(
-                inputJson,
-                folder,
-                compute
-            );
-            StringCache.setCache(cacheKey, results);
-            StringCache.setCache(this.InstanceGuid.ToString(), "");
-            if (compute)
-            {
-                StringCache.setCache(cacheKey + "create", "true");
-            }
-        }
-
-        private void RunOnCompute(string inputJson, List<GH_Mesh> geometry, string folder, string cacheKey,
-            bool compute)
+        private string RunOnCompute(string inputJson, List<GH_Mesh> geometry, string folder, bool compute)
         {
             if (FolderContainsEnergyPlus(folder))
             {
-                RunEnergyPlus(inputJson, folder, cacheKey, compute);
+                return Compute.CreateEnergyPlus(
+                    inputJson,
+                    folder,
+                    compute
+                );
             }
 
             else if (FolderContainsRadiance(folder))
             {
-                RunHoneybeeRadiance(inputJson, folder, cacheKey, compute);
+                return Compute.CreateRadiance(
+                    inputJson,
+                    folder,
+                    compute
+                );
             }
             else if (inputJson.Contains("radiation_solution"))
             {
-                RunRadiance(inputJson, geometry, cacheKey, compute);
+                return Compute.Create(
+                     inputJson,
+                     Export.STLObject(geometry),
+                     "Probe",
+                     compute
+                 );
             }
             else
             {
-                RunCFD(inputJson, geometry, cacheKey, compute);
+                return Compute.Create(
+                    inputJson,
+                    Export.STLObject(geometry),
+                    Export.RefinementRegionsToSTL(geometry),
+                    compute
+                );
             }
         }
 
@@ -258,17 +200,5 @@ namespace ComputeCS.Grasshopper
             var files = Directory.GetFiles(folder);
             return files.Any(file => file.ToLower().EndsWith(".idf"));
         }
-
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override Bitmap Icon => Resources.IconRun;
-
-        /// <summary>
-        /// Gets the unique ID for this component. Do not change this ID after release.
-        /// </summary>
-        public override Guid ComponentGuid => new Guid("898478bb-5b4f-4972-951a-d9e71ba0086b");
-
-        private Dictionary<string, double> TimeEstimate;
     }
 }
