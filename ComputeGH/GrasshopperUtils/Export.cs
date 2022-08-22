@@ -2,6 +2,7 @@
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -44,14 +45,15 @@ namespace ComputeGH.Grasshopper.Utils
                         verts[1] = face.B;
                         verts[2] = face.C;
 
+                        var iv = CultureInfo.InvariantCulture;
                         memStream.Write(
-                            $"facet normal {mesh.FaceNormals[f].X} {mesh.FaceNormals[f].Y} {mesh.FaceNormals[f].Z}\n");
+                            $"facet normal {mesh.FaceNormals[f].X.ToString(iv)} {mesh.FaceNormals[f].Y.ToString(iv)} {mesh.FaceNormals[f].Z.ToString(iv)}\n");
 
                         memStream.Write(" outer loop\n");
                         foreach (int v in verts)
                         {
                             memStream.Write(
-                                $"  vertex {mesh.Vertices[v].X} {mesh.Vertices[v].Y} {mesh.Vertices[v].Z}\n");
+                                $"  vertex {mesh.Vertices[v].X.ToString(iv)} {mesh.Vertices[v].Y.ToString(iv)} {mesh.Vertices[v].Z.ToString(iv)}\n");
                         }
 
                         memStream.Write(" endloop\n");
