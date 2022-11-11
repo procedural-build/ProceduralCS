@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using ComputeCS.types;
+﻿using ComputeCS.types;
+using System.Collections.Generic;
+using System.Text;
 
 namespace ComputeCS.Components
 {
@@ -12,28 +13,33 @@ namespace ComputeCS.Components
             var parentTask = inputData.Task;
             var project = inputData.Project;
 
-            var response = new GenericViewSet<Dictionary<string, object>>(
+            var view = new GenericViewSet<Dictionary<string, object>>(
                 tokens,
                 inputData.Url,
                 $"/api/task/{parentTask.UID}/file/"
-            ).GetOrCreate(
-                new Dictionary<string, object>
-                {
-                    {"file", path},
-                },
-                new Dictionary<string, object>
-                {
-                    {"text", text}
-                },
-                upload
             );
 
-            if (response.ContainsKey("file"))
+            if (upload)
             {
-                return inputData.Url + $"/project/${project.UID}/task/${parentTask.UID}/files/${path}/";
-            }
+                var response = view.Update(path, new Dictionary<string, object>
+                {
+                    {"file", Encoding.UTF8.GetBytes(text) }
+                });
 
-            return "";
+                return response.ContainsKey("file")
+                    ? inputData.Url + $"/project/${project.UID}/task/${parentTask.UID}/files/${path}/"
+                    : "";
+            }
+            else
+            {
+                var existing = view.List(new Dictionary<string, object>
+                {
+                    { "pattern", path }
+                });
+                return existing.Count > 0
+                    ? inputData.Url + $"/project/${project.UID}/task/${parentTask.UID}/files/${path}/"
+                    : "";
+            };
         }
     }
 }
